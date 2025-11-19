@@ -92,10 +92,10 @@ export function setupReplitAuth(app: Express) {
         tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
         verified: passport.AuthenticateCallback
       ) => {
-        const user = {};
-        updateUserSession(user, tokens);
-        await upsertReplitUser(tokens.claims());
-        verified(null, user);
+        const dbUser = await upsertReplitUser(tokens.claims());
+        const sessionUser: any = { id: dbUser.id };
+        updateUserSession(sessionUser, tokens);
+        verified(null, sessionUser);
       };
 
       const strategy = new Strategy(

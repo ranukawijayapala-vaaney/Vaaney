@@ -101,12 +101,32 @@ export async function setupAuth(app: Express) {
     )
   );
 
-  passport.serializeUser((user: any, cb) => cb(null, user.id));
-  
-  passport.deserializeUser(async (id: string, cb) => {
-    try {
-      const user = await storage.getUser(id);
+  passport.serializeUser((user: any, cb) => {
+    // For Replit Auth users, serialize the full session object (includes tokens)
+    // For local auth users, serialize just the ID
+    if (user.claims || user.access_token) {
       cb(null, user);
+    } else {
+      cb(null, user.id);
+    }
+  });
+  
+  passport.deserializeUser(async (sessionData: any, cb) => {
+    try {
+      // Extract user ID from session data
+      const id = typeof sessionData === 'string' ? sessionData : sessionData.id;
+      
+      // Always fetch fresh user data from database
+      const dbUser = await storage.getUser(id);
+      
+      // If sessionData has tokens (Replit Auth), merge with database user
+      if (typeof sessionData === 'object' && sessionData.claims) {
+        // Merge database profile with token metadata
+        cb(null, { ...dbUser, ...sessionData });
+      } else {
+        // Local auth - just return database user
+        cb(null, dbUser);
+      }
     } catch (error) {
       cb(error);
     }
