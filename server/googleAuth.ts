@@ -66,13 +66,21 @@ export function setupGoogleAuth(app: Express) {
     throw new Error("Google OAuth credentials missing");
   }
 
+  // Build absolute callback URL for Google OAuth
+  const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+    ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+    : 'http://localhost:5000';
+  const callbackURL = `${baseUrl}/api/auth/google/callback`;
+
+  console.log(`[Google OAuth] Callback URL: ${callbackURL}`);
+
   // Google OAuth Strategy
   passport.use(
     new GoogleStrategy(
       {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: "/api/auth/google/callback",
+        callbackURL,
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
