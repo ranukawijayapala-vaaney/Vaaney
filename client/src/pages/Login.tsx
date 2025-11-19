@@ -34,10 +34,10 @@ export default function Login() {
   });
 
   useEffect(() => {
-    // Check for Replit auth errors in URL
+    // Check for Google auth errors in URL
     const params = new URLSearchParams(window.location.search);
     const error = params.get("error");
-    if (error === "replit_auth_failed") {
+    if (error === "google_auth_failed") {
       toast({
         title: "Sign-in failed",
         description: "Please try again or sign in with your email and password",
@@ -167,7 +167,7 @@ export default function Login() {
           <Button
             variant="outline"
             className="w-full"
-            onClick={() => window.location.href = "/api/replit-auth/login"}
+            onClick={() => window.location.href = "/api/auth/google"}
             data-testid="button-google-signin"
           >
             <SiGoogle className="h-4 w-4 mr-2" />

@@ -1,0 +1,99 @@
+import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import type { Express } from "express";
+import { db } from "./db";
+import { users } from "@shared/schema";
+import { eq } from "drizzle-orm";
+
+async function upsertGoogleUser(profile: any) {
+  const userId = profile.id;
+  const email = profile.emails?.[0]?.value;
+  const firstName = profile.name?.givenName || "User";
+  const lastName = profile.name?.familyName || "";
+  const profileImageUrl = profile.photos?.[0]?.value;
+
+  if (!email) {
+    throw new Error("Email not provided by Google");
+  }
+
+  // Check if user exists by Google ID
+  const [existingUser] = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (existingUser) {
+    // Update existing user
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        email,
+        firstName,
+        lastName,
+        profileImageUrl,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser;
+  }
+
+  // Create new buyer account via Google Auth
+  // Google Auth users are auto-verified and buyers only
+  const [newUser] = await db
+    .insert(users)
+    .values({
+      id: userId,
+      email,
+      firstName,
+      lastName,
+      profileImageUrl,
+      role: "buyer",
+      verificationStatus: "approved", // Buyers don't need document verification
+      emailVerified: true, // Google emails are already verified
+      password: null, // No password for Google Auth users
+    })
+    .returning();
+
+  return newUser;
+}
+
+export function setupGoogleAuth(app: Express) {
+  // Google OAuth Strategy
+  passport.use(
+    new GoogleStrategy(
+      {
+        clientID: process.env.GOOGLE_CLIENT_ID!,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        callbackURL: "/api/auth/google/callback",
+      },
+      async (accessToken, refreshToken, profile, done) => {
+        try {
+          const user = await upsertGoogleUser(profile);
+          // Return only the user ID for session serialization
+          done(null, { id: user.id });
+        } catch (error) {
+          done(error);
+        }
+      }
+    )
+  );
+
+  // Google Auth login route for buyers
+  app.get(
+    "/api/auth/google",
+    passport.authenticate("google", {
+      scope: ["profile", "email"],
+    })
+  );
+
+  // Google Auth callback
+  app.get(
+    "/api/auth/google/callback",
+    passport.authenticate("google", {
+      successReturnToOrRedirect: "/",
+      failureRedirect: "/login?error=google_auth_failed",
+    })
+  );
+}

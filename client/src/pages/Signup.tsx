@@ -601,7 +601,7 @@ export default function Signup() {
               <Button
                 variant="outline"
                 className="w-full"
-                onClick={() => window.location.href = "/api/replit-auth/login"}
+                onClick={() => window.location.href = "/api/auth/google"}
                 data-testid="button-google-signup"
               >
                 <SiGoogle className="h-4 w-4 mr-2" />
