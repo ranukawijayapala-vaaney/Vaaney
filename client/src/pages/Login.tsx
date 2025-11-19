@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { LogIn, ArrowLeft } from "lucide-react";
+import { SiGoogle } from "react-icons/si";
 import { Separator } from "@/components/ui/separator";
 
 const loginSchema = z.object({
@@ -167,13 +168,13 @@ export default function Login() {
             variant="outline"
             className="w-full"
             onClick={() => window.location.href = "/api/replit-auth/login"}
-            data-testid="button-replit-signin"
+            data-testid="button-google-signin"
           >
-            <LogIn className="h-4 w-4 mr-2" />
-            Sign in with Replit
+            <SiGoogle className="h-4 w-4 mr-2" />
+            Sign in with Google
           </Button>
           <p className="text-xs text-muted-foreground text-center mt-2">
-            Replit sign-in is available for buyers only
+            Google sign-in is available for buyers only
           </p>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
