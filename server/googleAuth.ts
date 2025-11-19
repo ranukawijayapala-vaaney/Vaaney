@@ -6,7 +6,7 @@ import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 async function upsertGoogleUser(profile: any) {
-  const userId = profile.id;
+  const googleId = profile.id;
   const email = profile.emails?.[0]?.value;
   const firstName = profile.name?.givenName || "User";
   const lastName = profile.name?.familyName || "";
@@ -20,7 +20,7 @@ async function upsertGoogleUser(profile: any) {
   const [existingUser] = await db
     .select()
     .from(users)
-    .where(eq(users.id, userId))
+    .where(eq(users.googleId, googleId))
     .limit(1);
 
   if (existingUser) {
@@ -34,7 +34,7 @@ async function upsertGoogleUser(profile: any) {
         profileImageUrl,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, userId))
+      .where(eq(users.googleId, googleId))
       .returning();
     return updatedUser;
   }
@@ -44,7 +44,7 @@ async function upsertGoogleUser(profile: any) {
   const [newUser] = await db
     .insert(users)
     .values({
-      id: userId,
+      googleId,
       email,
       firstName,
       lastName,
@@ -60,12 +60,18 @@ async function upsertGoogleUser(profile: any) {
 }
 
 export function setupGoogleAuth(app: Express) {
+  // Validate Google OAuth credentials
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    console.error("Google OAuth credentials not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables.");
+    throw new Error("Google OAuth credentials missing");
+  }
+
   // Google OAuth Strategy
   passport.use(
     new GoogleStrategy(
       {
-        clientID: process.env.GOOGLE_CLIENT_ID!,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL: "/api/auth/google/callback",
       },
       async (accessToken, refreshToken, profile, done) => {
