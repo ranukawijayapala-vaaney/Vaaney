@@ -15,10 +15,12 @@ The application uses a TypeScript monorepo with separate `client/` (React), `ser
 The frontend is built with React and TypeScript, using Vite, Wouter for routing, and TanStack Query for state management. The UI utilizes shadcn/ui (based on Radix UI and Tailwind CSS) for a responsive and theme-supported experience. Role-based layouts (Buyer, Seller, Admin) adapt the UI to user permissions.
 
 ### Backend Architecture
-The backend is an Express.js server in TypeScript, exposing a REST API. Authentication uses Passport.js with two strategies: Local (email/password) and Replit Auth (OIDC). Session management uses `express-session` with a PostgreSQL session store. A storage abstraction layer handles database interactions.
+The backend is an Express.js server in TypeScript, exposing a REST API. Authentication uses Passport.js with two strategies: Local (email/password) and Google OAuth 2.0. Session management uses `express-session` with a PostgreSQL session store. A storage abstraction layer handles database interactions.
 
 ### Database Design
 The platform employs Drizzle ORM with Neon Serverless PostgreSQL, following a schema-first approach validated by Zod. The database supports core e-commerce entities like users, products, services, orders, bookings, transactions, messaging, promotions, and password resets. Orders are structured at the variant level and grouped by `checkout_sessions` for atomic payment processing. The `variantId` field in orders is nullable to support custom quote purchases without standard variant selection, enabling fully customized product specifications.
+
+The users table includes a `googleId` column (VARCHAR, UNIQUE) to segregate Google OAuth accounts while preserving UUID-based primary keys. This enables dual authentication support without conflicts between email/password and Google OAuth users.
 
 ### File Storage
 Google Cloud Storage manages all user-uploaded files, such as verification documents and product images. The `@google-cloud/storage` library is used for interactions, authenticated via the Replit sidecar. Uppy provides the drag-and-drop file upload interface.
@@ -27,7 +29,7 @@ Google Cloud Storage manages all user-uploaded files, such as verification docum
 The platform's UI/UX is built with shadcn/ui, Radix UI, and Tailwind CSS, providing a modern, responsive, and customizable interface. Distinct role-based layouts are a core design decision to cater to the specific needs of Buyers, Sellers, and Admins.
 
 ### Key Features
-- **Authentication:** Dual authentication system supporting email/password (with bcrypt hashing and email verification) and Replit Auth (OIDC) for buyers. Token-based password reset for email/password accounts. All new signups require email verification before login access is granted.
+- **Authentication:** Dual authentication system supporting email/password (with bcrypt hashing and email verification) and Google OAuth 2.0 for buyers only. Email/password authentication is available for all user types (buyers, sellers, admins) with mandatory email verification before login access. Google OAuth users are automatically verified and stored with their Google subject ID in a separate `googleId` column. Token-based password reset available for email/password accounts only.
 - **Messaging System:** A 3-way communication system (Buyer, Seller, Admin) with categorized messages, order/booking integration, attachments, and read statuses.
 - **Booking Workflow:** A 6-step process prioritizing seller confirmation.
 - **Payment System:** Supports IPG (with mock implementation) and manual Bank Transfer with administrative verification.
@@ -60,10 +62,14 @@ The platform's UI/UX is built with shadcn/ui, Radix UI, and Tailwind CSS, provid
 - **connect-pg-simple:** PostgreSQL-backed session store.
 
 ### Authentication
-- **Passport.js:** Authentication middleware supporting Local and OIDC (Replit Auth) strategies.
-- **openid-client:** OIDC client library for Replit Auth integration.
+- **Passport.js:** Authentication middleware supporting Local (email/password) and Google OAuth 2.0 strategies.
+- **passport-google-oauth20:** Google OAuth 2.0 authentication strategy for buyers.
 - **bcrypt:** Password hashing for email/password accounts.
 - **express-session:** User session management.
+- **Required Environment Variables:**
+  - `GOOGLE_CLIENT_ID`: Google OAuth client ID (obtain from Google Cloud Console)
+  - `GOOGLE_CLIENT_SECRET`: Google OAuth client secret (obtain from Google Cloud Console)
+  - Google OAuth redirect URI: `https://[your-domain]/api/auth/google/callback`
 
 ### File Storage
 - **Google Cloud Storage:** Cloud object storage for user uploads.
