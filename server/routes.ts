@@ -2462,8 +2462,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               id: d.id,
               fileName: d.fileName,
               fileUrl: d.fileUrl,
-              fileSize: d.fileSize,
-              mimeType: d.mimeType
+              fileSize: d.fileSize ?? 0,
+              mimeType: d.mimeType ?? 'application/octet-stream'
             }))
           });
         } catch (notifyError: any) {
