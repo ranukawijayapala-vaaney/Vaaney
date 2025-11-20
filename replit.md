@@ -28,6 +28,16 @@ Google Cloud Storage manages all user-uploaded files, such as verification docum
 ### UI/UX Decisions
 The platform's UI/UX is built with shadcn/ui, Radix UI, and Tailwind CSS, providing a modern, responsive, and customizable interface. Distinct role-based layouts are a core design decision to cater to the specific needs of Buyers, Sellers, and Admins.
 
+### Mobile Optimization
+The platform is fully optimized for mobile and tablet devices across all user roles:
+- **Navigation Breakpoint:** Main navigation bar displays at xl (1280px+), with hamburger menu for mobile/tablet devices.
+- **Bottom Navigation:** Buyers have a sticky bottom navigation bar on mobile/tablet (< xl) with quick access to Home, Orders, Messages, and Profile.
+- **Touch Accessibility:** All interactive elements (buttons, inputs, controls) maintain a minimum height of 44px (min-h-11) for comfortable touch interactions.
+- **Responsive Dialogs:** All modals/dialogs include mobile-friendly margins (1rem on each side), responsive padding (p-4 on mobile, p-6 on desktop), and automatic vertical scrolling (max-h-90vh).
+- **Responsive Tables:** Admin and seller data tables convert to card layouts on mobile (< xl breakpoint) while maintaining table views on desktop.
+- **Form Optimization:** Checkout, booking, and all form pages are optimized with proper mobile layouts, spacing, and touch-friendly controls.
+- **Product Cards:** Marketplace displays products in responsive grids (1 column mobile, 2 columns md, 3 columns lg, 4 columns xl) with square aspect ratio images and full-width action buttons.
+
 ### Key Features
 - **Authentication:** Dual authentication system supporting email/password (with bcrypt hashing and email verification) and Google OAuth 2.0 for buyers only. Email/password authentication is available for all user types (buyers, sellers, admins) with mandatory email verification before login access. Google OAuth users are automatically verified and stored with their Google subject ID in a separate `googleId` column. Token-based password reset available for email/password accounts only.
 - **Messaging System:** A 3-way communication system (Buyer, Seller, Admin) with categorized messages, order/booking integration, attachments, and read statuses.
