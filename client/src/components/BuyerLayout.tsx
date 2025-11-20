@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { NotificationBell } from "@/components/NotificationBell";
+import { BottomNav } from "@/components/BottomNav";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import ProfileSetupDialog from "@/components/ProfileSetupDialog";
@@ -130,9 +131,10 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
           )}
         </div>
       </header>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20 xl:pb-8">
         {children}
       </main>
+      <BottomNav />
       <ProfileSetupDialog />
     </div>
   );
