@@ -329,70 +329,130 @@ export default function Users() {
               <p className="text-muted-foreground">Try adjusting your search or filters</p>
             </div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Commission Rate</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((user: User) => (
-                    <TableRow 
-                      key={user.id} 
-                      data-testid={`row-user-${user.id}`}
-                      className="cursor-pointer hover-elevate"
-                      onClick={() => handleViewProfile(user)}
-                    >
-                      <TableCell>
-                        <div className="font-medium" data-testid={`text-user-name-${user.id}`}>
-                          {user.firstName} {user.lastName}
-                        </div>
-                        <div className="text-sm text-muted-foreground">{user.email}</div>
-                        <div className="text-xs text-muted-foreground">ID: {user.id.slice(0, 8)}...</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className={getRoleColor(user.role || "")} data-testid={`badge-role-${user.id}`}>
-                          {user.role || "none"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className={getStatusColor(user.verificationStatus || "")} data-testid={`badge-status-${user.id}`}>
-                          {user.verificationStatus || "none"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {user.role === "seller" ? (
-                          <div className="flex items-center gap-2">
-                            <DollarSign className="h-4 w-4 text-muted-foreground" />
-                            <span data-testid={`text-commission-${user.id}`}>{user.commissionRate || "20.00"}%</span>
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden xl:block rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Commission Rate</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user: User) => (
+                      <TableRow 
+                        key={user.id} 
+                        data-testid={`row-user-${user.id}`}
+                        className="cursor-pointer hover-elevate"
+                        onClick={() => handleViewProfile(user)}
+                      >
+                        <TableCell>
+                          <div className="font-medium" data-testid={`text-user-name-${user.id}`}>
+                            {user.firstName} {user.lastName}
                           </div>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">N/A</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
+                          <div className="text-sm text-muted-foreground">{user.email}</div>
+                          <div className="text-xs text-muted-foreground">ID: {user.id.slice(0, 8)}...</div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className={getRoleColor(user.role || "")} data-testid={`badge-role-${user.id}`}>
+                            {user.role || "none"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className={getStatusColor(user.verificationStatus || "")} data-testid={`badge-status-${user.id}`}>
+                            {user.verificationStatus || "none"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {user.role === "seller" ? (
+                            <div className="flex items-center gap-2">
+                              <DollarSign className="h-4 w-4 text-muted-foreground" />
+                              <span data-testid={`text-commission-${user.id}`}>{user.commissionRate || "20.00"}%</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">N/A</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {user.role === "seller" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => handleEditCommission(user, e)}
+                              data-testid={`button-edit-commission-${user.id}`}
+                            >
+                              <Edit2 className="h-4 w-4 mr-2" />
+                              Edit Commission
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile/Tablet Card View */}
+              <div className="xl:hidden space-y-4">
+                {filteredUsers.map((user: User) => (
+                  <Card 
+                    key={user.id} 
+                    className="cursor-pointer hover-elevate" 
+                    onClick={() => handleViewProfile(user)}
+                    data-testid={`card-user-${user.id}`}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold truncate" data-testid={`text-user-name-${user.id}`}>
+                            {user.firstName} {user.lastName}
+                          </h3>
+                          <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                          <p className="text-xs text-muted-foreground font-mono">ID: {user.id.slice(0, 8)}...</p>
+                        </div>
+                        <div className="flex flex-col gap-2 items-end">
+                          <Badge variant="secondary" className={getRoleColor(user.role || "")} data-testid={`badge-role-${user.id}`}>
+                            {user.role || "none"}
+                          </Badge>
+                          <Badge variant="secondary" className={getStatusColor(user.verificationStatus || "")} data-testid={`badge-status-${user.id}`}>
+                            {user.verificationStatus || "none"}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="flex justify-between items-center gap-3">
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Commission: </span>
+                          {user.role === "seller" ? (
+                            <span className="font-medium" data-testid={`text-commission-${user.id}`}>
+                              {user.commissionRate || "20.00"}%
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">N/A</span>
+                          )}
+                        </div>
                         {user.role === "seller" && (
                           <Button
                             variant="outline"
-                            size="sm"
+                            className="min-h-11"
                             onClick={(e) => handleEditCommission(user, e)}
                             data-testid={`button-edit-commission-${user.id}`}
                           >
                             <Edit2 className="h-4 w-4 mr-2" />
-                            Edit Commission
+                            Edit Rate
                           </Button>
                         )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

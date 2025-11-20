@@ -100,78 +100,143 @@ export default function AdminOrders() {
               </p>
             </div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Order ID</TableHead>
-                    <TableHead>Buyer</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Shipping Address</TableHead>
-                    <TableHead>Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOrders.map((order: Order) => (
-                    <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
-                      <TableCell>
-                        <div className="font-mono text-sm" data-testid={`text-order-id-${order.id}`}>
-                          {order.id.slice(0, 8)}...
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <div className="font-medium text-sm" data-testid={`text-buyer-name-${order.id}`}>
-                              {order.buyer.firstName} {order.buyer.lastName}
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden xl:block rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Order ID</TableHead>
+                      <TableHead>Buyer</TableHead>
+                      <TableHead>Items</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Shipping Address</TableHead>
+                      <TableHead>Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredOrders.map((order: Order) => (
+                      <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
+                        <TableCell>
+                          <div className="font-mono text-sm" data-testid={`text-order-id-${order.id}`}>
+                            {order.id.slice(0, 8)}...
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <div className="font-medium text-sm" data-testid={`text-buyer-name-${order.id}`}>
+                                {order.buyer.firstName} {order.buyer.lastName}
+                              </div>
+                              <div className="text-xs text-muted-foreground" data-testid={`text-buyer-email-${order.id}`}>
+                                {order.buyer.email}
+                              </div>
                             </div>
-                            <div className="text-xs text-muted-foreground" data-testid={`text-buyer-email-${order.id}`}>
-                              {order.buyer.email}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm" data-testid={`text-item-count-${order.id}`}>
+                            {order.itemCount} {order.itemCount === 1 ? 'item' : 'items'}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {order.items.slice(0, 2).map((item, idx) => (
+                              <div key={idx}>{item.productName}</div>
+                            ))}
+                            {order.items.length > 2 && (
+                              <div>+{order.items.length - 2} more</div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium" data-testid={`text-total-${order.id}`}>
+                            ${order.totalAmount}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className={getStatusColor(order.status)} data-testid={`badge-status-${order.id}`}>
+                            {order.status.replace('_', ' ')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm max-w-[200px] truncate" data-testid={`text-address-${order.id}`}>
+                            {order.shippingAddress}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm" data-testid={`text-date-${order.id}`}>
+                            {new Date(order.createdAt).toLocaleDateString()}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile/Tablet Card View */}
+              <div className="xl:hidden space-y-4">
+                {filteredOrders.map((order: Order) => (
+                  <Card key={order.id} data-testid={`card-order-${order.id}`}>
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="text-xs text-muted-foreground font-mono" data-testid={`text-order-id-${order.id}`}>
+                              {order.id.slice(0, 8)}...
+                            </p>
+                            <Badge variant="secondary" className={getStatusColor(order.status)} data-testid={`badge-status-${order.id}`}>
+                              {order.status.replace('_', ' ')}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm truncate" data-testid={`text-buyer-name-${order.id}`}>
+                                {order.buyer.firstName} {order.buyer.lastName}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate" data-testid={`text-buyer-email-${order.id}`}>
+                                {order.buyer.email}
+                              </p>
                             </div>
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm" data-testid={`text-item-count-${order.id}`}>
-                          {order.itemCount} {order.itemCount === 1 ? 'item' : 'items'}
+                        <div className="text-right flex-shrink-0">
+                          <p className="font-semibold text-lg text-primary" data-testid={`text-total-${order.id}`}>
+                            ${order.totalAmount}
+                          </p>
+                          <p className="text-xs text-muted-foreground" data-testid={`text-date-${order.id}`}>
+                            {new Date(order.createdAt).toLocaleDateString()}
+                          </p>
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0 space-y-3">
+                      <div>
+                        <p className="text-sm font-medium mb-1" data-testid={`text-item-count-${order.id}`}>
+                          {order.itemCount} {order.itemCount === 1 ? 'item' : 'items'}
+                        </p>
+                        <div className="text-xs text-muted-foreground space-y-0.5">
                           {order.items.slice(0, 2).map((item, idx) => (
-                            <div key={idx}>{item.productName}</div>
+                            <div key={idx} className="truncate">{item.productName}</div>
                           ))}
                           {order.items.length > 2 && (
                             <div>+{order.items.length - 2} more</div>
                           )}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium" data-testid={`text-total-${order.id}`}>
-                          ${order.totalAmount}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className={getStatusColor(order.status)} data-testid={`badge-status-${order.id}`}>
-                          {order.status.replace('_', ' ')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm max-w-[200px] truncate" data-testid={`text-address-${order.id}`}>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Shipping Address</p>
+                        <p className="text-sm line-clamp-2" data-testid={`text-address-${order.id}`}>
                           {order.shippingAddress}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm" data-testid={`text-date-${order.id}`}>
-                          {new Date(order.createdAt).toLocaleDateString()}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
