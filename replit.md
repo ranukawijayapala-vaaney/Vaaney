@@ -51,7 +51,7 @@ The platform's UI/UX is built with shadcn/ui, Radix UI, and Tailwind CSS, provid
 - **Buyer Design & Quote Management:** Three dedicated buyer dashboard pages:
   - **Design Approvals Page** (`/design-approvals`): View all design submissions with status filters (pending, approved, rejected, changes requested), type filters (products/services), and quick actions (view conversation, upload revision, view feedback).
   - **Custom Quotes Page** (`/quotes`): View all custom quote requests with accept/reject actions, status filters, and conversation access.
-  - **Design Library Page** (`/design-library`): Browse approved designs with search functionality, "Buy Again" quick actions, and cross-variant reuse capability (pending implementation).
+  - **Design Library Page** (`/design-library`): Browse approved designs with search functionality, "Buy Again" quick actions, and full cross-variant reuse capability. Buyers can reuse their approved designs for different variants of the same product through an intuitive variant selection dialog. The system automatically copies the design files and notifies the seller of the new design approval.
 - **Shipping Workflow:** Admin-led consolidation for international shipments via Aramex.
 - **Digital Delivery System:** Complete system for delivering digital service outputs:
   - Sellers can upload deliverable files (up to 50MB each) when marking bookings as completed

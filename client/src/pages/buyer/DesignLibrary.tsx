@@ -1,13 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FileImage, Package, Store, Eye, ShoppingCart, Calendar } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FileImage, Package, Store, Eye, ShoppingCart, Calendar, Copy, Loader2 } from "lucide-react";
 import { useState } from "react";
 import type { DesignApproval, ProductVariant, ServicePackage } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 type EnrichedDesignLibraryItem = DesignApproval & {
   product?: { name: string; id: string };
@@ -19,9 +22,48 @@ type EnrichedDesignLibraryItem = DesignApproval & {
 export default function BuyerDesignLibrary() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDesign, setSelectedDesign] = useState<EnrichedDesignLibraryItem | null>(null);
+  const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   const { data: approvedDesigns = [], isLoading, isError, error } = useQuery<EnrichedDesignLibraryItem[]>({
     queryKey: ["/api/buyer/design-library"],
+  });
+
+  const { data: productVariants = [], isLoading: isLoadingVariants } = useQuery<ProductVariant[]>({
+    queryKey: ["/api/products", selectedDesign?.productId, "variants"],
+    enabled: !!selectedDesign?.productId && isVariantDialogOpen,
+    queryFn: async () => {
+      if (!selectedDesign?.productId) return [];
+      const response = await fetch(`/api/products/${selectedDesign.productId}`);
+      if (!response.ok) throw new Error("Failed to fetch product variants");
+      const data = await response.json();
+      return data.variants || [];
+    },
+  });
+
+  const copyDesignMutation = useMutation({
+    mutationFn: async ({ designId, variantId }: { designId: string; variantId: string }) => {
+      return await apiRequest("POST", `/api/design-approvals/${designId}/copy-to-variant`, {
+        targetVariantId: variantId,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/buyer/design-library"] });
+      setIsVariantDialogOpen(false);
+      setSelectedDesign(null);
+      toast({
+        title: "Design reused successfully",
+        description: "Your design has been copied to the selected variant. The seller will be notified.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to reuse design",
+        description: error.message,
+      });
+    },
   });
 
   const filteredDesigns = approvedDesigns.filter(design => {
@@ -53,6 +95,19 @@ export default function BuyerDesignLibrary() {
     } else if (design.serviceId) {
       setLocation(`/book-service/${design.serviceId}`);
     }
+  };
+
+  const handleReuseForDifferentVariant = (design: EnrichedDesignLibraryItem) => {
+    setSelectedDesign(design);
+    setIsVariantDialogOpen(true);
+  };
+
+  const handleCopyToVariant = (variantId: string) => {
+    if (!selectedDesign) return;
+    copyDesignMutation.mutate({
+      designId: selectedDesign.id,
+      variantId,
+    });
   };
 
   return (
@@ -219,23 +274,109 @@ export default function BuyerDesignLibrary() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2">
                   <Button
                     variant="default"
                     size="sm"
-                    className="flex-1"
                     onClick={() => handleViewProduct(design)}
                     data-testid={`button-view-product-${design.id}`}
                   >
                     <ShoppingCart className="h-4 w-4 mr-2" />
                     Buy Again
                   </Button>
+                  {design.productId && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleReuseForDifferentVariant(design)}
+                      data-testid={`button-reuse-variant-${design.id}`}
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Use for Different Variant
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      {/* Variant Selection Dialog */}
+      <Dialog open={isVariantDialogOpen} onOpenChange={setIsVariantDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Select Variant for Design Reuse</DialogTitle>
+            <DialogDescription>
+              Choose which variant you want to use this design for. The same design files will be copied and the seller will be notified.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isLoadingVariants ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-20 w-full" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+              {productVariants
+                .filter(v => v.id !== selectedDesign?.variantId)
+                .map((variant) => (
+                  <Card 
+                    key={variant.id} 
+                    className="hover-elevate cursor-pointer" 
+                    onClick={() => handleCopyToVariant(variant.id)}
+                    data-testid={`card-variant-option-${variant.id}`}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1">
+                          <h4 className="font-medium">{variant.name}</h4>
+                          {variant.attributes && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {Object.entries(variant.attributes).map(([key, value]) => (
+                                <Badge key={key} variant="secondary" className="text-xs">
+                                  {key}: {value}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold">${parseFloat(variant.price).toFixed(2)}</p>
+                          {variant.inventory !== undefined && (
+                            <p className="text-sm text-muted-foreground">
+                              {variant.inventory > 0 ? `${variant.inventory} in stock` : "Out of stock"}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              
+              {productVariants.filter(v => v.id !== selectedDesign?.variantId).length === 0 && (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">
+                      No other variants available for this product.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+          
+          {copyDesignMutation.isPending && (
+            <div className="flex items-center justify-center gap-2 p-4 bg-muted rounded-md">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Copying design to selected variant...</span>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
