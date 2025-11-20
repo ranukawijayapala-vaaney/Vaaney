@@ -174,8 +174,31 @@ export function generateEmailTemplate(
           <h2 style="color: ${brandColor};">Service Completed!</h2>
           <p>Hi ${data.recipientName || "there"},</p>
           <p>The service for booking <strong>#${data.bookingId?.substring(0, 8)}</strong> has been marked as completed.</p>
-          <p>Please check your booking for any deliverables and consider leaving a review!</p>
-          <a href="${baseUrl}/bookings" style="display: inline-block; background: ${brandColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">View Details</a>
+          ${data.deliverables && data.deliverables.length > 0 ? `
+            <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="margin-top: 0; font-size: 16px;">Deliverable Files (${data.deliverables.length})</h3>
+              <ul style="list-style: none; padding: 0; margin: 0;">
+                ${data.deliverables.map((d: any) => `
+                  <li style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                    <a href="${baseUrl}/api/download-object?path=${encodeURIComponent(d.fileUrl)}" 
+                       style="color: ${brandColor}; text-decoration: none; font-weight: 500;">
+                      📎 ${d.fileName}
+                    </a>
+                    <span style="color: #6b7280; font-size: 14px; margin-left: 8px;">
+                      (${(d.fileSize / 1024 / 1024).toFixed(2)} MB)
+                    </span>
+                  </li>
+                `).join('')}
+              </ul>
+              <p style="margin-top: 12px; margin-bottom: 0; font-size: 14px; color: #6b7280;">
+                Click on a file name to download it directly.
+              </p>
+            </div>
+          ` : `
+            <p>No deliverable files were uploaded for this service.</p>
+          `}
+          <p>Please consider leaving a review to help other buyers!</p>
+          <a href="${baseUrl}/bookings" style="display: inline-block; background: ${brandColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">View Booking Details</a>
         </div>
       `,
     },

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, DollarSign, Clock, AlertCircle, CheckCircle, MessageCircle, Star } from "lucide-react";
+import { Calendar, DollarSign, Clock, AlertCircle, CheckCircle, MessageCircle, Star, Download, FileIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,104 @@ const statusColors: Record<BookingStatus, string> = {
   completed: "bg-green-500",
   cancelled: "bg-red-500",
 };
+
+interface BookingDeliverablesProps {
+  bookingId: string;
+}
+
+function BookingDeliverables({ bookingId }: BookingDeliverablesProps) {
+  const { data: deliverables = [], isLoading } = useQuery<Array<{
+    id: string;
+    fileName: string;
+    fileUrl: string;
+    fileSize: number;
+    mimeType: string;
+    uploadedAt: string;
+  }>>({
+    queryKey: ["/api/bookings", bookingId, "deliverables"],
+    queryFn: async () => {
+      const response = await fetch(`/api/bookings/${bookingId}/deliverables`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch deliverables");
+      return response.json();
+    },
+  });
+
+  const handleDownload = async (deliverable: any) => {
+    try {
+      // For object storage files, we need to fetch through a download endpoint
+      const response = await fetch(`/api/download-object?path=${encodeURIComponent(deliverable.fileUrl)}`, {
+        credentials: "include",
+      });
+      
+      if (!response.ok) throw new Error("Download failed");
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = deliverable.fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download failed:", error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2" data-testid="loading-deliverables">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    );
+  }
+
+  if (deliverables.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="border rounded-md p-4 space-y-3" data-testid={`deliverables-${bookingId}`}>
+      <div className="flex items-center gap-2">
+        <FileIcon className="h-4 w-4 text-muted-foreground" />
+        <h4 className="text-sm font-medium">Service Deliverables</h4>
+      </div>
+      <div className="space-y-2">
+        {deliverables.map((deliverable) => (
+          <div
+            key={deliverable.id}
+            className="flex items-center justify-between p-2 border rounded-md hover-elevate"
+            data-testid={`deliverable-${deliverable.id}`}
+          >
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <FileIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium truncate" data-testid={`deliverable-name-${deliverable.id}`}>
+                  {deliverable.fileName}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {(deliverable.fileSize / 1024 / 1024).toFixed(2)} MB
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleDownload(deliverable)}
+              data-testid={`button-download-${deliverable.id}`}
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function ServiceHistory() {
   const { toast } = useToast();
@@ -255,6 +353,10 @@ export default function ServiceHistory() {
                       </div>
                     </div>
                   </div>
+                )}
+
+                {(booking.status === "completed" || booking.status === "ongoing") && (
+                  <BookingDeliverables bookingId={booking.id} />
                 )}
 
                 <div className="grid grid-cols-2 gap-4">

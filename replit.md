@@ -53,6 +53,12 @@ The platform's UI/UX is built with shadcn/ui, Radix UI, and Tailwind CSS, provid
   - **Custom Quotes Page** (`/quotes`): View all custom quote requests with accept/reject actions, status filters, and conversation access.
   - **Design Library Page** (`/design-library`): Browse approved designs with search functionality, "Buy Again" quick actions, and cross-variant reuse capability (pending implementation).
 - **Shipping Workflow:** Admin-led consolidation for international shipments via Aramex.
+- **Digital Delivery System:** Complete system for delivering digital service outputs:
+  - Sellers can upload deliverable files (up to 50MB each) when marking bookings as completed
+  - Buyers receive deliverables via in-app UI with download links in service history
+  - Automated email notifications include deliverable file information with direct download links
+  - Files are stored securely in Google Cloud Storage with private access controls
+  - Email template dynamically lists all deliverable files with names and sizes
 
 ## External Dependencies
 

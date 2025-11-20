@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, ChevronRight, Clock, MessageSquare, FileSpreadsheet } from "lucide-react";
+import { Calendar, ChevronRight, Clock, MessageSquare, FileSpreadsheet, Upload, X, FileIcon } from "lucide-react";
 import type { Booking } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -39,6 +39,10 @@ export default function Bookings() {
   const [, setLocation] = useLocation();
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: bookings = [], isLoading } = useQuery<Booking[]>({
     queryKey: ["/api/seller/bookings"],
@@ -76,7 +80,71 @@ export default function Bookings() {
   });
 
   const handleStatusUpdate = (bookingId: string, newStatus: string) => {
-    updateStatusMutation.mutate({ bookingId, status: newStatus });
+    // If marking as completed, show file upload dialog
+    if (newStatus === "completed") {
+      setShowCompletionDialog(true);
+    } else {
+      updateStatusMutation.mutate({ bookingId, status: newStatus });
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setSelectedFiles(Array.from(e.target.files));
+    }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setSelectedFiles(files => files.filter((_, i) => i !== index));
+  };
+
+  const handleCompleteWithFiles = async () => {
+    if (!selectedBooking) return;
+
+    setUploadingFiles(true);
+    try {
+      // Upload each file
+      for (const file of selectedFiles) {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        await fetch(`/api/bookings/${selectedBooking.id}/deliverables`, {
+          method: "POST",
+          body: formData,
+          credentials: "include",
+        });
+      }
+
+      // After uploading files, update the status
+      await apiRequest("PUT", `/api/seller/bookings/${selectedBooking.id}/status`, { status: "completed" });
+
+      queryClient.invalidateQueries({ queryKey: ["/api/seller/bookings"] });
+      toast({ title: "Booking completed successfully", description: `${selectedFiles.length} file(s) uploaded` });
+      
+      setShowCompletionDialog(false);
+      setSelectedBooking(null);
+      setSelectedFiles([]);
+    } catch (error: any) {
+      toast({ title: "Completion failed", description: error.message, variant: "destructive" });
+    } finally {
+      setUploadingFiles(false);
+    }
+  };
+
+  const handleCompleteWithoutFiles = async () => {
+    if (!selectedBooking) return;
+
+    try {
+      await apiRequest("PUT", `/api/seller/bookings/${selectedBooking.id}/status`, { status: "completed" });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/seller/bookings"] });
+      toast({ title: "Booking completed successfully" });
+      
+      setShowCompletionDialog(false);
+      setSelectedBooking(null);
+    } catch (error: any) {
+      toast({ title: "Completion failed", description: error.message, variant: "destructive" });
+    }
   };
 
   const handleContactBuyer = (bookingId: string) => {
@@ -360,6 +428,116 @@ export default function Bookings() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Completion Dialog with File Upload */}
+      <Dialog open={showCompletionDialog} onOpenChange={() => {
+        setShowCompletionDialog(false);
+        setSelectedFiles([]);
+      }}>
+        <DialogContent className="max-w-2xl" data-testid="dialog-complete-booking">
+          <DialogHeader>
+            <DialogTitle>Complete Booking</DialogTitle>
+            <DialogDescription>
+              Upload any deliverable files for this service before completing the booking.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Upload Deliverables (Optional)</label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  data-testid="button-add-files"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Add Files
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  data-testid="input-file-upload"
+                />
+              </div>
+
+              {selectedFiles.length > 0 && (
+                <div className="space-y-2">
+                  {selectedFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-md" data-testid={`file-item-${index}`}>
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <FileIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate" data-testid={`file-name-${index}`}>{file.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {(file.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveFile(index)}
+                        data-testid={`button-remove-file-${index}`}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {selectedFiles.length === 0 && (
+                <div className="border-2 border-dashed rounded-md p-8 text-center" data-testid="text-no-files">
+                  <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-sm text-muted-foreground">
+                    No files selected. You can complete the booking without files or add deliverables above.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowCompletionDialog(false);
+                  setSelectedFiles([]);
+                }}
+                disabled={uploadingFiles}
+                className="flex-1"
+                data-testid="button-cancel-completion"
+              >
+                Cancel
+              </Button>
+              {selectedFiles.length > 0 ? (
+                <Button
+                  onClick={handleCompleteWithFiles}
+                  disabled={uploadingFiles}
+                  className="flex-1"
+                  data-testid="button-complete-with-files"
+                >
+                  {uploadingFiles ? `Uploading ${selectedFiles.length} file(s)...` : `Complete with ${selectedFiles.length} file(s)`}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleCompleteWithoutFiles}
+                  className="flex-1"
+                  data-testid="button-complete-without-files"
+                >
+                  Complete Without Files
+                </Button>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

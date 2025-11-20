@@ -2443,9 +2443,218 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const updatedBooking = await storage.updateBookingStatus(req.params.id, status);
+      
+      // Trigger notification when booking is completed
+      if (status === "completed") {
+        try {
+          // Fetch deliverables for this booking
+          const deliverables = await storage.getBookingDeliverables(booking.id);
+          
+          // Get service name
+          const service = await storage.getService(booking.serviceId);
+          
+          // Send notification with deliverables
+          await notifyBookingCompleted({
+            buyerId: booking.buyerId,
+            bookingId: booking.id,
+            serviceName: service?.name || "Service",
+            deliverables: deliverables.map(d => ({
+              id: d.id,
+              fileName: d.fileName,
+              fileUrl: d.fileUrl,
+              fileSize: d.fileSize,
+              mimeType: d.mimeType
+            }))
+          });
+        } catch (notifyError: any) {
+          // Log error but don't fail the booking status update
+          console.error("Failed to send booking completion notification:", notifyError);
+        }
+      }
+      
       res.json(updatedBooking);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
+    }
+  });
+
+  // ====================================
+  // BOOKING DELIVERABLES ROUTES
+  // ====================================
+
+  // Configure multer for deliverable uploads (memory storage)
+  const deliverableUpload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
+  });
+
+  // Upload a deliverable file for a booking (seller only)
+  app.post("/api/bookings/:bookingId/deliverables", isAuthenticated, requireRole(["seller"]), deliverableUpload.single("file"), async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = (req.user as any)?.id;
+      const { bookingId } = req.params;
+
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Verify seller owns this booking
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      if (booking.sellerId !== userId) {
+        return res.status(403).json({ message: "Access denied - not your booking" });
+      }
+
+      // Get private object directory
+      const privateObjectDir = objectStorageService.getPrivateObjectDir();
+      
+      // Create file path
+      const fileName = `booking-deliverables/${bookingId}/${Date.now()}-${req.file.originalname}`;
+      const fullPath = `${privateObjectDir}/${fileName}`;
+      
+      // Parse path to get bucket and object name
+      const { parseObjectPath } = await import("./objectStorage");
+      const { bucketName, objectName } = parseObjectPath(fullPath);
+      
+      // Upload file to storage
+      const { objectStorageClient } = await import("./objectStorage");
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
+      await file.save(req.file.buffer, {
+        contentType: req.file.mimetype,
+        metadata: {
+          metadata: {
+            uploadedBy: userId,
+            bookingId: bookingId,
+          },
+        },
+      });
+
+      // Create deliverable record in database
+      const deliverable = await storage.createBookingDeliverable({
+        bookingId,
+        fileName: req.file.originalname,
+        fileUrl: fullPath,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+      });
+
+      res.json(deliverable);
+    } catch (error: any) {
+      console.error("[DELIVERABLE] Error uploading deliverable:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Get all deliverables for a booking (buyer or seller)
+  app.get("/api/bookings/:bookingId/deliverables", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = (req.user as any)?.id;
+      const { bookingId } = req.params;
+
+      // Verify user is buyer or seller for this booking
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      if (booking.buyerId !== userId && booking.sellerId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const deliverables = await storage.getBookingDeliverables(bookingId);
+      res.json(deliverables);
+    } catch (error: any) {
+      console.error("[DELIVERABLE] Error fetching deliverables:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Download object storage file (authenticated users only)
+  app.get("/api/download-object", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    try {
+      const { path } = req.query;
+      
+      if (!path || typeof path !== "string") {
+        return res.status(400).json({ message: "File path is required" });
+      }
+
+      // Parse path to get bucket and object name
+      const { parseObjectPath } = await import("./objectStorage");
+      const { bucketName, objectName } = parseObjectPath(path);
+      
+      // Download file from storage
+      const { objectStorageClient } = await import("./objectStorage");
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
+      // Check if file exists
+      const [exists] = await file.exists();
+      if (!exists) {
+        return res.status(404).json({ message: "File not found" });
+      }
+
+      // Get file metadata
+      const [metadata] = await file.getMetadata();
+      
+      // Set appropriate headers
+      res.setHeader("Content-Type", metadata.contentType || "application/octet-stream");
+      res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(objectName.split('/').pop() || 'download')}"`);
+      
+      // Stream file to response
+      file.createReadStream().pipe(res);
+    } catch (error: any) {
+      console.error("[DOWNLOAD] Error downloading file:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Delete a deliverable (seller only)
+  app.delete("/api/bookings/:bookingId/deliverables/:deliverableId", isAuthenticated, requireRole(["seller"]), async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = (req.user as any)?.id;
+      const { bookingId, deliverableId } = req.params;
+
+      // Verify seller owns this booking
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      if (booking.sellerId !== userId) {
+        return res.status(403).json({ message: "Access denied - not your booking" });
+      }
+
+      // Get deliverable to find file URL before deleting
+      const deliverables = await storage.getBookingDeliverables(bookingId);
+      const deliverable = deliverables.find(d => d.id === deliverableId);
+      
+      if (!deliverable) {
+        return res.status(404).json({ message: "Deliverable not found" });
+      }
+
+      // Delete file from object storage
+      const { parseObjectPath } = await import("./objectStorage");
+      const { bucketName, objectName } = parseObjectPath(deliverable.fileUrl);
+      const { objectStorageClient } = await import("./objectStorage");
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+      
+      try {
+        await file.delete();
+      } catch (storageError) {
+        console.warn("[DELIVERABLE] Error deleting file from storage:", storageError);
+        // Continue with database deletion even if file deletion fails
+      }
+
+      // Delete from database
+      await storage.deleteBookingDeliverable(deliverableId, bookingId);
+
+      res.json({ message: "Deliverable deleted successfully" });
+    } catch (error: any) {
+      console.error("[DELIVERABLE] Error deleting deliverable:", error);
+      res.status(500).json({ message: error.message });
     }
   });
 

@@ -82,6 +82,9 @@ import {
   type BankAccount,
   type InsertBankAccount,
   type UpdateBankAccount,
+  bookingDeliverables,
+  type BookingDeliverable,
+  type InsertBookingDeliverable,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, lt, gte, inArray } from "drizzle-orm";
@@ -150,6 +153,11 @@ export interface IStorage {
   createBooking(booking: InsertBooking & { buyerId: string, sellerId: string }): Promise<Booking>;
   getBookings(buyerId?: string, sellerId?: string): Promise<Booking[]>;
   getBooking(id: string): Promise<Booking | undefined>;
+  
+  // Booking deliverables - for digital service delivery
+  createBookingDeliverable(deliverable: Omit<InsertBookingDeliverable, "id" | "uploadedAt">): Promise<BookingDeliverable>;
+  getBookingDeliverables(bookingId: string): Promise<BookingDeliverable[]>;
+  deleteBookingDeliverable(id: string, bookingId: string): Promise<void>;
   
   createTransaction(transaction: Omit<Transaction, "id" | "createdAt" | "updatedAt">): Promise<Transaction>;
   getTransactions(sellerId?: string): Promise<Transaction[]>;
@@ -764,6 +772,19 @@ export class DatabaseStorage implements IStorage {
   async getBooking(id: string): Promise<Booking | undefined> {
     const [booking] = await db.select().from(bookings).where(eq(bookings.id, id));
     return booking;
+  }
+
+  async createBookingDeliverable(deliverableData: Omit<InsertBookingDeliverable, "id" | "uploadedAt">): Promise<BookingDeliverable> {
+    const [deliverable] = await db.insert(bookingDeliverables).values(deliverableData).returning();
+    return deliverable;
+  }
+
+  async getBookingDeliverables(bookingId: string): Promise<BookingDeliverable[]> {
+    return await db.select().from(bookingDeliverables).where(eq(bookingDeliverables.bookingId, bookingId)).orderBy(desc(bookingDeliverables.uploadedAt));
+  }
+
+  async deleteBookingDeliverable(id: string, bookingId: string): Promise<void> {
+    await db.delete(bookingDeliverables).where(and(eq(bookingDeliverables.id, id), eq(bookingDeliverables.bookingId, bookingId)));
   }
 
   async updateBookingStatus(id: string, status: string): Promise<Booking> {

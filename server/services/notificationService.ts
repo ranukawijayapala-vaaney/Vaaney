@@ -231,14 +231,27 @@ export async function notifyBookingCompleted(params: {
   buyerId: string;
   bookingId: string;
   serviceName: string;
+  deliverables?: Array<{
+    id: string;
+    fileName: string;
+    fileUrl: string;
+    fileSize: number;
+    mimeType: string;
+  }>;
 }) {
   await createNotification({
     userId: params.buyerId,
     type: "booking_completed",
     title: "Service Completed",
-    message: `The service for ${params.serviceName} has been completed. Please check for deliverables!`,
+    message: params.deliverables && params.deliverables.length > 0
+      ? `The service for ${params.serviceName} has been completed with ${params.deliverables.length} deliverable file(s)!`
+      : `The service for ${params.serviceName} has been completed.`,
     link: `/bookings`,
-    metadata: { bookingId: params.bookingId, serviceName: params.serviceName },
+    metadata: { 
+      bookingId: params.bookingId, 
+      serviceName: params.serviceName,
+      deliverables: params.deliverables || []
+    },
   });
 }
 
