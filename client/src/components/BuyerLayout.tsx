@@ -42,7 +42,7 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
               <Package className="h-8 w-8 text-primary" />
               <span className="text-2xl font-bold font-display">Vaaney</span>
             </Link>
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden xl:flex items-center gap-1">
               {navItems.map((item) => (
                 <Button
                   key={item.href}
@@ -74,16 +74,16 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
                   window.location.href = "/";
                 }}
                 data-testid="button-logout"
-                className="hover-elevate active-elevate-2 hidden md:flex"
+                className="hover-elevate active-elevate-2 hidden xl:flex"
               >
                 <LogOut className="h-5 w-5" />
               </Button>
               
-              {/* Mobile Menu Button */}
+              {/* Mobile/Tablet Menu Button */}
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden"
+                className="xl:hidden min-h-11 min-w-11"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 data-testid="button-mobile-menu"
               >
@@ -92,18 +92,17 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
             </div>
           </div>
           
-          {/* Mobile Menu Dropdown */}
+          {/* Mobile/Tablet Menu Dropdown */}
           {mobileMenuOpen && (
-            <div className="md:hidden border-t bg-background/95 backdrop-blur">
+            <div className="xl:hidden border-t bg-background/95 backdrop-blur">
               <div className="px-4 py-4 space-y-2">
                 {navItems.map((item) => (
                   <Button
                     key={item.href}
                     asChild
                     variant={location === item.href ? "default" : "ghost"}
-                    size="sm"
+                    className="w-full justify-start min-h-11"
                     data-testid={`mobile-${item.testid}`}
-                    className="w-full justify-start"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Link href={item.href}>
@@ -115,13 +114,12 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
                 <div className="pt-3 border-t">
                   <Button
                     variant="ghost"
-                    size="sm"
+                    className="w-full justify-start min-h-11 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                     onClick={async () => {
                       await fetch("/api/logout", { method: "POST" });
                       window.location.href = "/";
                     }}
                     data-testid="mobile-button-logout"
-                    className="w-full justify-start text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                   >
                     <LogOut className="h-4 w-4 mr-2" />
                     Logout

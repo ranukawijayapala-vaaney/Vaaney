@@ -289,20 +289,20 @@ export default function Marketplace() {
           <p className="text-muted-foreground mt-2">Browse products and services from verified sellers</p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
+        <div className="flex flex-col gap-4">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               placeholder="Search products and services..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 w-full"
               data-testid="input-search"
             />
           </div>
           <div className="flex gap-2 flex-wrap">
             <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="w-[180px]" data-testid="select-category">
+              <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-category">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
@@ -316,7 +316,7 @@ export default function Marketplace() {
             </Select>
 
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[180px]" data-testid="select-sort">
+              <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-sort">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -332,7 +332,7 @@ export default function Marketplace() {
                 size="icon"
                 onClick={() => setViewMode("grid")}
                 data-testid="button-grid-view"
-                className="rounded-r-none"
+                className="rounded-r-none min-h-11 min-w-11"
               >
                 <Grid className="h-4 w-4" />
               </Button>
@@ -341,7 +341,7 @@ export default function Marketplace() {
                 size="icon"
                 onClick={() => setViewMode("list")}
                 data-testid="button-list-view"
-                className="rounded-l-none"
+                className="rounded-l-none min-h-11 min-w-11"
               >
                 <List className="h-4 w-4" />
               </Button>
@@ -460,8 +460,7 @@ export default function Marketplace() {
                         (product.requiresDesignApproval && product.approvedVariantCount > 0) || !product.requiresDesignApproval
                       ) && (
                         <Button
-                          size="sm"
-                          className="w-full"
+                          className="w-full min-h-11"
                           onClick={(e) => handleAddToCart(e, product)}
                           data-testid={`button-add-to-cart-${product.id}`}
                         >
@@ -473,8 +472,7 @@ export default function Marketplace() {
                       {/* Show Upload Design only if product requires design approval AND has no approved variants */}
                       {product.requiresDesignApproval && (!product.approvedVariantCount || product.approvedVariantCount === 0) && (
                         <Button
-                          size="sm"
-                          className="w-full"
+                          className="w-full min-h-11"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -489,9 +487,8 @@ export default function Marketplace() {
                       
                       {product.requiresQuote && (
                         <Button
-                          size="sm"
                           variant={(product.requiresDesignApproval && product.approvedVariantCount > 0) ? "outline" : "default"}
-                          className="w-full"
+                          className="w-full min-h-11"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -506,8 +503,7 @@ export default function Marketplace() {
                       
                       <Button
                         variant="outline"
-                        size="sm"
-                        className="w-full"
+                        className="w-full min-h-11"
                         onClick={(e) => handleAskSeller(e, "product", product)}
                         data-testid={`button-ask-seller-${product.id}`}
                       >
@@ -590,8 +586,7 @@ export default function Marketplace() {
                               (product.requiresDesignApproval && product.approvedVariantCount > 0) || !product.requiresDesignApproval
                             ) && (
                               <Button
-                                size="sm"
-                                className="w-full"
+                                className="w-full min-h-11"
                                 onClick={(e) => handleAddToCart(e, product)}
                                 data-testid={`button-add-to-cart-${product.id}`}
                               >
@@ -602,8 +597,7 @@ export default function Marketplace() {
                             
                             {product.requiresDesignApproval && (!product.approvedVariantCount || product.approvedVariantCount === 0) && (
                               <Button
-                                size="sm"
-                                className="w-full"
+                                className="w-full min-h-11"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
@@ -618,9 +612,8 @@ export default function Marketplace() {
                             
                             {product.requiresQuote && (
                               <Button
-                                size="sm"
                                 variant={(product.requiresDesignApproval && product.approvedVariantCount > 0) ? "outline" : "default"}
-                                className="w-full"
+                                className="w-full min-h-11"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
@@ -635,8 +628,7 @@ export default function Marketplace() {
                             
                             <Button
                               variant="outline"
-                              size="sm"
-                              className="w-full"
+                              className="w-full min-h-11"
                               onClick={(e) => handleAskSeller(e, "product", product)}
                               data-testid={`button-ask-seller-${product.id}`}
                             >
@@ -732,14 +724,13 @@ export default function Marketplace() {
                           <p className="text-lg font-semibold text-primary">
                             {minPrice ? `From $${minPrice.toFixed(2)}` : "Price TBD"}
                           </p>
-                          <Button size="sm" data-testid={`button-book-service-${service.id}`}>
+                          <Button className="min-h-11" data-testid={`button-book-service-${service.id}`}>
                             Book Now
                           </Button>
                         </div>
                         <Button
                           variant="outline"
-                          size="sm"
-                          className="w-full"
+                          className="w-full min-h-11"
                           onClick={(e) => {
                             e.preventDefault();
                             handleAskSeller(e, "service", service);
