@@ -26,8 +26,10 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
   }
 
   try {
+    // Use Resend sandbox sender for testing (no domain verification required)
+    // For production, set FROM_EMAIL environment variable with verified domain
     const payload: ResendEmailPayload = {
-      from: process.env.FROM_EMAIL || "Vaaney <noreply@vaaney.com>",
+      from: process.env.FROM_EMAIL || "Vaaney <onboarding@resend.dev>",
       to: [options.to],
       subject: options.subject,
       html: options.html,

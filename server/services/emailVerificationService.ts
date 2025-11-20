@@ -26,10 +26,10 @@ export async function sendVerificationEmail(
     })
     .where(eq(users.id, userId));
 
-  // Get base URL from environment or construct it
-  const baseUrl = process.env.APP_URL || process.env.REPL_SLUG 
-    ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
-    : "http://localhost:5000";
+  // Get base URL - use REPLIT_DEV_DOMAIN for development environment
+  const baseUrl = process.env.REPLIT_DEV_DOMAIN
+    ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+    : process.env.APP_URL || "http://localhost:5000";
   
   const verificationUrl = `${baseUrl}/verify-email?token=${token}`;
 
