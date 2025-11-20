@@ -205,7 +205,7 @@ export default function BuyerGuidelines() {
                 <h4 className="font-medium mb-2">3-Way Communication:</h4>
                 <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                   <li>Message sellers directly about products, services, and custom requests</li>
-                  <li>Admins can join conversations to provide support</li>
+                  <li>Admins can join conversations when issues need escalation or support</li>
                   <li>All parties can see the full conversation history</li>
                   <li>Upload files and images in messages</li>
                 </ul>
@@ -318,9 +318,9 @@ export default function BuyerGuidelines() {
                 <h4 className="font-medium mb-2">Service Booking Statuses:</h4>
                 <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                   <li><strong>Pending Confirmation:</strong> Waiting for seller to confirm availability</li>
-                  <li><strong>Confirmed:</strong> Seller has accepted your booking</li>
-                  <li><strong>Pending Payment:</strong> Payment link available, awaiting your payment</li>
-                  <li><strong>Paid:</strong> Payment confirmed, service scheduled</li>
+                  <li><strong>Confirmed:</strong> Seller has accepted - you can now proceed to payment</li>
+                  <li><strong>Pending Payment:</strong> Awaiting your payment (IPG or bank transfer)</li>
+                  <li><strong>Paid:</strong> Payment confirmed (IPG instant, bank transfer after admin verification)</li>
                   <li><strong>Ongoing:</strong> Service is in progress</li>
                   <li><strong>Completed:</strong> Service delivered - deliverables sent via email</li>
                 </ul>
@@ -355,7 +355,8 @@ export default function BuyerGuidelines() {
                   <li>Click "Request Return/Refund"</li>
                   <li>Select reason and provide details</li>
                   <li>Seller reviews and responds to your request</li>
-                  <li>If seller approves or admin resolves in your favor, refund is processed</li>
+                  <li>If seller rejects, admin reviews and makes final decision</li>
+                  <li>Once approved (by seller or admin), refund is processed</li>
                   <li>Commission is automatically reversed on approved refunds</li>
                 </ol>
               </div>

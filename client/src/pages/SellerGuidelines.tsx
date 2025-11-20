@@ -287,7 +287,7 @@ export default function SellerGuidelines() {
                 <h4 className="font-medium mb-2">3-Way Communication:</h4>
                 <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                   <li>Message buyers about their orders, bookings, and custom requests</li>
-                  <li>Admins can join any conversation to provide support</li>
+                  <li>Admins can join conversations when issues need escalation or support</li>
                   <li>View full conversation history with buyers</li>
                   <li>Share files and images in messages</li>
                 </ul>
@@ -397,6 +397,16 @@ export default function SellerGuidelines() {
                   <li>Track all transactions and payouts in real-time</li>
                 </ul>
               </div>
+              <div>
+                <h4 className="font-medium mb-2">Commission & Payouts:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Default commission rate: 20% per transaction (customizable by admin)</li>
+                  <li>Commission automatically deducted from each sale</li>
+                  <li>You receive net amount (price minus commission)</li>
+                  <li>Request payouts when funds are available</li>
+                  <li>Commission reversed automatically on refunds</li>
+                </ul>
+              </div>
             </CardContent>
           </Card>
 
@@ -415,8 +425,13 @@ export default function SellerGuidelines() {
                 <h4 className="font-medium mb-2">Product Order Workflow:</h4>
                 <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
                   <li>Receive order notification</li>
-                  <li>Wait for payment confirmation from admin</li>
-                  <li>Process and pack the order</li>
+                  <li>Wait for payment confirmation:
+                    <ul className="list-disc list-inside ml-6 mt-1">
+                      <li><strong>IPG:</strong> Instant automatic confirmation</li>
+                      <li><strong>Bank Transfer:</strong> Admin manually verifies payment first</li>
+                    </ul>
+                  </li>
+                  <li>Once payment is confirmed, begin processing</li>
                   <li>Update status to "Processing" then "Shipped"</li>
                   <li>Provide tracking information if available</li>
                   <li>Mark as "Delivered" upon confirmation</li>
@@ -428,9 +443,14 @@ export default function SellerGuidelines() {
                   <li>Receive booking request from buyer</li>
                   <li>Review date, time, and service details</li>
                   <li>Confirm or decline the booking</li>
-                  <li>Wait for buyer payment (admin confirms)</li>
+                  <li>Wait for buyer payment:
+                    <ul className="list-disc list-inside ml-6 mt-1">
+                      <li><strong>IPG:</strong> Instant automatic confirmation</li>
+                      <li><strong>Bank Transfer:</strong> Admin manually verifies payment first</li>
+                    </ul>
+                  </li>
                   <li>Deliver the service on scheduled date</li>
-                  <li>Mark booking as "Completed"</li>
+                  <li>Mark booking as "Completed" and upload deliverables</li>
                 </ol>
               </div>
               <div>
