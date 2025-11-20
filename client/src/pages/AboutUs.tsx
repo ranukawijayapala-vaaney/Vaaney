@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ArrowLeft, ShieldCheck, Target, Users, Globe, Award, Zap } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Target, Users, Globe, Award, Zap, Palette, FileText, Mail, MessageSquare } from "lucide-react";
 
 export default function AboutUs() {
   return (
@@ -57,10 +57,11 @@ export default function AboutUs() {
                 Cross-border commerce in the region faced challenges: lack of trust, payment security concerns, and difficulty verifying legitimate sellers. Vaaney addresses these pain points through:
               </p>
               <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
-                <li><strong>Mandatory Verification:</strong> All users, both buyers and sellers, must verify their identity before transacting</li>
+                <li><strong>Dual Authentication:</strong> Buyers can use Google sign-in or email/password, while sellers use verified email accounts</li>
+                <li><strong>Seller Verification:</strong> All sellers must complete document verification to ensure legitimacy</li>
                 <li><strong>Escrow Protection:</strong> Payments are held securely until orders are completed and services delivered</li>
-                <li><strong>Transparent Pricing:</strong> Clear commission structure starting at 20%, with no hidden fees</li>
-                <li><strong>Local Payment Processing:</strong> Integration with Maldivian and Sri Lankan banking systems</li>
+                <li><strong>Transparent Pricing:</strong> Clear commission structure starting at 20%, customizable per seller</li>
+                <li><strong>Flexible Payment Options:</strong> Instant online payment gateway (IPG) or manual bank transfer</li>
               </ul>
             </CardContent>
           </Card>
@@ -82,23 +83,31 @@ export default function AboutUs() {
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
-                    <span>Verified Sri Lankan sellers offering quality products and services</span>
+                    <span>Easy sign-up with Google or email/password (no document verification required)</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
-                    <span>Secure escrow payment protection</span>
+                    <span>Design approval workflow for print products before purchase</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
-                    <span>Wide range of print products with custom variants</span>
+                    <span>Custom quote requests for unique specifications</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
-                    <span>Professional digital services with flexible packages</span>
+                    <span>Digital service delivery via email with downloadable files</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
-                    <span>Complete order and booking tracking</span>
+                    <span>WhatsApp-style mobile messaging for seller communication</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Design library to reuse approved designs across variants</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Secure escrow payment with flexible options (IPG or bank transfer)</span>
                   </li>
                 </ul>
               </CardContent>
@@ -120,23 +129,31 @@ export default function AboutUs() {
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
-                    <span>Access to Maldivian market with verified buyers</span>
+                    <span>Verified seller accounts with document verification for trust</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
-                    <span>Secure payment processing with escrow protection</span>
+                    <span>Design approval dashboard to review buyer designs before production</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
-                    <span>Flexible product and service listing tools</span>
+                    <span>Custom quote creation for unique buyer requirements</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
-                    <span>Transparent commission structure (customizable per seller)</span>
+                    <span>Digital deliverable uploads for completed services (automatic email delivery)</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
-                    <span>Dashboard with real-time revenue and payout tracking</span>
+                    <span>3-way messaging with buyers and admin support</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Transparent commission structure (20% default, customizable by admin)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Real-time dashboard tracking revenue, escrow, and available payouts</span>
                   </li>
                 </ul>
               </CardContent>
@@ -161,8 +178,8 @@ export default function AboutUs() {
                       <span className="text-sm font-bold text-primary">1</span>
                     </div>
                     <div>
-                      <p className="font-medium">Sign Up & Verify</p>
-                      <p className="text-sm text-muted-foreground">All users create accounts and upload verification documents</p>
+                      <p className="font-medium">Sign Up</p>
+                      <p className="text-sm text-muted-foreground">Buyers: Use Google or email/password (email verification only). Sellers: Email/password with document verification</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
@@ -170,8 +187,8 @@ export default function AboutUs() {
                       <span className="text-sm font-bold text-primary">2</span>
                     </div>
                     <div>
-                      <p className="font-medium">Admin Approval</p>
-                      <p className="text-sm text-muted-foreground">Our team reviews and approves all accounts within 24-48 hours</p>
+                      <p className="font-medium">Browse & Message</p>
+                      <p className="text-sm text-muted-foreground">Buyers explore products/services, message sellers for questions, request custom quotes</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
@@ -179,8 +196,8 @@ export default function AboutUs() {
                       <span className="text-sm font-bold text-primary">3</span>
                     </div>
                     <div>
-                      <p className="font-medium">Browse & Transact</p>
-                      <p className="text-sm text-muted-foreground">Buyers shop from verified sellers, sellers list products and services</p>
+                      <p className="font-medium">Design Approval (Print Products)</p>
+                      <p className="text-sm text-muted-foreground">Upload designs for seller approval before purchasing print products</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
@@ -188,8 +205,8 @@ export default function AboutUs() {
                       <span className="text-sm font-bold text-primary">4</span>
                     </div>
                     <div>
-                      <p className="font-medium">Secure Payments</p>
-                      <p className="text-sm text-muted-foreground">All payments held in escrow until order completion or service delivery</p>
+                      <p className="font-medium">Purchase & Pay</p>
+                      <p className="text-sm text-muted-foreground">Choose payment method (instant IPG or bank transfer). Funds held in escrow for protection</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
@@ -197,14 +214,152 @@ export default function AboutUs() {
                       <span className="text-sm font-bold text-primary">5</span>
                     </div>
                     <div>
-                      <p className="font-medium">Complete & Release</p>
-                      <p className="text-sm text-muted-foreground">Funds released to sellers after successful delivery confirmation</p>
+                      <p className="font-medium">Delivery & Release</p>
+                      <p className="text-sm text-muted-foreground">Products shipped or services delivered via email. Funds released to seller after confirmation</p>
                     </div>
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-start gap-3">
+                  <Palette className="h-6 w-6 text-primary mt-1" />
+                  <div>
+                    <CardTitle>Design Approval Workflow</CardTitle>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-3">
+                  For print products like business cards, banners, and flyers:
+                </p>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Upload designs before purchasing</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Sellers review for print quality</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Reuse approved designs across variants</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Reduces production errors and returns</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-start gap-3">
+                  <FileText className="h-6 w-6 text-primary mt-1" />
+                  <div>
+                    <CardTitle>Custom Quote Requests</CardTitle>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-3">
+                  For unique specifications and bulk orders:
+                </p>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Request pricing for custom sizes and materials</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Sellers create tailored quotes</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Accept and purchase directly from quote</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Perfect for bulk and specialized orders</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-start gap-3">
+                  <Mail className="h-6 w-6 text-primary mt-1" />
+                  <div>
+                    <CardTitle>Digital Service Delivery</CardTitle>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-3">
+                  All services are digital with automated delivery:
+                </p>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Sellers upload deliverable files when complete</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Automatic email delivery to buyers</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Download from dashboard or email</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Secure file storage and access</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-start gap-3">
+                  <MessageSquare className="h-6 w-6 text-primary mt-1" />
+                  <div>
+                    <CardTitle>Mobile-Friendly Messaging</CardTitle>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-3">
+                  WhatsApp-style communication experience:
+                </p>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>3-way messaging (buyer, seller, admin)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Mobile-optimized interface</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>File and image sharing</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Admin support when needed</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
 
           <Card>
             <CardHeader>
