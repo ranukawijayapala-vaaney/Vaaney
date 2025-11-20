@@ -60,7 +60,6 @@ import { trackShipments, isShipmentDelivered } from "./aramex";
 import { setupShippingRoutes } from "./shippingRoutes";
 import { setupQuoteApprovalRoutes } from "./quoteApprovalRoutes";
 import notificationRoutes from "./notificationRoutes";
-import adminSetupRoutes from "./adminSetupRoutes";
 import emailVerificationRoutes from "./emailVerificationRoutes";
 import {
   notifyOrderPaid,
@@ -177,9 +176,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize ACL with storage for conversation-based access control
   const { setStorageForAcl } = await import("./objectAcl");
   setStorageForAcl(storage);
-
-  // Admin Setup - Public route for initial admin account creation
-  app.use("/api", adminSetupRoutes);
 
   // Object Storage - MUST be first to prevent Vite SPA fallback from catching it
   app.get("/objects/*", async (req: AuthRequest, res: Response) => {
@@ -5714,6 +5710,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(account);
     } catch (error: any) {
       console.error("Error setting default bank account:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Admin initialization endpoint - creates admin user if none exists
+  app.post("/api/admin/initialize", async (req: Request, res: Response) => {
+    const timestamp = new Date().toISOString();
+    const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
+    
+    try {
+      // Verify ADMIN_INIT_TOKEN environment variable is set
+      const expectedToken = process.env.ADMIN_INIT_TOKEN;
+      
+      if (!expectedToken) {
+        console.log(`[ADMIN INIT] FAILED - Missing ADMIN_INIT_TOKEN environment variable at ${timestamp} from IP ${clientIp}`);
+        return res.status(500).json({ 
+          message: "Server misconfigured: ADMIN_INIT_TOKEN environment variable is not set" 
+        });
+      }
+
+      // Verify initialization token for security
+      const { initToken } = req.body;
+      
+      if (initToken !== expectedToken) {
+        console.log(`[ADMIN INIT] FAILED - Invalid token attempt at ${timestamp} from IP ${clientIp}`);
+        return res.status(401).json({ 
+          message: "Invalid initialization token" 
+        });
+      }
+
+      // Check if any admin users exist
+      const existingAdmins = await db.select()
+        .from(users)
+        .where(eq(users.role, "admin"));
+      
+      if (existingAdmins.length > 0) {
+        console.log(`[ADMIN INIT] FAILED - Admin already exists, attempt at ${timestamp} from IP ${clientIp}`);
+        return res.status(400).json({ 
+          message: "Admin already exists. This endpoint can only be used when no admin exists." 
+        });
+      }
+
+      // Import bcrypt for password hashing
+      const bcrypt = await import("bcrypt");
+      
+      // Create admin user with predefined credentials
+      const adminEmail = "ranuka.wijayapala@gmail.com";
+      const adminPassword = "Admin@123"; // Default password - user should change after first login
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
+      
+      const [adminUser] = await db.insert(users).values({
+        email: adminEmail,
+        password: hashedPassword,
+        firstName: "Ranuka",
+        lastName: "Wijayapala",
+        role: "admin",
+        emailVerified: true, // Admin is pre-verified
+        verificationStatus: "approved",
+      }).returning();
+
+      // Log successful initialization for security audit
+      console.log(`[ADMIN INIT] SUCCESS - Admin user created: ${adminEmail} at ${timestamp} from IP ${clientIp}`);
+
+      res.json({ 
+        message: "Admin user created successfully",
+        email: adminEmail,
+        defaultPassword: adminPassword,
+        note: "IMPORTANT: Change the default password immediately after first login"
+      });
+    } catch (error: any) {
+      console.error(`[ADMIN INIT] FAILED - Internal error at ${timestamp} from IP ${clientIp}:`, error);
       res.status(500).json({ message: error.message });
     }
   });

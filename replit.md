@@ -100,6 +100,21 @@ The platform is fully optimized for mobile and tablet devices across all user ro
   - **Note:** Optional `FROM_EMAIL` environment variable (defaults to "Vaaney <noreply@vaaney.com>").
   - Until API key is provided, email sending fails and users cannot verify their accounts for email/password login.
 
+### Admin Initialization
+- **Admin Bootstrap Endpoint:** `/api/admin/initialize` - Creates admin user after database reset/clearing.
+  - **REQUIRED Environment Variable:** `ADMIN_INIT_TOKEN` - Secret token for secure admin initialization (no default fallback for security).
+  - **Endpoint Security:**
+    - Only works when no admin users exist in database
+    - Requires valid `initToken` in request body matching `ADMIN_INIT_TOKEN` environment variable
+    - Returns 500 if `ADMIN_INIT_TOKEN` not set, 401 for invalid token, 400 if admin already exists
+  - **Usage Workflow:**
+    1. Clear production database (manual operation)
+    2. Set `ADMIN_INIT_TOKEN` environment variable in production
+    3. POST to `/api/admin/initialize` with `{"initToken": "your-secret-token"}`
+    4. Admin account created: ranuka.wijayapala@gmail.com with default password "Admin@123"
+    5. **CRITICAL:** Login and change password immediately after initialization
+  - **Audit Logging:** All admin initialization attempts are logged with timestamp for security review
+
 ### Other Libraries & Tools
 - **React 18:** Core UI library.
 - **Vite:** Frontend build tool.
