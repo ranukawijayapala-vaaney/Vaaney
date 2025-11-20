@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, ShoppingCart, Package, Grid, List, Filter, Plus, MessageCircle, CheckCircle, Upload, FileText } from "lucide-react";
+import { Search, ShoppingCart, Package, Grid, List, Filter, Plus, MessageCircle, CheckCircle, Upload, FileText, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Product, Service } from "@shared/schema";
+import type { Product, Service, BoostedItem } from "@shared/schema";
 import { Link, useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AddToCartModal, type ApprovedVariant } from "@/components/cart/AddToCartModal";
@@ -35,6 +35,18 @@ export default function Marketplace() {
 
   const { data: allServices = [], isLoading: servicesLoading } = useQuery<(Service & { seller: { firstName: string; lastName: string } })[]>({
     queryKey: ["/api/services"],
+  });
+
+  // Fetch boosted items
+  const { data: boostedItems = [] } = useQuery<BoostedItem[]>({
+    queryKey: ["/api/boosted-items", { activeOnly: true }],
+    queryFn: async () => {
+      const response = await fetch("/api/boosted-items?activeOnly=true", {
+        credentials: "include",
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
   });
 
   // Client-side filtering and sorting
@@ -77,6 +89,19 @@ export default function Marketplace() {
       return a.name.localeCompare(b.name);
     }
   });
+
+  // Helper function to check if an item is boosted
+  const isItemBoosted = (itemId: string, itemType: "product" | "service") => {
+    return boostedItems.some(boost => boost.itemId === itemId && boost.itemType === itemType && boost.isActive);
+  };
+
+  // Separate boosted and regular products
+  const boostedProducts = products.filter(p => isItemBoosted(p.id, "product"));
+  const regularProducts = products.filter(p => !isItemBoosted(p.id, "product"));
+
+  // Separate boosted and regular services
+  const boostedServices = services.filter(s => isItemBoosted(s.id, "service"));
+  const regularServices = services.filter(s => !isItemBoosted(s.id, "service"));
 
   const addToCartMutation = useMutation({
     mutationFn: async (data: { productVariantId: string; designApprovalId: string; quantity: number }) => {
@@ -361,12 +386,20 @@ export default function Marketplace() {
               </CardContent>
             </Card>
           ) : (
-            <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "space-y-4"}>
-              {products.map((product) => (
-                <Card key={product.id} className="h-full hover-elevate transition-all" data-testid={`card-product-${product.id}`}>
+            <div className="space-y-8">
+              {/* Featured Products Section */}
+              {boostedProducts.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    <h2 className="text-2xl font-semibold">Featured Products</h2>
+                  </div>
+                  <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "space-y-4"}>
+                    {boostedProducts.map((product) => (
+                <Card key={product.id} className="h-full hover-elevate transition-all" data-testid={`card-featured-product-${product.id}`}>
                   <Link href={`/product/${product.id}`}>
                     <CardHeader className="p-0 cursor-pointer">
-                      <div className="aspect-square overflow-hidden rounded-t-md bg-muted">
+                      <div className="relative aspect-square overflow-hidden rounded-t-md bg-muted">
                         {product.images && product.images[0] ? (
                           <img
                             src={product.images[0]}
@@ -378,6 +411,10 @@ export default function Marketplace() {
                             <Package className="h-12 w-12 text-muted-foreground" />
                           </div>
                         )}
+                        <Badge className="absolute top-3 right-3 bg-primary/90 backdrop-blur">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          Featured
+                        </Badge>
                       </div>
                     </CardHeader>
                   </Link>
@@ -481,6 +518,138 @@ export default function Marketplace() {
                   </CardFooter>
                 </Card>
               ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Regular Products Section */}
+              {regularProducts.length > 0 && (
+                <div>
+                  {boostedProducts.length > 0 && (
+                    <div className="flex items-center gap-2 mb-4">
+                      <Package className="h-5 w-5 text-muted-foreground" />
+                      <h2 className="text-2xl font-semibold">All Products</h2>
+                    </div>
+                  )}
+                  <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "space-y-4"}>
+                    {regularProducts.map((product) => (
+                      <Card key={product.id} className="h-full hover-elevate transition-all" data-testid={`card-product-${product.id}`}>
+                        <Link href={`/product/${product.id}`}>
+                          <CardHeader className="p-0 cursor-pointer">
+                            <div className="aspect-square overflow-hidden rounded-t-md bg-muted">
+                              {product.images && product.images[0] ? (
+                                <img
+                                  src={product.images[0]}
+                                  alt={product.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <Package className="h-12 w-12 text-muted-foreground" />
+                                </div>
+                              )}
+                            </div>
+                          </CardHeader>
+                        </Link>
+                        <Link href={`/product/${product.id}`}>
+                          <CardContent className="p-4 space-y-2 cursor-pointer">
+                            <h3 className="font-semibold line-clamp-2">{product.name}</h3>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              {product.seller && (
+                                <>
+                                  <Badge variant="secondary" className="text-xs">Verified</Badge>
+                                  <span>{product.seller.firstName} {product.seller.lastName}</span>
+                                </>
+                              )}
+                            </div>
+                            {product.requiresDesignApproval && product.approvedVariantCount > 0 && (
+                              <div className="flex items-center gap-2">
+                                <Badge variant="default" className="text-xs">
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Design Approved
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {product.approvedVariantCount} {product.approvedVariantCount === 1 ? 'variant' : 'variants'}
+                                </span>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Link>
+                        <CardFooter className="p-4 pt-0 flex flex-col gap-2">
+                          <div className="flex justify-between items-center gap-2 w-full">
+                            <p className="text-lg font-semibold text-primary">
+                              {product.variants && product.variants.length > 0
+                                ? `From $${parseFloat(product.variants[0].price).toFixed(2)}`
+                                : product.requiresQuote
+                                ? "Custom Quote"
+                                : "Price TBD"}
+                            </p>
+                          </div>
+                          <div className="flex flex-col gap-2 w-full">
+                            {!product.requiresQuote && (
+                              (product.requiresDesignApproval && product.approvedVariantCount > 0) || !product.requiresDesignApproval
+                            ) && (
+                              <Button
+                                size="sm"
+                                className="w-full"
+                                onClick={(e) => handleAddToCart(e, product)}
+                                data-testid={`button-add-to-cart-${product.id}`}
+                              >
+                                <Plus className="h-4 w-4 mr-1" />
+                                Add to Cart
+                              </Button>
+                            )}
+                            
+                            {product.requiresDesignApproval && (!product.approvedVariantCount || product.approvedVariantCount === 0) && (
+                              <Button
+                                size="sm"
+                                className="w-full"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  navigate(`/product/${product.id}?action=upload-design`);
+                                }}
+                                data-testid={`button-upload-design-${product.id}`}
+                              >
+                                <Upload className="h-4 w-4 mr-1" />
+                                Upload Your Design
+                              </Button>
+                            )}
+                            
+                            {product.requiresQuote && (
+                              <Button
+                                size="sm"
+                                variant={(product.requiresDesignApproval && product.approvedVariantCount > 0) ? "outline" : "default"}
+                                className="w-full"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  navigate(`/product/${product.id}?action=request-quote`);
+                                }}
+                                data-testid={`button-request-quote-${product.id}`}
+                              >
+                                <FileText className="h-4 w-4 mr-1" />
+                                Get Custom Quote
+                              </Button>
+                            )}
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full"
+                              onClick={(e) => handleAskSeller(e, "product", product)}
+                              data-testid={`button-ask-seller-${product.id}`}
+                            >
+                              <MessageCircle className="h-4 w-4 mr-2" />
+                              Ask Seller
+                            </Button>
+                          </div>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </TabsContent>
@@ -510,17 +679,25 @@ export default function Marketplace() {
               </CardContent>
             </Card>
           ) : (
-            <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
-              {services.map((service: any) => {
+            <div className="space-y-8">
+              {/* Featured Services Section */}
+              {boostedServices.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    <h2 className="text-2xl font-semibold">Featured Services</h2>
+                  </div>
+                  <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
+                    {boostedServices.map((service: any) => {
                 const minPrice = service.packages?.length > 0
                   ? Math.min(...service.packages.map((pkg: any) => parseFloat(pkg.price)))
                   : null;
                 
                 return (
                   <Link key={service.id} href={`/book-service/${service.id}`} className="block">
-                    <Card className="h-full hover-elevate transition-all cursor-pointer" data-testid={`card-service-${service.id}`}>
+                    <Card className="h-full hover-elevate transition-all cursor-pointer" data-testid={`card-featured-service-${service.id}`}>
                       <CardHeader className="p-0">
-                        <div className="aspect-video overflow-hidden rounded-t-md bg-muted">
+                        <div className="relative aspect-video overflow-hidden rounded-t-md bg-muted">
                           {service.images && service.images[0] ? (
                             <img
                               src={service.images[0]}
@@ -532,6 +709,10 @@ export default function Marketplace() {
                               <ShoppingCart className="h-12 w-12 text-muted-foreground" />
                             </div>
                           )}
+                          <Badge className="absolute top-3 right-3 bg-primary/90 backdrop-blur">
+                            <Sparkles className="h-3 w-3 mr-1" />
+                            Featured
+                          </Badge>
                         </div>
                       </CardHeader>
                       <CardContent className="p-4 space-y-2">
@@ -573,6 +754,85 @@ export default function Marketplace() {
                   </Link>
                 );
               })}
+                  </div>
+                </div>
+              )}
+
+              {/* Regular Services Section */}
+              {regularServices.length > 0 && (
+                <div>
+                  {boostedServices.length > 0 && (
+                    <div className="flex items-center gap-2 mb-4">
+                      <ShoppingCart className="h-5 w-5 text-muted-foreground" />
+                      <h2 className="text-2xl font-semibold">All Services</h2>
+                    </div>
+                  )}
+                  <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
+                    {regularServices.map((service: any) => {
+                      const minPrice = service.packages?.length > 0
+                        ? Math.min(...service.packages.map((pkg: any) => parseFloat(pkg.price)))
+                        : null;
+                      
+                      return (
+                        <Link key={service.id} href={`/book-service/${service.id}`} className="block">
+                          <Card className="h-full hover-elevate transition-all cursor-pointer" data-testid={`card-service-${service.id}`}>
+                            <CardHeader className="p-0">
+                              <div className="aspect-video overflow-hidden rounded-t-md bg-muted">
+                                {service.images && service.images[0] ? (
+                                  <img
+                                    src={service.images[0]}
+                                    alt={service.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <ShoppingCart className="h-12 w-12 text-muted-foreground" />
+                                  </div>
+                                )}
+                              </div>
+                            </CardHeader>
+                            <CardContent className="p-4 space-y-2">
+                              <h3 className="font-semibold line-clamp-2">{service.name}</h3>
+                              <p className="text-sm text-muted-foreground line-clamp-2">{service.description}</p>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                {service.seller && (
+                                  <>
+                                    <Badge variant="secondary" className="text-xs">Verified</Badge>
+                                    <span>{service.seller.firstName} {service.seller.lastName}</span>
+                                  </>
+                                )}
+                              </div>
+                            </CardContent>
+                            <CardFooter className="p-4 pt-0 flex flex-col gap-2">
+                              <div className="flex justify-between items-center gap-2 w-full">
+                                <p className="text-lg font-semibold text-primary">
+                                  {minPrice ? `From $${minPrice.toFixed(2)}` : "Price TBD"}
+                                </p>
+                                <Button size="sm" data-testid={`button-book-service-${service.id}`}>
+                                  Book Now
+                                </Button>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleAskSeller(e, "service", service);
+                                }}
+                                data-testid={`button-ask-seller-service-${service.id}`}
+                              >
+                                <MessageCircle className="h-4 w-4 mr-2" />
+                                Ask Seller
+                              </Button>
+                            </CardFooter>
+                          </Card>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </TabsContent>
