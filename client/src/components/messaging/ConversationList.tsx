@@ -165,7 +165,7 @@ export function ConversationList({
                     );
                   })}
                   <span className="text-xs text-muted-foreground ml-auto" data-testid={`text-time-${conversation.id}`}>
-                    {formatDistanceToNow(new Date(conversation.lastMessageAt), { addSuffix: true })}
+                    {conversation.lastMessageAt ? formatDistanceToNow(new Date(conversation.lastMessageAt), { addSuffix: true }) : 'Just now'}
                   </span>
                 </div>
               </div>

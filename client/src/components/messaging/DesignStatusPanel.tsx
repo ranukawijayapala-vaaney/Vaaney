@@ -78,6 +78,7 @@ export function DesignStatusPanel({
   const [changeNotes, setChangeNotes] = useState("");
   const [workflowMode, setWorkflowMode] = useState<"product" | "quote">("product");
   const [hasPendingBooking, setHasPendingBooking] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Auto-populate approved variants when design is approved and variants are available
   useEffect(() => {
@@ -226,7 +227,7 @@ export function DesignStatusPanel({
     },
   });
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -238,6 +239,7 @@ export function DesignStatusPanel({
         description: "Please upload an image (JPG, PNG, GIF, SVG) or PDF file",
         variant: "destructive",
       });
+      e.target.value = "";
       return;
     }
 
@@ -248,11 +250,25 @@ export function DesignStatusPanel({
         description: "Please upload a file smaller than 10MB",
         variant: "destructive",
       });
+      e.target.value = "";
+      return;
+    }
+
+    // Store the file in state
+    setSelectedFile(file);
+  };
+
+  const handleUploadSubmit = async () => {
+    if (!selectedFile) {
+      toast({
+        title: "No file selected",
+        description: "Please select a file to upload",
+        variant: "destructive",
+      });
       return;
     }
 
     // Determine context based on workflowMode
-    const workflowContexts = conversation?.workflowContexts || [];
     const context = workflowMode;
     
     // Validate variant/package selection for product/service-scoped uploads
@@ -278,7 +294,7 @@ export function DesignStatusPanel({
     setUploadingFile(true);
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", selectedFile);
       formData.append("conversationId", conversationId);
 
       const response = await fetch("/api/upload-message-attachment", {
@@ -295,9 +311,9 @@ export function DesignStatusPanel({
       // Capture full file metadata for design approval
       const designFile = {
         url,
-        filename: file.name,
-        size: file.size,
-        mimeType: file.type,
+        filename: selectedFile.name,
+        size: selectedFile.size,
+        mimeType: selectedFile.type,
       };
       
       uploadDesign({
@@ -308,6 +324,7 @@ export function DesignStatusPanel({
         packageId: context === "product" && selectedPackageId ? selectedPackageId : undefined,
       });
       setShowUploadDialog(false);
+      setSelectedFile(null);
       
       // Persist selection for next upload
       if (context === "product") {
@@ -753,20 +770,51 @@ export function DesignStatusPanel({
                   id="design-file"
                   type="file"
                   accept="image/jpeg,image/png,image/gif,image/svg+xml,application/pdf"
-                  onChange={handleFileUpload}
+                  onChange={handleFileSelect}
                   disabled={uploadingFile}
                   className="w-full mt-1"
                   data-testid="input-design-file"
                 />
+                {selectedFile && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Selected: {selectedFile.name}
+                  </p>
+                )}
               </div>
             </div>
             <DialogFooter>
               <Button
                 variant="outline"
-                onClick={() => setShowUploadDialog(false)}
+                onClick={() => {
+                  setShowUploadDialog(false);
+                  setSelectedFile(null);
+                }}
                 disabled={uploadingFile}
               >
                 Cancel
+              </Button>
+              <Button
+                onClick={handleUploadSubmit}
+                disabled={
+                  uploadingFile ||
+                  !selectedFile ||
+                  (workflowMode === "product" && !!productId && !selectedVariantId) ||
+                  (workflowMode === "product" && !!serviceId && !selectedPackageId)
+                }
+                data-testid="button-upload-design"
+                className="min-h-11"
+              >
+                {uploadingFile ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
