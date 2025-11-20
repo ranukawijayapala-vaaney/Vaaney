@@ -365,7 +365,7 @@ export default function Checkout() {
                 <CardTitle>Shipping Address</CardTitle>
                 <Dialog open={isAddressDialogOpen} onOpenChange={setIsAddressDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" data-testid="button-add-new-address">
+                    <Button variant="outline" className="min-h-11" data-testid="button-add-new-address">
                       <Plus className="h-4 w-4 mr-2" />
                       Add New
                     </Button>
@@ -456,7 +456,7 @@ export default function Checkout() {
                             </FormItem>
                           )}
                         />
-                        <Button type="submit" className="w-full" disabled={createAddressMutation.isPending} data-testid="button-create-address">
+                        <Button type="submit" className="w-full min-h-11" disabled={createAddressMutation.isPending} data-testid="button-create-address">
                           {createAddressMutation.isPending ? "Adding..." : "Add Address"}
                         </Button>
                       </form>
@@ -471,7 +471,7 @@ export default function Checkout() {
                   <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p className="font-medium mb-2">No shipping addresses</p>
                   <p className="text-sm mb-4">Add your first address to continue</p>
-                  <Button onClick={() => setIsAddressDialogOpen(true)} data-testid="button-add-first-address-checkout">
+                  <Button onClick={() => setIsAddressDialogOpen(true)} className="min-h-11" data-testid="button-add-first-address-checkout">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Address
                   </Button>
@@ -684,7 +684,8 @@ export default function Checkout() {
                                     <Button
                                       type="button"
                                       variant="ghost"
-                                      size="sm"
+                                      size="icon"
+                                      className="min-h-11 min-w-11"
                                       onClick={() => {
                                         field.onChange("");
                                       }}
@@ -893,7 +894,7 @@ export default function Checkout() {
             </CardContent>
             <CardFooter>
               <Button
-                className="w-full"
+                className="w-full min-h-11"
                 onClick={form.handleSubmit(onSubmit)}
                 disabled={isProcessing}
                 data-testid="button-place-order"

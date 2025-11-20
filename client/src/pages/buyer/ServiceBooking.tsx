@@ -835,7 +835,7 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
                       {/* Notes Collapsible */}
                       <Collapsible open={notesOpen} onOpenChange={setNotesOpen}>
                         <CollapsibleTrigger asChild>
-                          <Button variant="ghost" size="sm" className="w-full justify-start p-0 h-auto">
+                          <Button variant="ghost" className="w-full justify-start p-0 min-h-11">
                             <ChevronRight className={`h-4 w-4 mr-2 transition-transform ${notesOpen ? 'rotate-90' : ''}`} />
                             <span className="text-sm">Add notes (optional)</span>
                           </Button>
@@ -1085,12 +1085,14 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
           <DialogFooter>
             <Button
               variant="outline"
+              className="min-h-11"
               onClick={() => setShowContactDialog(false)}
               data-testid="button-cancel-message"
             >
               Cancel
             </Button>
             <Button
+              className="min-h-11"
               onClick={handleSendQuestion}
               disabled={!contactMessage.trim() || sendMessageMutation.isPending}
               data-testid="button-send-message"
@@ -1140,12 +1142,14 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
           <DialogFooter>
             <Button
               variant="outline"
+              className="min-h-11"
               onClick={handleDesignGateCancel}
               data-testid="button-cancel-design-gate"
             >
               Cancel
             </Button>
             <Button
+              className="min-h-11"
               onClick={handleDesignGateConfirm}
               data-testid="button-go-to-messages"
             >
