@@ -454,6 +454,7 @@ export default function ProductDetail() {
                             type="button"
                             size="icon"
                             variant="outline"
+                            className="min-h-11 min-w-11"
                             onClick={() => setQuantity(Math.max(1, quantity - 1))}
                             disabled={quantity <= 1}
                             data-testid="button-decrease-quantity"
@@ -474,6 +475,7 @@ export default function ProductDetail() {
                             type="button"
                             size="icon"
                             variant="outline"
+                            className="min-h-11 min-w-11"
                             onClick={() => setQuantity(Math.min(maxStock, quantity + 1))}
                             disabled={quantity >= maxStock}
                             data-testid="button-increase-quantity"
@@ -517,7 +519,7 @@ export default function ProductDetail() {
                               size="lg"
                               onClick={() => initiateDesignUploadMutation.mutate()}
                               disabled={initiateDesignUploadMutation.isPending}
-                              className="w-full gap-2"
+                              className="w-full gap-2 min-h-11"
                               data-testid="button-upload-design"
                             >
                               <Upload className="h-5 w-5" />
@@ -545,7 +547,7 @@ export default function ProductDetail() {
                               variant="outline"
                               onClick={() => requestQuoteMutation.mutate()}
                               disabled={requestQuoteMutation.isPending}
-                              className="w-full gap-2"
+                              className="w-full gap-2 min-h-11"
                               data-testid="button-request-quote"
                             >
                               <FileText className="h-5 w-5" />
@@ -568,7 +570,7 @@ export default function ProductDetail() {
                             size="lg"
                             onClick={handleAddToCart}
                             disabled={addToCartMutation.isPending || maxStock === 0}
-                            className="w-full gap-2"
+                            className="w-full gap-2 min-h-11"
                             data-testid="button-add-to-cart"
                           >
                             <ShoppingCart className="h-5 w-5" />
@@ -580,7 +582,7 @@ export default function ProductDetail() {
                             size="sm"
                             onClick={() => initiateDesignUploadMutation.mutate()}
                             disabled={initiateDesignUploadMutation.isPending}
-                            className="w-full gap-2"
+                            className="w-full gap-2 min-h-11"
                             data-testid="button-submit-new-design"
                           >
                             <Upload className="h-5 w-5" />
@@ -602,7 +604,7 @@ export default function ProductDetail() {
                               variant="default"
                               onClick={() => requestQuoteMutation.mutate()}
                               disabled={requestQuoteMutation.isPending}
-                              className="w-full gap-2"
+                              className="w-full gap-2 min-h-11"
                               data-testid="button-request-quote"
                             >
                               <FileText className="h-5 w-5" />
@@ -617,7 +619,7 @@ export default function ProductDetail() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => navigate("/messages")}
-                                className="w-full"
+                                className="w-full min-h-11"
                                 data-testid="button-view-quote-messages"
                               >
                                 View Messages
@@ -641,7 +643,7 @@ export default function ProductDetail() {
                             size="lg"
                             onClick={() => initiateDesignUploadMutation.mutate()}
                             disabled={initiateDesignUploadMutation.isPending}
-                            className="w-full gap-2"
+                            className="w-full gap-2 min-h-11"
                             data-testid="button-upload-design"
                           >
                             <Upload className="h-5 w-5" />
@@ -659,7 +661,7 @@ export default function ProductDetail() {
                           size="lg"
                           onClick={handleAddToCart}
                           disabled={addToCartMutation.isPending || maxStock === 0}
-                          className="w-full gap-2"
+                          className="w-full gap-2 min-h-11"
                           data-testid="button-add-to-cart"
                         >
                           <ShoppingCart className="h-5 w-5" />
@@ -674,7 +676,7 @@ export default function ProductDetail() {
                             size="lg"
                             onClick={handleAddToCart}
                             disabled={addToCartMutation.isPending || maxStock === 0}
-                            className="w-full gap-2"
+                            className="w-full gap-2 min-h-11"
                             data-testid="button-add-to-cart"
                           >
                             <ShoppingCart className="h-5 w-5" />
@@ -686,7 +688,7 @@ export default function ProductDetail() {
                             size="sm"
                             onClick={() => initiateDesignUploadMutation.mutate()}
                             disabled={initiateDesignUploadMutation.isPending}
-                            className="w-full gap-2"
+                            className="w-full gap-2 min-h-11"
                             data-testid="button-submit-new-design"
                           >
                             <Upload className="h-5 w-5" />
