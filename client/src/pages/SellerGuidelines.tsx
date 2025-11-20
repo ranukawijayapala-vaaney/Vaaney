@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ArrowLeft, ShieldCheck, DollarSign, Package, FileCheck, TrendingUp, AlertCircle } from "lucide-react";
+import { ArrowLeft, ShieldCheck, DollarSign, Package, FileCheck, TrendingUp, AlertCircle, Palette, FileText, MessageSquare, Mail } from "lucide-react";
 
 export default function SellerGuidelines() {
   return (
@@ -29,19 +29,27 @@ export default function SellerGuidelines() {
               <div className="flex items-start gap-3">
                 <ShieldCheck className="h-6 w-6 text-primary mt-1" />
                 <div>
-                  <CardTitle>Seller Verification Requirements</CardTitle>
-                  <CardDescription>Mandatory verification for all sellers</CardDescription>
+                  <CardTitle>Getting Started as a Seller</CardTitle>
+                  <CardDescription>Account creation and verification</CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
+              <div>
+                <h4 className="font-medium mb-2">Account Setup:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Sellers must sign up using email and password</li>
+                  <li>Verify your email address through the verification link</li>
+                  <li>Complete seller verification process to start selling</li>
+                </ul>
+              </div>
               <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
                 <div className="flex gap-2">
                   <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
                   <div>
-                    <p className="font-medium text-amber-900 dark:text-amber-100">Required for All Sellers</p>
+                    <p className="font-medium text-amber-900 dark:text-amber-100">Seller Verification Required</p>
                     <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                      Verification is mandatory before you can list products or services on Vaaney.
+                      All sellers must be verified before listing products or services on Vaaney.
                     </p>
                   </div>
                 </div>
@@ -58,9 +66,10 @@ export default function SellerGuidelines() {
               <div>
                 <h4 className="font-medium mb-2">Verification Process:</h4>
                 <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-                  <li>Upload required documents during signup</li>
+                  <li>Create seller account and verify your email</li>
+                  <li>Upload required verification documents</li>
                   <li>Admin reviews your documents (typically 24-48 hours)</li>
-                  <li>Receive approval notification</li>
+                  <li>Receive approval notification via email</li>
                   <li>Start listing products and services</li>
                 </ol>
               </div>
@@ -106,6 +115,199 @@ export default function SellerGuidelines() {
                   <li>Keep inventory levels updated</li>
                   <li>Respond promptly to booking requests</li>
                   <li>Maintain competitive pricing</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <Palette className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <CardTitle>Design Approval Management</CardTitle>
+                  <CardDescription>Review and approve buyer designs for print products</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <h4 className="font-medium mb-2">How Design Approval Works:</h4>
+                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                  <li>Buyers upload designs for your print products (business cards, banners, etc.)</li>
+                  <li>You receive notification when designs are submitted</li>
+                  <li>Review designs in your Design Approvals dashboard</li>
+                  <li>Approve, reject, or request changes with feedback</li>
+                  <li>Buyers can revise and resubmit designs</li>
+                  <li>Once approved, buyers can add to cart and purchase</li>
+                </ol>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Review Actions:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li><strong>Approve:</strong> Design meets print quality standards</li>
+                  <li><strong>Request Changes:</strong> Issues need to be fixed (provide detailed feedback)</li>
+                  <li><strong>Reject:</strong> Design cannot be printed (explain why)</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Design Reuse:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Buyers can reuse approved designs for different variants</li>
+                  <li>You'll receive notification when a design is reused</li>
+                  <li>Previously approved designs don't need re-approval for same buyer</li>
+                </ul>
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex gap-2">
+                  <Palette className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-blue-900 dark:text-blue-100">Quality Control</p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                      Design approval ensures print quality and reduces errors before production.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <FileText className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <CardTitle>Custom Quote Management</CardTitle>
+                  <CardDescription>Create custom pricing for unique buyer requests</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <h4 className="font-medium mb-2">When Buyers Request Quotes:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Custom sizes or specifications not listed</li>
+                  <li>Bulk quantity pricing</li>
+                  <li>Special materials or options</li>
+                  <li>Personalized service packages</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Quote Creation Process:</h4>
+                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                  <li>Receive quote request from buyer via messaging</li>
+                  <li>Review buyer's custom requirements</li>
+                  <li>Create quote in your Quotes dashboard</li>
+                  <li>Set custom price, quantity, and optional specifications</li>
+                  <li>Optionally link to an approved design</li>
+                  <li>Send quote to buyer</li>
+                  <li>Buyer accepts or rejects the quote</li>
+                  <li>If accepted, buyer purchases directly</li>
+                </ol>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Quote + Design Workflow:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Buyers can upload custom designs separately from quote requests</li>
+                  <li>Link approved designs to custom quotes</li>
+                  <li>Custom specs flow through to final order/booking</li>
+                </ul>
+              </div>
+              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                <div className="flex gap-2">
+                  <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-amber-900 dark:text-amber-100">Flexible Pricing</p>
+                    <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                      Custom quotes let you serve unique customer needs and increase sales opportunities.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <Mail className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <CardTitle>Digital Service Delivery</CardTitle>
+                  <CardDescription>Deliver service outputs via email</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <h4 className="font-medium mb-2">How Digital Delivery Works:</h4>
+                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                  <li>Complete the service work for your customer</li>
+                  <li>Navigate to the booking in your dashboard</li>
+                  <li>Click "Mark as Completed"</li>
+                  <li>Upload deliverable files (designs, documents, etc.)</li>
+                  <li>System automatically sends files to buyer via email</li>
+                  <li>Buyer can also download from their Service History</li>
+                </ol>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Deliverable Files:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Upload up to 50MB per file</li>
+                  <li>Supported formats: PDF, PNG, JPG, AI, PSD, DOC, XLS, ZIP, etc.</li>
+                  <li>Multiple files can be uploaded per service</li>
+                  <li>Files are stored securely and accessible to buyer</li>
+                </ul>
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex gap-2">
+                  <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-blue-900 dark:text-blue-100">Automatic Email Delivery</p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                      When you upload deliverables, buyers receive instant email notification with download links.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <MessageSquare className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <CardTitle>Messaging System</CardTitle>
+                  <CardDescription>Communicate with buyers and admin</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <h4 className="font-medium mb-2">3-Way Communication:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Message buyers about their orders, bookings, and custom requests</li>
+                  <li>Admins can join any conversation to provide support</li>
+                  <li>View full conversation history with buyers</li>
+                  <li>Share files and images in messages</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Conversation Management:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Conversations automatically created when buyers message you</li>
+                  <li>Categorized by type (Product, Service, Design, Quote, Support)</li>
+                  <li>Mark conversations as resolved when complete</li>
+                  <li>Mobile-friendly interface for messaging on the go</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Best Practices:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Respond to buyer messages within 24 hours</li>
+                  <li>Use messaging to clarify custom requirements</li>
+                  <li>Provide updates on order/service progress</li>
+                  <li>Maintain professional communication</li>
                 </ul>
               </div>
             </CardContent>
