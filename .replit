@@ -103,3 +103,11 @@ integrations = ["javascript_object_storage:1.0.0", "javascript_log_in_with_repli
 
 [objectStorage]
 defaultBucketID = "replit-objstore-81aeed1d-ef75-4c3f-9684-ab4d9e16d9f9"
+
+[userenv]
+
+[userenv.shared]
+ADMIN_EMAIL = "ranuka.wijayapala@gmail.com"
+ADMIN_PASSWORD = "Devindha@11"
+PEXELS_API_KEY = "XiXY7wHqHFMwLK7d2pYNOUHs5tPeiXyT7ouy4CGnbyJwX4zfUTeNJxq3"
+PRODUCTION_URL = "https://vaaney-marketplace.replit.app"
