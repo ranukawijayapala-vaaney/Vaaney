@@ -99,6 +99,15 @@ The platform is fully optimized for mobile and tablet devices across all user ro
   - **Note:** **REQUIRED** `RESEND_API_KEY` environment variable to enable email verification (critical for email/password signup).
   - **Note:** Optional `FROM_EMAIL` environment variable (defaults to "Vaaney <noreply@vaaney.com>").
   - Until API key is provided, email sending fails and users cannot verify their accounts for email/password login.
+- **Notification System:** Comprehensive notification system with dual delivery channels:
+  - **In-App Notifications (Bell Icon):** All user activities trigger in-app notifications viewable in the notifications panel. Includes: new messages, boost purchases, payment confirmations, order/booking updates, returns/refunds, and all platform activities.
+  - **Email Notifications:** Only major events trigger email delivery to prevent inbox spam. Includes: payment confirmations (orders, bookings, boosts), boost activation, order shipment/delivery, booking completion, return approvals/rejections, and refund processing.
+  - **Implementation Details:**
+    - `server/services/notificationService.ts`: Core notification helper functions for all event types
+    - `server/services/emailService.ts`: Email template generation and delivery via Resend
+    - `server/notificationRoutes.ts`: API endpoints for fetching and marking notifications as read
+    - Notification triggers integrated throughout `server/routes.ts` for all relevant events
+    - Three new notification types: `boost_purchase_created`, `boost_payment_confirmed`, `boost_activated`
 
 ### Admin Initialization
 - **Admin Bootstrap Endpoint:** `/api/admin/initialize` - Creates admin user after database reset/clearing.
