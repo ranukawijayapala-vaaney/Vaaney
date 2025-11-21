@@ -26,10 +26,20 @@ export async function sendVerificationEmail(
     })
     .where(eq(users.id, userId));
 
-  // Get base URL - use REPLIT_DEV_DOMAIN for development environment
-  const baseUrl = process.env.REPLIT_DEV_DOMAIN
-    ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-    : process.env.APP_URL || "http://localhost:5000";
+  // Get base URL - handle production and development environments correctly
+  // Priority: Production URL > Dev Domain > Localhost
+  let baseUrl: string;
+  
+  if (process.env.NODE_ENV === 'production' || process.env.REPLIT_DEPLOYMENT === '1') {
+    // Production environment - use production domain
+    baseUrl = process.env.PRODUCTION_URL || 'https://vaaney-marketplace.replit.app';
+  } else if (process.env.REPLIT_DEV_DOMAIN) {
+    // Development environment on Replit
+    baseUrl = `https://${process.env.REPLIT_DEV_DOMAIN}`;
+  } else {
+    // Local development
+    baseUrl = 'http://localhost:5000';
+  }
   
   const verificationUrl = `${baseUrl}/verify-email?token=${token}`;
 
