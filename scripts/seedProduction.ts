@@ -233,7 +233,7 @@ async function ensureSellerAndLogin(adminClient: ApiClient): Promise<{ sellerId:
 }
 
 // Upload image to GCS
-async function uploadImage(client: ApiClient, imagePath: string): Promise<string> {
+async function uploadImage(client: ApiClient, imagePath: string, isPublic: boolean = true): Promise<string> {
   // Get upload URL
   const uploadData = await client.fetch('/api/object-storage/upload-url', {
     method: 'POST',
@@ -253,11 +253,14 @@ async function uploadImage(client: ApiClient, imagePath: string): Promise<string
     throw new Error(`Image upload failed: ${uploadResponse.statusText}`);
   }
 
-  // Finalize upload
+  // Finalize upload with visibility setting (public for product/service images)
   const finalizeData = await client.fetch('/api/object-storage/finalize-upload', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ objectPath: uploadData.objectPath }),
+    body: JSON.stringify({ 
+      objectPath: uploadData.objectPath,
+      visibility: isPublic ? 'public' : 'private'
+    }),
   });
 
   return finalizeData.objectPath;

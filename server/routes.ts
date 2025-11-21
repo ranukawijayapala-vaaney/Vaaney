@@ -495,14 +495,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/object-storage/finalize-upload", isAuthenticated, async (req: AuthRequest, res: Response) => {
     const userId = (req.user as any)?.id;
-    const { objectPath } = req.body;
+    const { objectPath, visibility } = req.body;
     if (!objectPath) {
       return res.status(400).json({ message: "Missing objectPath" });
     }
     try {
       const aclPolicy: ObjectAclPolicy = {
         owner: userId,
-        visibility: "private",
+        visibility: visibility === "public" ? "public" : "private", // Allow public for product/service images
       };
       const normalizedPath = await objectStorageService.trySetObjectEntityAclPolicy(objectPath, aclPolicy);
       res.json({ objectPath: normalizedPath });
