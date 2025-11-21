@@ -9,23 +9,24 @@ const router = Router();
 
 // GET /api/auth/verify-email?token=xxx - Verify email with token
 router.get("/verify-email", async (req, res) => {
+  const token = req.query.token as string;
+  
   try {
-    const token = req.query.token as string;
-    
     if (!token) {
-      return res.status(400).json({ message: "Verification token is required" });
+      return res.redirect(`/verify-email?error=missing_token`);
     }
     
     const result = await verifyEmailToken(token);
     
     if (!result.success) {
-      return res.status(400).json({ message: result.message });
+      return res.redirect(`/verify-email?token=${token}&error=verification_failed`);
     }
     
-    res.json({ message: result.message });
+    // Redirect to frontend page with success
+    res.redirect(`/verify-email?token=${token}`);
   } catch (error: any) {
     console.error("Email verification error:", error);
-    res.status(500).json({ message: "Failed to verify email" });
+    res.redirect(`/verify-email?token=${token || ""}&error=server_error`);
   }
 });
 
