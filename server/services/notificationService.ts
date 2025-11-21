@@ -518,7 +518,7 @@ export async function notifyMessageReceived(params: {
   const link = params.recipientRole === 'seller' 
     ? `/seller/messages?conversation=${params.conversationId}`
     : params.recipientRole === 'admin'
-    ? `/admin/messages?conversation=${params.conversationId}`
+    ? `/admin/conversations?conversation=${params.conversationId}`
     : `/buyer/messages?conversation=${params.conversationId}`;
 
   await createNotification({
