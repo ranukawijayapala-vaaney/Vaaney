@@ -503,3 +503,92 @@ export async function notifySellerVerificationRejected(params: {
     metadata: { rejectionReason: params.rejectionReason },
   });
 }
+
+/**
+ * Messaging notifications - in-app only (no emails for routine messages)
+ */
+export async function notifyMessageReceived(params: {
+  recipientId: string;
+  senderName: string;
+  conversationId: string;
+  messagePreview: string;
+}) {
+  await createNotification({
+    userId: params.recipientId,
+    type: "message_received",
+    title: `New message from ${params.senderName}`,
+    message: params.messagePreview.substring(0, 100),
+    link: `/messages?id=${params.conversationId}`,
+    metadata: {
+      conversationId: params.conversationId,
+      senderName: params.senderName,
+    },
+    sendEmailNotification: false, // In-app only - don't spam email for every message
+  });
+}
+
+/**
+ * Boost purchase notifications
+ */
+export async function notifyBoostPurchaseCreated(params: {
+  sellerId: string;
+  packageName: string;
+  amount: string;
+  itemName: string;
+}) {
+  await createNotification({
+    userId: params.sellerId,
+    type: "boost_purchase_created",
+    title: "Boost Purchase Initiated",
+    message: `You've initiated a boost purchase for ${params.itemName} using ${params.packageName} package.`,
+    link: `/seller/boost`,
+    metadata: {
+      packageName: params.packageName,
+      amount: params.amount,
+      itemName: params.itemName,
+    },
+    sendEmailNotification: false, // In-app only - minor event
+  });
+}
+
+export async function notifyBoostPaymentConfirmed(params: {
+  sellerId: string;
+  packageName: string;
+  itemName: string;
+  boostDuration: string;
+}) {
+  await createNotification({
+    userId: params.sellerId,
+    type: "boost_payment_confirmed",
+    title: "Boost Activated!",
+    message: `Your boost for ${params.itemName} is now active for ${params.boostDuration}.`,
+    link: `/seller/boost`,
+    metadata: {
+      packageName: params.packageName,
+      itemName: params.itemName,
+      boostDuration: params.boostDuration,
+    },
+    sendEmailNotification: true, // Email notification - major event
+  });
+}
+
+export async function notifyBoostPaymentFailed(params: {
+  sellerId: string;
+  packageName: string;
+  itemName: string;
+  reason: string;
+}) {
+  await createNotification({
+    userId: params.sellerId,
+    type: "boost_payment_failed",
+    title: "Boost Payment Issue",
+    message: `Your boost payment for ${params.itemName} could not be confirmed. Reason: ${params.reason}`,
+    link: `/seller/boost`,
+    metadata: {
+      packageName: params.packageName,
+      itemName: params.itemName,
+      reason: params.reason,
+    },
+    sendEmailNotification: true, // Email notification - important issue
+  });
+}

@@ -1487,7 +1487,10 @@ export type NotificationType =
   | "message_received"
   | "deliverables_uploaded"
   | "seller_verification_approved"
-  | "seller_verification_rejected";
+  | "seller_verification_rejected"
+  | "boost_purchase_created"
+  | "boost_payment_confirmed"
+  | "boost_payment_failed";
 
 // Notifications table - for in-app notifications
 export const notifications = pgTable("notifications", {

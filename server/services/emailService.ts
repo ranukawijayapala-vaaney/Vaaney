@@ -72,6 +72,11 @@ export function generateEmailTemplate(
     rejectionReason?: string;
     refundAmount?: string;
     deliverableCount?: number;
+    packageName?: string;
+    itemName?: string;
+    amount?: string;
+    boostDuration?: string;
+    reason?: string;
     link?: string;
   }
 ): { subject: string; html: string } {
@@ -407,6 +412,43 @@ export function generateEmailTemplate(
           ${data.rejectionReason ? `<p><strong>Reason:</strong> ${data.rejectionReason}</p>` : ""}
           <p>You can resubmit your verification documents with the required information.</p>
           <a href="${baseUrl}/profile" style="display: inline-block; background: ${brandColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">Update Profile</a>
+        </div>
+      `,
+    },
+    boost_purchase_created: {
+      subject: "Boost Purchase Initiated - Vaaney",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: ${brandColor};">Boost Purchase Created</h2>
+          <p>Hi ${data.recipientName || "there"},</p>
+          <p>You've successfully initiated a boost purchase for <strong>${data.productName || data.serviceName || "your item"}</strong>.</p>
+          <p>Your item will be promoted once payment is confirmed by our admin team.</p>
+          <a href="${baseUrl}/seller/boost" style="display: inline-block; background: ${brandColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">View Boost Status</a>
+        </div>
+      `,
+    },
+    boost_payment_confirmed: {
+      subject: "Boost Activated! - Vaaney",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: ${brandColor};">🚀 Your Boost is Live!</h2>
+          <p>Hi ${data.recipientName || "there"},</p>
+          <p>Great news! Your payment has been confirmed and your boost for <strong>${data.productName || data.serviceName || "your item"}</strong> is now active.</p>
+          <p>Your item will receive increased visibility and priority placement in search results.</p>
+          <a href="${baseUrl}/seller/boost" style="display: inline-block; background: ${brandColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">Manage Boosts</a>
+        </div>
+      `,
+    },
+    boost_payment_failed: {
+      subject: "Boost Payment Issue - Vaaney",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #ef4444;">Boost Payment Could Not Be Confirmed</h2>
+          <p>Hi ${data.recipientName || "there"},</p>
+          <p>We were unable to confirm your boost payment for <strong>${data.productName || data.serviceName || "your item"}</strong>.</p>
+          ${data.rejectionReason ? `<p><strong>Reason:</strong> ${data.rejectionReason}</p>` : ""}
+          <p>Please review the payment details or contact our support team for assistance.</p>
+          <a href="${baseUrl}/seller/boost" style="display: inline-block; background: ${brandColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">Review Payment</a>
         </div>
       `,
     },
