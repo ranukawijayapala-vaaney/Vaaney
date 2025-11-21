@@ -5,7 +5,7 @@ import { db } from "./db";
 import { eq, and, or, inArray, isNull, isNotNull, not, desc } from "drizzle-orm";
 import { isAuthenticated } from "./localAuth";
 import { ObjectStorageService, ObjectNotFoundError, parseObjectPath, objectStorageClient } from "./objectStorage";
-import { ObjectAclPolicy, ObjectPermission, setObjectAclPolicy, canAccessObject } from "./objectAcl";
+import { ObjectAclPolicy, ObjectPermission, setObjectAclPolicy, canAccessObject, getObjectAclPolicy } from "./objectAcl";
 import type { User, OrderItem, ConversationType } from "@shared/schema";
 import multer from "multer";
 import { z } from "zod";
@@ -191,6 +191,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
       console.log(`[OBJECTS] File found: ${objectFile.name}`);
+      
+      // Debug: Check ACL policy
+      const aclPolicy = await getObjectAclPolicy(objectFile);
+      console.log(`[OBJECTS] ACL Policy:`, JSON.stringify(aclPolicy));
+      
       const canAccess = await objectStorageService.canAccessObjectEntity({
         userId,
         objectFile,
