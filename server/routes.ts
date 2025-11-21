@@ -3852,6 +3852,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .set({ status: "escrow" })
         .where(eq(transactions.orderId, req.params.id));
       
+      // Send notification to buyer
+      await notifyOrderPaid({
+        buyerId: order.buyerId,
+        orderId: order.id,
+      });
+      
       res.json({ message: "Payment confirmed successfully" });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -5593,6 +5599,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .set({ status: "escrow" })
           .where(eq(transactions.orderId, entityId));
 
+        // Send notification to buyer
+        await notifyOrderPaid({
+          buyerId: order.buyerId,
+          orderId: order.id,
+        });
+
         return res.json({ message: "Order payment confirmed successfully" });
       }
 
@@ -5620,6 +5632,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await db.update(transactions)
           .set({ status: "escrow" })
           .where(eq(transactions.bookingId, entityId));
+
+        // Send notification to buyer and seller
+        const serviceData = await storage.getService(booking.serviceId);
+        if (serviceData) {
+          await notifyBookingPaid({
+            buyerId: booking.buyerId,
+            sellerId: booking.sellerId,
+            bookingId: booking.id,
+            serviceName: serviceData.name,
+          });
+        }
 
         return res.json({ message: "Booking payment confirmed successfully" });
       }
@@ -5672,6 +5695,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Link the purchase to the boosted item
         await storage.linkBoostPurchaseToBoost(purchase.id, boostedItem.id);
+
+        // Get item name for notification
+        let itemName = "your item";
+        if (purchase.itemType === "product") {
+          const product = await storage.getProduct(purchase.itemId);
+          itemName = product?.name || itemName;
+        } else if (purchase.itemType === "service") {
+          const service = await storage.getService(purchase.itemId);
+          itemName = service?.name || itemName;
+        }
+
+        // Send notification (with email - major event!)
+        await notifyBoostPaymentConfirmed({
+          sellerId: purchase.sellerId,
+          packageName: boostPackage.name,
+          itemName,
+          boostDuration: `${boostPackage.durationDays} days`,
+        });
 
         return res.json({ message: "Boost payment confirmed and activated successfully" });
       }
