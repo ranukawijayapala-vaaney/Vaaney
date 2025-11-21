@@ -312,7 +312,7 @@ export async function notifyDesignSubmitted(params: {
     type: "design_submitted",
     title: "New Design for Approval",
     message: `A new design has been submitted for ${params.itemName}.`,
-    link: `/seller/design-approvals`,
+    link: `/seller/designs`,
     metadata: { designApprovalId: params.designApprovalId, productName: params.itemName },
   });
 }
@@ -519,7 +519,7 @@ export async function notifyMessageReceived(params: {
     ? `/seller/messages?conversation=${params.conversationId}`
     : params.recipientRole === 'admin'
     ? `/admin/conversations?conversation=${params.conversationId}`
-    : `/buyer/messages?conversation=${params.conversationId}`;
+    : `/messages?conversation=${params.conversationId}`;
 
   await createNotification({
     userId: params.recipientId,
