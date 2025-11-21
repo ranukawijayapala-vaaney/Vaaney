@@ -26,8 +26,7 @@ export async function initializeDatabase() {
       log("Database tables not found. Initializing schema...");
       
       // Run drizzle-kit push to create tables
-      // Using --yes flag to skip confirmation prompts
-      execSync('npx drizzle-kit push --yes', {
+      execSync('npx drizzle-kit push', {
         stdio: 'inherit',
         env: process.env
       });
@@ -42,7 +41,7 @@ export async function initializeDatabase() {
     log("Database schema check failed. Attempting to initialize...");
     
     try {
-      execSync('npx drizzle-kit push --yes', {
+      execSync('npx drizzle-kit push', {
         stdio: 'inherit',
         env: process.env
       });
