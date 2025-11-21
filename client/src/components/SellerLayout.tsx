@@ -1,4 +1,4 @@
-import { Package, LayoutDashboard, Store, Calendar as CalendarIcon, DollarSign, MessageCircle, LogOut, ShoppingBag, Package2, Menu, X, Rocket, ChevronDown, Truck, User, AlertCircle, RotateCcw, FileText, FileImage } from "lucide-react";
+import { LayoutDashboard, Store, Calendar as CalendarIcon, DollarSign, MessageCircle, LogOut, ShoppingBag, Package2, Menu, X, Rocket, ChevronDown, Truck, User, AlertCircle, RotateCcw, FileText, FileImage } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import logoImage from "@assets/Vaaney logo 1_1763711707233.png";
 
 interface SellerLayoutProps {
   children: React.ReactNode;
@@ -34,8 +35,7 @@ export function SellerLayout({ children }: SellerLayoutProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <Link href="/seller/dashboard" className="flex items-center gap-2 hover-elevate active-elevate-2 rounded-md px-2 py-1 -ml-2 cursor-pointer" data-testid="link-home-logo">
-              <Package className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold font-display">Vaaney</span>
+              <img src={logoImage} alt="Vaaney" className="h-10" />
               <Badge variant="secondary" className="ml-2 text-xs">Seller</Badge>
             </Link>
             <nav className="hidden lg:flex items-center gap-1">
