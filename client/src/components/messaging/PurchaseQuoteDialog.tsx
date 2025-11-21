@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
-import { CreditCard, MapPin, Package, DollarSign, Loader2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CreditCard, MapPin, Package, DollarSign, Loader2, Building2, Info } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -37,8 +38,14 @@ export function PurchaseQuoteDialog({
   const [paymentMethod, setPaymentMethod] = useState<"ipg" | "bank_transfer">("ipg");
 
   // Fetch shipping addresses
-  const { data: shippingAddresses = [], isLoading: addressesLoading } = useQuery<ShippingAddress[]>({
+  const { data: shippingAddresses = [], isLoading: addressesLoading} = useQuery<ShippingAddress[]>({
     queryKey: ["/api/shipping-addresses"],
+    enabled: open,
+  });
+
+  // Fetch bank accounts
+  const { data: bankAccounts = [], isLoading: bankAccountsLoading } = useQuery<any[]>({
+    queryKey: ["/api/bank-accounts?currency=USD"],
     enabled: open,
   });
 
@@ -245,6 +252,91 @@ export function PurchaseQuoteDialog({
                 </Label>
               </div>
             </RadioGroup>
+
+            {/* Bank Account Details */}
+            {paymentMethod === "bank_transfer" && (() => {
+              // Show loading state while bank accounts are being fetched
+              if (bankAccountsLoading) {
+                return (
+                  <div className="flex items-center justify-center py-8 bg-muted/50 rounded-lg">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                );
+              }
+
+              const defaultAccount = bankAccounts.find((acc: any) => acc.isDefault) || bankAccounts[0];
+              
+              // Only show "no accounts" message after loading is complete
+              if (!defaultAccount) {
+                return (
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      No bank accounts available. Please contact support.
+                    </AlertDescription>
+                  </Alert>
+                );
+              }
+
+              return (
+                <Alert className="border-primary bg-primary/5">
+                  <Building2 className="h-4 w-4 text-primary" />
+                  <AlertDescription>
+                    <div className="space-y-3">
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground">Bank Name</span>
+                        <p className="font-semibold mt-0.5" data-testid="text-bank-name">{defaultAccount.bankName}</p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <span className="text-xs font-medium text-muted-foreground">Account Number</span>
+                          <p className="font-mono font-semibold mt-0.5" data-testid="text-account-number">{defaultAccount.accountNumber}</p>
+                        </div>
+                        <div>
+                          <span className="text-xs font-medium text-muted-foreground">Account Holder</span>
+                          <p className="font-semibold mt-0.5" data-testid="text-account-holder">{defaultAccount.accountHolderName}</p>
+                        </div>
+                      </div>
+
+                      {(defaultAccount.swiftCode || defaultAccount.iban || defaultAccount.routingNumber) && (
+                        <div className="grid grid-cols-2 gap-3">
+                          {defaultAccount.swiftCode && (
+                            <div>
+                              <span className="text-xs font-medium text-muted-foreground">SWIFT Code</span>
+                              <p className="font-mono font-semibold mt-0.5" data-testid="text-swift-code">{defaultAccount.swiftCode}</p>
+                            </div>
+                          )}
+                          {defaultAccount.iban && (
+                            <div>
+                              <span className="text-xs font-medium text-muted-foreground">IBAN</span>
+                              <p className="font-mono font-semibold mt-0.5 text-xs" data-testid="text-iban">{defaultAccount.iban}</p>
+                            </div>
+                          )}
+                          {defaultAccount.routingNumber && (
+                            <div>
+                              <span className="text-xs font-medium text-muted-foreground">Routing Number</span>
+                              <p className="font-mono font-semibold mt-0.5" data-testid="text-routing-number">{defaultAccount.routingNumber}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {defaultAccount.transferInstructions && (
+                        <div className="border-t border-primary/20 pt-3 mt-3">
+                          <span className="text-xs font-medium text-muted-foreground">Transfer Instructions</span>
+                          <p className="text-xs mt-1 leading-relaxed" data-testid="text-transfer-instructions">{defaultAccount.transferInstructions}</p>
+                        </div>
+                      )}
+
+                      <p className="text-xs text-muted-foreground italic border-t border-primary/20 pt-3 mt-3">
+                        Your order will be confirmed after admin verifies your payment.
+                      </p>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              );
+            })()}
           </div>
         </div>
 
