@@ -1,4 +1,4 @@
-import { ShoppingCart, ShoppingBag, History, Calendar, MessageCircle, LogOut, Menu, X, User, FileImage, FileText, Library } from "lucide-react";
+import { Package, ShoppingCart, ShoppingBag, History, Calendar, MessageCircle, LogOut, Menu, X, User, FileImage, FileText, Library } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -8,7 +8,6 @@ import { BottomNav } from "@/components/BottomNav";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import ProfileSetupDialog from "@/components/ProfileSetupDialog";
-import logoImage from "@assets/Vaaney logo 1_1763711707233.png";
 
 interface BuyerLayoutProps {
   children: React.ReactNode;
@@ -40,8 +39,9 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center hover-elevate active-elevate-2 rounded-md px-2 py-1 -ml-2 cursor-pointer" data-testid="link-home-logo">
-              <img src={logoImage} alt="Vaaney" className="h-10" />
+            <Link href="/" className="flex items-center gap-2 hover-elevate active-elevate-2 rounded-md px-2 py-1 -ml-2 cursor-pointer" data-testid="link-home-logo">
+              <Package className="h-8 w-8 text-primary" />
+              <span className="text-2xl font-bold font-display">Vaaney</span>
             </Link>
             <nav className="hidden xl:flex items-center gap-1">
               {navItems.map((item) => (
