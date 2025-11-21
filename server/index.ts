@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupAuth } from "./localAuth";
 import { setupGoogleAuth } from "./googleAuth";
+import { initializeDatabase } from "./initDb";
 
 const app = express();
 
@@ -53,6 +54,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize database schema if needed (creates tables in production)
+  await initializeDatabase();
+  
   await setupAuth(app);
   setupGoogleAuth(app);
   const server = await registerRoutes(app);
