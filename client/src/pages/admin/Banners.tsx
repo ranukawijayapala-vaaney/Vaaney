@@ -159,8 +159,12 @@ export default function Banners() {
 
   const getUploadUrl = async () => {
     const response = await fetch("/api/object-storage/upload-url", {
-      method: "GET",
+      method: "POST",
       credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
     });
     const data = await response.json();
     
