@@ -67,11 +67,23 @@ export function setupGoogleAuth(app: Express) {
   }
 
   // Build absolute callback URL for Google OAuth
-  const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-    ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-    : 'http://localhost:5000';
+  // Priority: Production URL > Dev Domain > Localhost
+  let baseUrl: string;
+  
+  if (process.env.NODE_ENV === 'production' || process.env.REPLIT_DEPLOYMENT === '1') {
+    // Production environment - use production domain
+    baseUrl = process.env.PRODUCTION_URL || 'https://vaaney-marketplace.replit.app';
+  } else if (process.env.REPLIT_DEV_DOMAIN) {
+    // Development environment on Replit
+    baseUrl = `https://${process.env.REPLIT_DEV_DOMAIN}`;
+  } else {
+    // Local development
+    baseUrl = 'http://localhost:5000';
+  }
+  
   const callbackURL = `${baseUrl}/api/auth/google/callback`;
 
+  console.log(`[Google OAuth] Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`[Google OAuth] Callback URL: ${callbackURL}`);
 
   // Google OAuth Strategy
