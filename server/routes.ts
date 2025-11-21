@@ -5334,6 +5334,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cancel a pending boost purchase
+  app.delete("/api/seller/boost-purchases/:id", isAuthenticated, requireRole(["seller"]), async (req: AuthRequest, res: Response) => {
+    try {
+      const sellerId = (req.user as any)?.id;
+      const purchase = await storage.getBoostPurchase(req.params.id);
+      
+      if (!purchase) {
+        return res.status(404).json({ message: "Boost purchase not found" });
+      }
+
+      // Verify the seller owns this purchase
+      if (purchase.sellerId !== sellerId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Only pending purchases can be cancelled
+      if (purchase.status !== "pending") {
+        return res.status(400).json({ message: "Only pending boost purchases can be cancelled" });
+      }
+
+      // Update purchase status to cancelled
+      await db.update(boostPurchases)
+        .set({ status: "cancelled" })
+        .where(eq(boostPurchases.id, req.params.id));
+
+      // Update associated transaction to refunded (closest valid status for cancelled)
+      await db.update(transactions)
+        .set({ status: "refunded" })
+        .where(eq(transactions.boostPurchaseId, req.params.id));
+
+      res.json({ message: "Boost purchase cancelled successfully" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Admin confirms boost purchase payment (like orders/bookings)
   app.put("/api/admin/boost-purchases/:id/confirm-payment", isAuthenticated, requireRole(["admin"]), async (req: Request, res: Response) => {
     try {
@@ -5614,7 +5650,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Public route - Get public/buyer-facing bank accounts for checkout
   app.get("/api/bank-accounts", async (req: Request, res: Response) => {
     try {
-      const accounts = await storage.getPublicBankAccounts(); // Only public/buyer-facing accounts
+      const currency = req.query.currency as string | undefined;
+      let accounts = await storage.getPublicBankAccounts(); // Only public/buyer-facing accounts
+      
+      // Filter by currency if specified
+      if (currency) {
+        accounts = accounts.filter(account => account.currency === currency);
+      }
+      
       res.json(accounts);
     } catch (error: any) {
       console.error("Error fetching public bank accounts:", error);

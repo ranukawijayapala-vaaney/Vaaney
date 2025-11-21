@@ -79,6 +79,11 @@ export default function Boost() {
     queryKey: ["/api/boosted-items?activeOnly=true"],
   });
 
+  // Fetch bank accounts for LKR currency (for boost payments via bank transfer)
+  const { data: bankAccounts = [] } = useQuery<any[]>({
+    queryKey: ["/api/bank-accounts?currency=LKR"],
+  });
+
   // Filter boosted items to only show ones belonging to this seller
   const myBoostedItems = useMemo(() => {
     return boostedItems.filter((boost: any) => {
@@ -146,9 +151,25 @@ export default function Boost() {
     },
   });
 
+  const cancelPurchaseMutation = useMutation({
+    mutationFn: async (purchaseId: string) => {
+      return await apiRequest("DELETE", `/api/seller/boost-purchases/${purchaseId}`);
+    },
+    onSuccess: (response: any) => {
+      toast({ 
+        title: "Purchase cancelled", 
+        description: response.message 
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/seller/boost-purchases"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Cancellation failed", description: error.message, variant: "destructive" });
+    },
+  });
+
   const getUploadUrl = async () => {
     const response = await fetch("/api/object-storage/upload-url", {
-      method: "GET",
+      method: "POST",
       credentials: "include",
     });
     const data = await response.json();
@@ -548,22 +569,34 @@ export default function Boost() {
                           </div>
                         </div>
 
-                        <div className="flex flex-col items-end gap-3">
+                        <div className="flex flex-col items-end gap-2">
                           {getStatusBadge(purchase.status)}
-                          {purchase.status === "pending" && 
-                           purchase.paymentMethod === "bank_transfer" && 
-                           !purchase.paymentSlipUrl && 
-                           !purchase.paymentReference && (
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                setSelectedPurchase(purchase);
-                                setShowPaymentDialog(true);
-                              }}
-                              data-testid={`button-confirm-payment-${purchase.id}`}
-                            >
-                              Upload Payment Slip
-                            </Button>
+                          {purchase.status === "pending" && (
+                            <div className="flex gap-2">
+                              {purchase.paymentMethod === "bank_transfer" && 
+                               !purchase.paymentSlipUrl && 
+                               !purchase.paymentReference && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedPurchase(purchase);
+                                    setShowPaymentDialog(true);
+                                  }}
+                                  data-testid={`button-confirm-payment-${purchase.id}`}
+                                >
+                                  Upload Payment Slip
+                                </Button>
+                              )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => cancelPurchaseMutation.mutate(purchase.id)}
+                                disabled={cancelPurchaseMutation.isPending}
+                                data-testid={`button-cancel-purchase-${purchase.id}`}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
                           )}
                           {purchase.status === "pending" && 
                            (purchase.paymentSlipUrl || purchase.paymentReference) && (
@@ -718,6 +751,49 @@ export default function Boost() {
                   </Label>
                 </div>
               </RadioGroup>
+
+              {/* Show bank account details when Bank Transfer is selected */}
+              {selectedPaymentMethod === "bank_transfer" && bankAccounts.length > 0 && (
+                <Card className="mt-4" data-testid="card-bank-details">
+                  <CardHeader>
+                    <CardTitle className="text-base">Bank Transfer Details</CardTitle>
+                    <CardDescription>Transfer payment to the following account</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {bankAccounts.map((account: any) => (
+                      <div key={account.id} className="space-y-2">
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="font-medium text-muted-foreground">Bank Name:</div>
+                          <div className="font-medium" data-testid="text-bank-name">{account.bankName}</div>
+                          
+                          <div className="font-medium text-muted-foreground">Account Holder:</div>
+                          <div data-testid="text-account-holder">{account.accountHolderName}</div>
+                          
+                          <div className="font-medium text-muted-foreground">Account Number:</div>
+                          <div className="font-mono" data-testid="text-account-number">{account.accountNumber}</div>
+                          
+                          {account.branchName && (
+                            <>
+                              <div className="font-medium text-muted-foreground">Branch:</div>
+                              <div data-testid="text-branch-name">{account.branchName}</div>
+                            </>
+                          )}
+                          
+                          <div className="font-medium text-muted-foreground">Currency:</div>
+                          <div data-testid="text-currency">{account.currency}</div>
+                        </div>
+                        {account.transferInstructions && (
+                          <div className="mt-3 p-3 bg-muted rounded-md">
+                            <p className="text-xs text-muted-foreground">
+                              <strong>Instructions:</strong> {account.transferInstructions}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             <div className="flex gap-3 pt-4">
