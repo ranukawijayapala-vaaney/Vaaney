@@ -325,7 +325,7 @@ async function createProduct(client: ApiClient, sellerId: string, product: Produ
         height: variant.height.toString(),
       };
 
-      await client.fetch('/api/seller/products/variants', {
+      await client.fetch(`/api/seller/products/${createdProduct.id}/variants`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(variantData),
@@ -388,7 +388,7 @@ async function createService(client: ApiClient, sellerId: string, service: Servi
         availability: pkg.availability,
       };
 
-      await client.fetch('/api/seller/services/packages', {
+      await client.fetch(`/api/seller/services/${createdService.id}/packages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(packageData),
