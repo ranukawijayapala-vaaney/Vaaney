@@ -309,20 +309,62 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
     setActiveTab("review");
   };
 
+  const createDesignApprovalConversationMutation = useMutation({
+    mutationFn: async (data: { packageId?: string; isCustomQuote: boolean }) => {
+      if (!service) throw new Error("Service not found");
+      
+      // Determine workflow context
+      const context = data.isCustomQuote ? 'quote' : 'service';
+      
+      // Prepare initial message with package/quote details
+      let initialMessage = `Hi, I'm interested in booking **${service.name}**.\n\n`;
+      
+      if (data.isCustomQuote) {
+        initialMessage += `I would like a **custom quote** and need to get my design approved first. I'll upload my design files for your review.`;
+      } else if (data.packageId) {
+        const selectedPkg = service.packages.find(pkg => pkg.id === data.packageId);
+        if (selectedPkg) {
+          initialMessage += `I would like to book the **${selectedPkg.name}** package ($${selectedPkg.price}) and need to get my design approved first. I'll upload my design files for your review.\n\n**Package Details:**\n- Price: $${selectedPkg.price}\n- Delivery: ${selectedPkg.duration} days`;
+        }
+      }
+      
+      // Use workflow initialization endpoint to create conversation with context
+      const conversation: any = await apiRequest("POST", "/api/conversations/workflows", {
+        serviceId: service.id,
+        context,
+        initialMessage,
+      });
+      
+      await queryClient.invalidateQueries({ queryKey: ["/api/conversations", conversation.id] });
+      
+      return conversation;
+    },
+    onSuccess: (conversation) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
+      setShowDesignApprovalGate(false);
+      setPendingPackageSelection(null);
+      
+      // Navigate to the specific conversation
+      const messagesRoute = user?.role === "seller" ? "/seller/messages" : "/messages";
+      navigate(`${messagesRoute}?conversation=${conversation.id}`);
+      
+      toast({ 
+        title: "Conversation started!", 
+        description: "Please upload your design files for seller approval.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to create conversation", description: error.message, variant: "destructive" });
+    },
+  });
+
   const handleDesignGateConfirm = () => {
     if (!pendingPackageSelection || !serviceId) return;
     
-    const storageData = {
-      serviceId,
+    createDesignApprovalConversationMutation.mutate({
       packageId: pendingPackageSelection.packageId,
       isCustomQuote: pendingPackageSelection.isCustomQuote,
-    };
-    sessionStorage.setItem('pendingBooking', JSON.stringify(storageData));
-    
-    setShowDesignApprovalGate(false);
-    setPendingPackageSelection(null);
-    
-    navigateToMessages();
+    });
   };
 
   const handleDesignGateCancel = () => {

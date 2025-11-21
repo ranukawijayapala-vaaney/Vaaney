@@ -69,7 +69,7 @@ export function WorkflowPanel({
   // Workflows are mutually exclusive per conversation EXCEPT when quote is accepted
   const workflowContexts = conversation?.workflowContexts || [];
   const isQuoteWorkflow = workflowContexts.includes('quote');
-  const isProductWorkflow = workflowContexts.includes('product') || workflowContexts.length === 0;
+  const isProductWorkflow = workflowContexts.includes('product') || workflowContexts.includes('service') || workflowContexts.length === 0;
   
   // Show quote panel if in quote workflow
   const showQuotePanel = requiresQuote && isQuoteWorkflow;
