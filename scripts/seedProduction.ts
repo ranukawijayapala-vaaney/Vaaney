@@ -143,29 +143,79 @@ async function ensureSellerAndLogin(adminClient: ApiClient): Promise<{ sellerId:
   // Create seller if doesn't exist
   if (needsCreation) {
     console.log('📝 Creating new seller account...');
-    const newSeller = await adminClient.fetch('/api/auth/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: SELLER_EMAIL,
-        password: SELLER_PASSWORD,
-        firstName: 'Vaaney',
-        lastName: 'Marketplace',
-        role: 'seller',
-      }),
-    });
-
-    sellerId = newSeller.id;
-    console.log(`✅ Seller created: ${newSeller.email}`);
     
-    // Approve seller verification
-    console.log('📝 Approving seller verification...');
-    await adminClient.fetch(`/api/admin/sellers/${sellerId}/verify`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ verificationStatus: 'approved' }),
-    });
-    console.log('✅ Seller verified');
+    try {
+      // Create multipart form data with all required seller fields
+      const FormData = (await import('form-data')).default;
+      const formData = new FormData();
+      
+      formData.append('email', SELLER_EMAIL);
+      formData.append('password', SELLER_PASSWORD);
+      formData.append('firstName', 'Vaaney');
+      formData.append('lastName', 'Marketplace');
+      formData.append('role', 'seller');
+      
+      // Required contact information for sellers
+      formData.append('contactNumber', '+960 7777777');
+      formData.append('streetAddress', 'Boduthakurufaanu Magu');
+      formData.append('city', 'Male');
+      formData.append('postalCode', '20026');
+      formData.append('country', 'Maldives');
+      
+      // Required bank details for sellers
+      formData.append('bankName', 'Bank of Maldives');
+      formData.append('bankAccountNumber', '7777777777');
+      formData.append('bankAccountHolderName', 'Vaaney Marketplace');
+      formData.append('bankSwiftCode', 'MALBMVMV');
+      
+      // Create a dummy verification document (PDF)
+      const dummyPdf = Buffer.from('%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/Resources <<\n/Font <<\n/F1 4 0 R\n>>\n>>\n/MediaBox [0 0 612 792]\n/Contents 5 0 R\n>>\nendobj\n4 0 obj\n<<\n/Type /Font\n/Subtype /Type1\n/BaseFont /Times-Roman\n>>\nendobj\n5 0 obj\n<<\n/Length 44\n>>\nstream\nBT\n/F1 12 Tf\n100 700 Td\n(Verification Document) Tj\nET\nendstream\nendobj\nxref\n0 6\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\n0000000262 00000 n\n0000000350 00000 n\ntrailer\n<<\n/Size 6\n/Root 1 0 R\n>>\nstartxref\n442\n%%EOF');
+      formData.append('documents', dummyPdf, {
+        filename: 'verification.pdf',
+        contentType: 'application/pdf',
+      });
+
+      const signupResponse = await fetch(`${PRODUCTION_URL}/api/signup`, {
+        method: 'POST',
+        body: formData,
+        headers: formData.getHeaders(),
+      });
+
+      const responseText = await signupResponse.text();
+      
+      if (!signupResponse.ok) {
+        // If email already registered, that's OK - we'll login instead
+        if (responseText.includes('Email already registered')) {
+          console.log('✅ Seller account already exists, will login instead');
+          needsCreation = false; // Skip verification since account exists
+        } else {
+          console.error('Signup response:', responseText.substring(0, 500));
+          throw new Error(`Signup failed (${signupResponse.status}): ${responseText.substring(0, 200)}`);
+        }
+      } else {
+
+        let newSeller;
+        try {
+          newSeller = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('Response was not JSON:', responseText.substring(0, 500));
+          throw new Error(`Signup returned invalid JSON. Response starts with: ${responseText.substring(0, 100)}`);
+        }
+        sellerId = newSeller.id;
+        console.log(`✅ Seller created: ${newSeller.email}`);
+        
+        // Approve seller verification via admin
+        console.log('📝 Approving seller verification...');
+        await adminClient.fetch(`/api/admin/sellers/${sellerId}/verify`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ verificationStatus: 'approved' }),
+        });
+        console.log('✅ Seller verified');
+      }
+    } catch (error: any) {
+      throw new Error(`Failed to create seller account: ${error.message}`);
+    }
   }
   
   // Now login as the seller to get seller session
