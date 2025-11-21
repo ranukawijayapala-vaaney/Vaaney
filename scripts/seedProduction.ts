@@ -93,36 +93,8 @@ async function ensureSellerAndLogin(adminClient: ApiClient): Promise<{ sellerId:
     
     if (seller) {
       console.log(`✅ Seller account found: ${SELLER_EMAIL}`);
+      console.log(`   Status: ${seller.verificationStatus}, Email Verified: ${seller.emailVerified}`);
       sellerId = seller.id;
-      
-      // Check and fix verification issues
-      let needsUpdate = false;
-      
-      if (!seller.emailVerified) {
-        console.log('📧 Email not verified, marking as verified...');
-        await adminClient.fetch(`/api/admin/users/${sellerId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ emailVerified: true }),
-        });
-        needsUpdate = true;
-      }
-      
-      if (seller.verificationStatus !== 'approved') {
-        console.log('📝 Approving seller verification...');
-        await adminClient.fetch(`/api/admin/sellers/${sellerId}/verify`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ verificationStatus: 'approved' }),
-        });
-        needsUpdate = true;
-      }
-      
-      if (needsUpdate) {
-        console.log('✅ Seller account updated and verified');
-      } else {
-        console.log('✅ Seller account already verified');
-      }
     } else {
       console.log('⚠️  Seller account not found, will create');
       needsCreation = true;
