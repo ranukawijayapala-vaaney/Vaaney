@@ -1,7 +1,7 @@
 # Vaaney E-Marketplace Platform
 
 ## Overview
-Vaaney is a full-stack e-commerce marketplace platform designed for the Maldivian market. It connects buyers with verified sellers of physical products and services, emphasizing trust and transparency through secure escrow-based payments, comprehensive seller verification, and robust commission management. The platform aims to provide a professional user experience and has significant potential in the Maldivian e-commerce sector. Key capabilities include role-based access, a secure payment system integrated with local banks, and extensive support for seller operations and customer interactions.
+Vaaney is a full-stack e-commerce marketplace platform for the Maldivian market, connecting buyers with verified sellers of physical products and services. It emphasizes trust, transparency, and a professional user experience through secure escrow-based payments, comprehensive seller verification, and robust commission management. Key capabilities include role-based access, a secure payment system integrated with local banks, and extensive support for seller operations and customer interactions, positioning it for significant growth in the Maldivian e-commerce sector.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -9,125 +9,71 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### Monorepo Structure
-The application uses a TypeScript monorepo with separate `client/` (React), `server/` (Express.js), and `shared/` (common types/schemas) directories for end-to-end type safety.
+The application uses a TypeScript monorepo with `client/` (React), `server/` (Express.js), and `shared/` (common types/schemas) directories for end-to-end type safety.
 
 ### Frontend Architecture
-The frontend is built with React and TypeScript, using Vite, Wouter for routing, and TanStack Query for state management. The UI utilizes shadcn/ui (based on Radix UI and Tailwind CSS) for a responsive and theme-supported experience. Role-based layouts (Buyer, Seller, Admin) adapt the UI to user permissions.
+Built with React and TypeScript, using Vite, Wouter for routing, and TanStack Query for state management. The UI utilizes shadcn/ui (Radix UI and Tailwind CSS) for a responsive, theme-supported experience, with role-based layouts (Buyer, Seller, Admin). Mobile optimization includes responsive navigation, bottom navigation for buyers, touch accessibility, responsive dialogs, mobile-friendly data tables, and optimized forms and product displays.
 
 ### Backend Architecture
-The backend is an Express.js server in TypeScript, exposing a REST API. Authentication uses Passport.js with two strategies: Local (email/password) and Google OAuth 2.0. Session management uses `express-session` with a PostgreSQL session store. A storage abstraction layer handles database interactions.
+An Express.js server in TypeScript, exposing a REST API. Authentication uses Passport.js with Local (email/password) and Google OAuth 2.0 strategies. Session management uses `express-session` with a PostgreSQL store.
 
 ### Database Design
-The platform employs Drizzle ORM with Neon Serverless PostgreSQL, following a schema-first approach validated by Zod. The database supports core e-commerce entities like users, products, services, orders, bookings, transactions, messaging, promotions, and password resets. Orders are structured at the variant level and grouped by `checkout_sessions` for atomic payment processing. The `variantId` field in orders is nullable to support custom quote purchases without standard variant selection, enabling fully customized product specifications.
-
-The users table includes a `googleId` column (VARCHAR, UNIQUE) to segregate Google OAuth accounts while preserving UUID-based primary keys. This enables dual authentication support without conflicts between email/password and Google OAuth users.
+Drizzle ORM with Neon Serverless PostgreSQL and Zod for schema validation. Supports core e-commerce entities, with orders structured at the variant level and grouped by `checkout_sessions`. The `variantId` in orders is nullable to support custom quote purchases. User accounts support dual authentication via `googleId` while preserving UUID-based primary keys.
 
 ### File Storage
-Google Cloud Storage manages all user-uploaded files, such as verification documents and product images. The `@google-cloud/storage` library is used for interactions, authenticated via the Replit sidecar. Uppy provides the drag-and-drop file upload interface.
-
-### UI/UX Decisions
-The platform's UI/UX is built with shadcn/ui, Radix UI, and Tailwind CSS, providing a modern, responsive, and customizable interface. Distinct role-based layouts are a core design decision to cater to the specific needs of Buyers, Sellers, and Admins.
-
-### Mobile Optimization
-The platform is fully optimized for mobile and tablet devices across all user roles:
-- **Navigation Breakpoint:** Main navigation bar displays at xl (1280px+), with hamburger menu for mobile/tablet devices.
-- **Bottom Navigation:** Buyers have a sticky bottom navigation bar on mobile/tablet (< xl) with quick access to Home, Orders, Messages, and Profile.
-- **Touch Accessibility:** All interactive elements (buttons, inputs, controls) maintain a minimum height of 44px (min-h-11) for comfortable touch interactions.
-- **Responsive Dialogs:** All modals/dialogs include mobile-friendly margins (1rem on each side), responsive padding (p-4 on mobile, p-6 on desktop), and automatic vertical scrolling (max-h-90vh).
-- **Responsive Tables:** Admin and seller data tables convert to card layouts on mobile (< xl breakpoint) while maintaining table views on desktop.
-- **Form Optimization:** Checkout, booking, and all form pages are optimized with proper mobile layouts, spacing, and touch-friendly controls.
-- **Product Cards:** Marketplace displays products in responsive grids (1 column mobile, 2 columns md, 3 columns lg, 4 columns xl) with square aspect ratio images and full-width action buttons.
+Google Cloud Storage manages user-uploaded files, authenticated via the Replit sidecar. Uppy provides the drag-and-drop upload interface.
 
 ### Key Features
-- **Authentication:** Dual authentication system supporting email/password (with bcrypt hashing and email verification) and Google OAuth 2.0 for buyers only. Email/password authentication is available for all user types (buyers, sellers, admins) with mandatory email verification before login access. Google OAuth users are automatically verified and stored with their Google subject ID in a separate `googleId` column. Token-based password reset available for email/password accounts only.
-- **Messaging System:** A 3-way communication system (Buyer, Seller, Admin) with categorized messages, order/booking integration, attachments, and read statuses.
-- **Booking Workflow:** A 6-step process prioritizing seller confirmation.
-- **Payment System:** Supports IPG (with mock implementation) and manual Bank Transfer with administrative verification.
+- **Authentication:** Dual system with email/password (bcrypt, email verification) and Google OAuth 2.0 (for buyers only).
+- **Messaging System:** 3-way communication (Buyer, Seller, Admin) with attachments and read statuses.
+- **Booking Workflow:** 6-step process prioritizing seller confirmation.
+- **Payment System:** Supports IPG (mock) and manual Bank Transfer with admin verification.
 - **Seller Promotion:** Functionality for sellers to purchase promotional packages.
-- **Aramex Shipping Integration:** Manages international shipments between Sri Lanka and Maldives, including cost calculation, admin-led consolidation, and tracking.
+- **Aramex Shipping Integration:** Manages international shipments, cost calculation, consolidation, and tracking.
 - **Role-Based Access Control:** Granular permissions for Buyers, Sellers, and Admins.
-- **Seller Verification:** A workflow for document upload and administrative approval (pending, approved, rejected statuses).
-- **Commission Management:** Administrative tools to configure commission rates per seller.
-- **Buyer Shipping Address Management:** Buyers can manage multiple shipping addresses.
-- **First-Time Buyer Onboarding:** Guides new buyers to complete profiles upon initial login.
-- **Admin User Profile Management:** Admins can view user profiles and adjust seller commission rates.
-- **Returns & Refunds System:** Workflow for buyers to initiate returns/refunds, including seller response, admin resolution, and automated refund processing with commission reversal.
-- **Comprehensive Rating System:** Verified post-transaction rating system for orders and bookings (1-5 stars, comments, photo uploads).
-- **Quote Request & Design Approval System:** Pre-purchase workflow for customized print products. Buyers can initiate quote requests (status="requested") which sellers then fulfill by providing pricing (status="sent"). The system automatically supersedes older quotes in the same conversation when sellers send updated pricing. Quotes support both standard variants and fully custom specifications (where variant selection is optional).
-- **Direct Purchase Flow for Custom Quotes:** Accepted custom quotes can be purchased directly without adding to cart. The purchase dialog captures shipping address and payment method, calculates real-time shipping costs based on product weight and quantity, then creates orders/bookings immediately. Supports custom specifications without variant selection, with designApprovalId flowing through to the order for proper fulfillment. Service quotes create bookings while product quotes create orders. IPG payment creates redirect URL to payment gateway for immediate processing.
-  - **Shipping Cost Calculation:** Uses `/api/quotes/:id/calculate-shipping` endpoint to calculate actual shipping costs when address is selected. For variant-based quotes, uses variant weight; for custom quotes without variants, uses product weight with 0.5kg default fallback. Applies $2.5/kg rate with $10 minimum, multiplied by quantity. Preview totals match final purchase totals exactly.
-  - **Workflow Status Badges:** Conversation list displays "Quote Workflow" or "Design Workflow" badges based on workflow context. Context is automatically set when: (1) quotes are created, (2) design approvals are created, or (3) when viewing a conversation for a product/service that requires design approval. This provides visual indication of active workflows in conversations.
-- **Seller Dashboards:** Dedicated interfaces for sellers to manage custom quote requests and design approvals. Sellers can create custom quotes with approved designs independently from variant selection, enabling maximum flexibility for custom specifications.
-- **Buyer Design & Quote Management:** Three dedicated buyer dashboard pages:
-  - **Design Approvals Page** (`/design-approvals`): View all design submissions with status filters (pending, approved, rejected, changes requested), type filters (products/services), and quick actions (view conversation, upload revision, view feedback).
-  - **Custom Quotes Page** (`/quotes`): View all custom quote requests with accept/reject actions, status filters, and conversation access.
-  - **Design Library Page** (`/design-library`): Browse approved designs with search functionality, "Buy Again" quick actions, and full cross-variant reuse capability. Buyers can reuse their approved designs for different variants of the same product through an intuitive variant selection dialog. The system automatically copies the design files and notifies the seller of the new design approval.
-- **Shipping Workflow:** Admin-led consolidation for international shipments via Aramex.
-- **Digital Delivery System:** Complete system for delivering digital service outputs:
-  - Sellers can upload deliverable files (up to 50MB each) when marking bookings as completed
-  - Buyers receive deliverables via in-app UI with download links in service history
-  - Automated email notifications include deliverable file information with direct download links
-  - Files are stored securely in Google Cloud Storage with private access controls
-  - Email template dynamically lists all deliverable files with names and sizes
+- **Seller Verification:** Workflow for document upload and administrative approval.
+- **Commission Management:** Administrative tools for configuring commission rates.
+- **Buyer Shipping Address Management:** Buyers can manage multiple addresses.
+- **First-Time Buyer Onboarding:** Guides new buyers to complete profiles.
+- **Admin User Profile Management:** Admins can view profiles and adjust seller commission rates.
+- **Returns & Refunds System:** Workflow for buyer-initiated returns/refunds, seller response, admin resolution, and automated refunds with commission reversal.
+- **Rating System:** Verified post-transaction rating for orders and bookings (1-5 stars, comments, photo uploads).
+- **Quote Request & Design Approval System:** Pre-purchase workflow for customized products, allowing buyers to request quotes and sellers to provide pricing, supporting standard variants and custom specifications. Accepted quotes can be purchased directly, calculating real-time shipping costs. Includes design library for reusing approved designs across variants.
+- **Digital Delivery System:** Sellers upload deliverable files for completed bookings, which buyers access in-app and via email notifications. Files are securely stored in Google Cloud Storage.
+- **Notification System:** Comprehensive system with in-app (bell icon) and email notifications for major events.
 
 ## External Dependencies
 
 ### Database
-- **Neon Serverless PostgreSQL:** Primary relational database service.
+- **Neon Serverless PostgreSQL:** Primary relational database.
 - **Drizzle ORM:** Type-safe database interactions.
 - **connect-pg-simple:** PostgreSQL-backed session store.
 
 ### Authentication
-- **Passport.js:** Authentication middleware supporting Local (email/password) and Google OAuth 2.0 strategies.
-- **passport-google-oauth20:** Google OAuth 2.0 authentication strategy for buyers.
-- **bcrypt:** Password hashing for email/password accounts.
+- **Passport.js:** Authentication middleware.
+- **passport-google-oauth20:** Google OAuth 2.0 strategy.
+- **bcrypt:** Password hashing.
 - **express-session:** User session management.
-- **Required Environment Variables:**
-  - `GOOGLE_CLIENT_ID`: Google OAuth client ID (obtain from Google Cloud Console)
-  - `GOOGLE_CLIENT_SECRET`: Google OAuth client secret (obtain from Google Cloud Console)
-  - Google OAuth redirect URI: `https://[your-domain]/api/auth/google/callback`
+- **Environment Variables:** `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
 
 ### File Storage
-- **Google Cloud Storage:** Cloud object storage for user uploads.
+- **Google Cloud Storage:** Cloud object storage.
 - **Uppy:** Modular file uploader.
 
 ### Shipping
-- **Aramex Shipping Services API:** Integrated for international shipping operations and tracking.
+- **Aramex Shipping Services API:** International shipping operations.
 
 ### Email & Notifications
-- **Resend:** Transactional email service for sending system notifications and email verification to users.
-  - **Note:** **REQUIRED** `RESEND_API_KEY` environment variable to enable email verification (critical for email/password signup).
-  - **Note:** Optional `FROM_EMAIL` environment variable (defaults to "Vaaney <noreply@vaaney.com>").
-  - Until API key is provided, email sending fails and users cannot verify their accounts for email/password login.
-- **Notification System:** Comprehensive notification system with dual delivery channels:
-  - **In-App Notifications (Bell Icon):** All user activities trigger in-app notifications viewable in the notifications panel. Includes: new messages, boost purchases, payment confirmations, order/booking updates, returns/refunds, and all platform activities.
-  - **Email Notifications:** Only major events trigger email delivery to prevent inbox spam. Includes: payment confirmations (orders, bookings, boosts), boost activation, order shipment/delivery, booking completion, return approvals/rejections, and refund processing.
-  - **Implementation Details:**
-    - `server/services/notificationService.ts`: Core notification helper functions for all event types
-    - `server/services/emailService.ts`: Email template generation and delivery via Resend
-    - `server/notificationRoutes.ts`: API endpoints for fetching and marking notifications as read
-    - Notification triggers integrated throughout `server/routes.ts` for all relevant events
-    - Three new notification types: `boost_purchase_created`, `boost_payment_confirmed`, `boost_activated`
+- **Resend:** Transactional email service for system notifications and email verification.
+- **Environment Variables:** `RESEND_API_KEY` (required), `FROM_EMAIL` (optional).
 
 ### Admin Initialization
-- **Admin Bootstrap Endpoint:** `/api/admin/initialize` - Creates admin user after database reset/clearing.
-  - **REQUIRED Environment Variable:** `ADMIN_INIT_TOKEN` - Secret token for secure admin initialization (no default fallback for security).
-  - **Endpoint Security:**
-    - Only works when no admin users exist in database
-    - Requires valid `initToken` in request body matching `ADMIN_INIT_TOKEN` environment variable
-    - Returns 500 if `ADMIN_INIT_TOKEN` not set, 401 for invalid token, 400 if admin already exists
-  - **Usage Workflow:**
-    1. Clear production database (manual operation)
-    2. Set `ADMIN_INIT_TOKEN` environment variable in production
-    3. POST to `/api/admin/initialize` with `{"initToken": "your-secret-token"}`
-    4. Admin account created: ranuka.wijayapala@gmail.com with default password "Admin@123"
-    5. **CRITICAL:** Login and change password immediately after initialization
-  - **Audit Logging:** All admin initialization attempts are logged with timestamp for security review
+- **Environment Variable:** `ADMIN_INIT_TOKEN` (required for `/api/admin/initialize` endpoint).
 
 ### Other Libraries & Tools
 - **React 18:** Core UI library.
 - **Vite:** Frontend build tool.
-- **TypeScript:** Used across the stack.
+- **TypeScript:** Across the stack.
 - **Wouter:** React router.
 - **TanStack Query:** Data fetching and state management.
 - **Radix UI, Tailwind CSS, shadcn/ui:** UI component libraries and styling.
