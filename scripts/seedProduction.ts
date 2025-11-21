@@ -85,58 +85,50 @@ async function ensureSellerAndLogin(adminClient: ApiClient): Promise<{ sellerId:
   let sellerId: string | null = null;
   let needsCreation = false;
 
-  // Try to login as seller first to see if account exists
+  // Try to find seller via admin API first
   try {
     console.log('🔍 Checking if seller account exists...');
-    const loginResponse = await fetch(`${PRODUCTION_URL}/api/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: SELLER_EMAIL,
-        password: SELLER_PASSWORD,
-      }),
-    });
-
-    if (loginResponse.ok) {
-      // Seller exists and credentials work
-      console.log(`✅ Seller account exists: ${SELLER_EMAIL}`);
+    const users = await adminClient.fetch('/api/admin/users');
+    const seller = users.find((u: any) => u.email === SELLER_EMAIL);
+    
+    if (seller) {
+      console.log(`✅ Seller account found: ${SELLER_EMAIL}`);
+      sellerId = seller.id;
       
-      // Get seller info to check verification status
-      const setCookie = loginResponse.headers.get('set-cookie');
-      if (setCookie) {
-        const tempClient: ApiClient = {
-          sessionCookie: setCookie.split(';')[0],
-          fetch: async (endpoint: string, options: any = {}) => {
-            const response = await fetch(`${PRODUCTION_URL}${endpoint}`, {
-              ...options,
-              headers: {
-                ...options.headers,
-                Cookie: setCookie.split(';')[0],
-              },
-            });
-            if (!response.ok) throw new Error(`API failed: ${response.statusText}`);
-            return response.json();
-          },
-        };
-        
-        const profile = await tempClient.fetch('/api/auth/profile');
-        sellerId = profile.id;
-        
-        // Check if verified, if not verify via admin
-        if (profile.verificationStatus !== 'approved') {
-          console.log('📝 Approving seller verification...');
-          await adminClient.fetch(`/api/admin/sellers/${sellerId}/verify`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ verificationStatus: 'approved' }),
-          });
-          console.log('✅ Seller verified');
-        }
+      // Check and fix verification issues
+      let needsUpdate = false;
+      
+      if (!seller.emailVerified) {
+        console.log('📧 Email not verified, marking as verified...');
+        await adminClient.fetch(`/api/admin/users/${sellerId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ emailVerified: true }),
+        });
+        needsUpdate = true;
+      }
+      
+      if (seller.verificationStatus !== 'approved') {
+        console.log('📝 Approving seller verification...');
+        await adminClient.fetch(`/api/admin/sellers/${sellerId}/verify`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ verificationStatus: 'approved' }),
+        });
+        needsUpdate = true;
+      }
+      
+      if (needsUpdate) {
+        console.log('✅ Seller account updated and verified');
+      } else {
+        console.log('✅ Seller account already verified');
       }
     } else {
+      console.log('⚠️  Seller account not found, will create');
       needsCreation = true;
     }
   } catch (error) {
+    console.log('⚠️  Could not check seller account, will try to create');
     needsCreation = true;
   }
 
