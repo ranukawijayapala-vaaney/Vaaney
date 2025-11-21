@@ -35,7 +35,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <Link href="/admin/dashboard" className="flex items-center gap-2 hover-elevate active-elevate-2 rounded-md px-2 py-1 -ml-2 cursor-pointer" data-testid="link-home-logo">
-              <img src={logoUrl} alt="Vaaney" className="h-8" />
+              <img src={logoUrl} alt="Vaaney" className="h-10" />
               <Badge variant="destructive" className="ml-2 text-xs">Admin</Badge>
             </Link>
             <nav className="hidden lg:flex items-center gap-1">

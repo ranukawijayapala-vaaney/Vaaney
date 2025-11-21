@@ -41,7 +41,7 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <Link href="/" className="flex items-center hover-elevate active-elevate-2 rounded-md px-2 py-1 -ml-2 cursor-pointer" data-testid="link-home-logo">
-              <img src={logoUrl} alt="Vaaney" className="h-8" />
+              <img src={logoUrl} alt="Vaaney" className="h-10" />
             </Link>
             <nav className="hidden xl:flex items-center gap-1">
               {navItems.map((item) => (

@@ -119,7 +119,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <a href="/" className="flex items-center hover-elevate active-elevate-2 rounded-md px-2 py-1 -ml-2 cursor-pointer" data-testid="link-home-logo">
-              <img src={logoUrl} alt="Vaaney" className="h-8" />
+              <img src={logoUrl} alt="Vaaney" className="h-10" />
             </a>
             
             {/* Desktop Navigation */}
@@ -617,7 +617,7 @@ export default function Landing() {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div className="space-y-4">
               <div className="flex items-center">
-                <img src={logoUrl} alt="Vaaney" className="h-7" />
+                <img src={logoUrl} alt="Vaaney" className="h-9" />
               </div>
               <p className="text-sm text-muted-foreground">
                 Connecting Maldivian buyers with Sri Lankan sellers through a trusted, secure marketplace.
