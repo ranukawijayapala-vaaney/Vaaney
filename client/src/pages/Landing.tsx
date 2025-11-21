@@ -1,5 +1,5 @@
 import { 
-  ArrowRight, ShieldCheck, DollarSign, Users, Package, 
+  ArrowRight, ShieldCheck, DollarSign, Users, Package,
   Globe, Sparkles, TrendingUp, CheckCircle2, 
   Printer, Code, Megaphone, PenTool, Video, FileText,
   Music, BarChart3, Leaf, Clock, Target, Award, Menu, X, ChevronLeft, ChevronRight
@@ -15,6 +15,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import type { HomepageBanner, BoostedItem, Product, Service } from "@shared/schema";
 import printServiceImage from "@assets/stock_images/printing_press_comme_31325a01.jpg";
 import digitalServiceImage from "@assets/stock_images/digital_marketing_te_924e1fd2.jpg";
+import logoUrl from "@assets/Vaaney logo (1)_1763710382064.png";
 
 export default function Landing() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -117,9 +118,8 @@ export default function Landing() {
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            <a href="/" className="flex items-center gap-2 hover-elevate active-elevate-2 rounded-md px-2 py-1 -ml-2 cursor-pointer" data-testid="link-home-logo">
-              <Package className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold font-display">Vaaney</span>
+            <a href="/" className="flex items-center hover-elevate active-elevate-2 rounded-md px-2 py-1 -ml-2 cursor-pointer" data-testid="link-home-logo">
+              <img src={logoUrl} alt="Vaaney" className="h-8" />
             </a>
             
             {/* Desktop Navigation */}
@@ -616,9 +616,8 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Package className="h-6 w-6 text-primary" />
-                <span className="font-bold font-display text-lg">Vaaney</span>
+              <div className="flex items-center">
+                <img src={logoUrl} alt="Vaaney" className="h-7" />
               </div>
               <p className="text-sm text-muted-foreground">
                 Connecting Maldivian buyers with Sri Lankan sellers through a trusted, secure marketplace.
