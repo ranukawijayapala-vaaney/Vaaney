@@ -1728,7 +1728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // All validated, use transaction for atomic operation
       const booking = await db.transaction(async (tx) => {
-        // Create booking
+        // Create booking with appropriate status for payment method
         const [newBooking] = await tx.insert(bookings).values({
           serviceId: parsedData.serviceId,
           packageId: parsedData.packageId,
@@ -1741,6 +1741,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           paymentLink: parsedData.paymentLink,
           buyerId: userId,
           sellerId,
+          status: parsedData.paymentMethod === "bank_transfer" ? "pending_payment" : "pending_confirmation",
           transferSlipObjectPath: parsedData.paymentMethod === "bank_transfer" ? transferSlipObjectPath : null,
         }).returning();
         
