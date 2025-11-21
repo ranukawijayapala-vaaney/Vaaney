@@ -680,7 +680,7 @@ export function DesignStatusPanel({
                   onClick={() => setShowUploadDialog(true)}
                   disabled={isUploading}
                   className="w-full"
-                  data-testid="button-upload-design"
+                  data-testid="button-open-upload-dialog"
                 >
                   <Upload className="h-4 w-4 mr-2" />
                   {isUploading ? "Uploading..." : "Upload Design"}
