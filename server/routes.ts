@@ -501,6 +501,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/object-storage/finalize-upload", isAuthenticated, async (req: AuthRequest, res: Response) => {
     const userId = (req.user as any)?.id;
     const { objectPath, visibility } = req.body;
+    console.log("[FINALIZE-UPLOAD] Request:", { userId, objectPath, visibility });
     if (!objectPath) {
       return res.status(400).json({ message: "Missing objectPath" });
     }
@@ -509,9 +510,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         owner: userId,
         visibility: visibility === "public" ? "public" : "private", // Allow public for product/service images
       };
+      console.log("[FINALIZE-UPLOAD] Setting ACL policy:", aclPolicy);
       const normalizedPath = await objectStorageService.trySetObjectEntityAclPolicy(objectPath, aclPolicy);
+      console.log("[FINALIZE-UPLOAD] ACL set successfully, normalized path:", normalizedPath);
+      
+      // Verify the ACL was set
+      const objectFile = await objectStorageService.getObjectEntityFile(normalizedPath);
+      const setPolicy = await getObjectAclPolicy(objectFile);
+      console.log("[FINALIZE-UPLOAD] Verified ACL policy:", JSON.stringify(setPolicy));
+      
       res.json({ objectPath: normalizedPath });
     } catch (error: any) {
+      console.error("[FINALIZE-UPLOAD] Error:", error);
       res.status(500).json({ message: error.message });
     }
   });
