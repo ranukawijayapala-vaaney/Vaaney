@@ -4556,7 +4556,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const schema = z.object({
         productId: z.string().optional(),
         serviceId: z.string().optional(),
-        context: z.enum(["product", "quote"]),
+        context: z.enum(["product", "quote", "service"]),
         initialMessage: z.string().optional(),
       });
       
@@ -4599,10 +4599,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       if (!conversation) {
-        // Create new conversation
-        const subject = context === "quote" 
-          ? `Custom Quote Request for ${itemName}`
-          : `Design Upload for ${itemName}`;
+        // Create new conversation with appropriate subject
+        let subject: string;
+        if (context === "quote") {
+          subject = `Custom Quote Request for ${itemName}`;
+        } else if (context === "service") {
+          subject = `Design Approval for ${itemName}`;
+        } else {
+          subject = `Design Upload for ${itemName}`;
+        }
 
         conversation = await storage.createConversation({
           type,
@@ -4615,7 +4620,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Add workflow context (uses set semantics - won't duplicate)
-      conversation = await storage.addWorkflowContext(conversation.id, context);
+      // For services with design approval, use 'service' context instead of 'product'
+      const workflowContext = context === 'service' ? 'service' : context;
+      conversation = await storage.addWorkflowContext(conversation.id, workflowContext);
 
       // If quote context, create a quote request record with status="requested"
       if (context === "quote") {
