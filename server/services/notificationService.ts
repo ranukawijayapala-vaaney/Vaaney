@@ -509,16 +509,24 @@ export async function notifySellerVerificationRejected(params: {
  */
 export async function notifyMessageReceived(params: {
   recipientId: string;
+  recipientRole: 'buyer' | 'seller' | 'admin';
   senderName: string;
   conversationId: string;
   messagePreview: string;
 }) {
+  // Generate role-specific link
+  const link = params.recipientRole === 'seller' 
+    ? `/seller/messages?conversation=${params.conversationId}`
+    : params.recipientRole === 'admin'
+    ? `/admin/messages?conversation=${params.conversationId}`
+    : `/buyer/messages?conversation=${params.conversationId}`;
+
   await createNotification({
     userId: params.recipientId,
     type: "message_received",
     title: `New message from ${params.senderName}`,
     message: params.messagePreview.substring(0, 100),
-    link: `/messages?id=${params.conversationId}`,
+    link,
     metadata: {
       conversationId: params.conversationId,
       senderName: params.senderName,

@@ -4886,13 +4886,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send notification to recipient (in-app only, no email spam)
       const recipientId = userId === conversation.buyerId ? conversation.sellerId : conversation.buyerId;
       if (recipientId) {
-        const senderName = user.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : "Someone";
-        await notifyMessageReceived({
-          recipientId,
-          senderName,
-          conversationId: req.params.id,
-          messagePreview: messageData.content,
-        });
+        const recipient = await storage.getUser(recipientId);
+        if (recipient) {
+          const senderName = user.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : "Someone";
+          await notifyMessageReceived({
+            recipientId,
+            recipientRole: recipient.role as 'buyer' | 'seller' | 'admin',
+            senderName,
+            conversationId: req.params.id,
+            messagePreview: messageData.content,
+          });
+        }
       }
       
       res.json(message);
