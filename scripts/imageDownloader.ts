@@ -27,6 +27,18 @@ export async function downloadStockImage(
       fs.mkdirSync(outputDir, { recursive: true });
     }
 
+    // Generate filename from search term
+    const filename = searchTerm.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.jpg';
+    const localPath = path.join(outputDir, filename);
+
+    // Check if image already exists in cache
+    if (fs.existsSync(localPath)) {
+      return {
+        searchTerm,
+        localPath,
+      };
+    }
+
     // Search for image on Pexels
     const searchUrl = `https://api.pexels.com/v1/search?query=${encodeURIComponent(searchTerm)}&per_page=1&orientation=landscape`;
     
@@ -54,10 +66,6 @@ export async function downloadStockImage(
     if (!imageResponse.ok) {
       throw new Error(`Failed to download image: ${imageResponse.statusText}`);
     }
-
-    // Generate filename from search term
-    const filename = searchTerm.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.jpg';
-    const localPath = path.join(outputDir, filename);
 
     // Save image to file
     const buffer = await imageResponse.arrayBuffer();

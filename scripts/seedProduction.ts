@@ -235,7 +235,9 @@ async function ensureSellerAndLogin(adminClient: ApiClient): Promise<{ sellerId:
 // Upload image to GCS
 async function uploadImage(client: ApiClient, imagePath: string): Promise<string> {
   // Get upload URL
-  const uploadData = await client.fetch('/api/object-storage/upload-url');
+  const uploadData = await client.fetch('/api/object-storage/upload-url', {
+    method: 'POST',
+  });
   
   // Upload file to GCS
   const imageBuffer = fs.readFileSync(imagePath);
