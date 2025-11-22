@@ -1,4 +1,4 @@
-import { Package, ShoppingCart, ShoppingBag, History, Calendar, MessageCircle, LogOut, Menu, X, User, FileImage, FileText, Library } from "lucide-react";
+import { Package, ShoppingCart, ShoppingBag, History, Calendar, MessageCircle, LogOut, Menu, X, User, FileImage, FileText, Library, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -8,6 +8,12 @@ import { BottomNav } from "@/components/BottomNav";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import ProfileSetupDialog from "@/components/ProfileSetupDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface BuyerLayoutProps {
   children: React.ReactNode;
@@ -18,21 +24,8 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
   const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navItems = [
-    // Shopping
-    { icon: ShoppingBag, label: "Marketplace", href: "/", testid: "link-marketplace" },
-    { icon: ShoppingCart, label: "Cart", href: "/cart", testid: "link-cart" },
-    // History & Support
-    { icon: History, label: "Orders", href: "/orders", testid: "link-orders" },
-    { icon: Calendar, label: "Bookings", href: "/bookings", testid: "link-bookings" },
-    // Design & Quotes
-    { icon: FileImage, label: "Design Approvals", href: "/design-approvals", testid: "link-design-approvals" },
-    { icon: FileText, label: "Custom Quotes", href: "/quotes", testid: "link-custom-quotes" },
-    { icon: Library, label: "Design Library", href: "/design-library", testid: "link-design-library" },
-    // Communication
-    { icon: MessageCircle, label: "Messages", href: "/messages", testid: "link-messages" },
-    { icon: User, label: "Profile", href: "/profile", testid: "link-profile" },
-  ];
+  const isActivityActive = location === "/orders" || location === "/bookings";
+  const isInquiriesActive = location === "/design-approvals" || location === "/quotes" || location === "/design-library";
 
   return (
     <div className="min-h-screen bg-background">
@@ -44,21 +37,127 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
               <span className="text-2xl font-bold font-display">Vaaney</span>
             </Link>
             <nav className="hidden xl:flex items-center gap-1">
-              {navItems.map((item) => (
-                <Button
-                  key={item.href}
-                  asChild
-                  variant={location === item.href ? "default" : "ghost"}
-                  size="sm"
-                  data-testid={item.testid}
-                  className={location === item.href ? "" : "hover-elevate"}
-                >
-                  <Link href={item.href}>
-                    <item.icon className="h-4 w-4 mr-2" />
-                    {item.label}
-                  </Link>
-                </Button>
-              ))}
+              {/* Marketplace */}
+              <Button
+                asChild
+                variant={location === "/" ? "default" : "ghost"}
+                size="sm"
+                data-testid="link-marketplace"
+                className={location === "/" ? "" : "hover-elevate"}
+              >
+                <Link href="/">
+                  <ShoppingBag className="h-4 w-4 mr-2" />
+                  Marketplace
+                </Link>
+              </Button>
+
+              {/* Cart */}
+              <Button
+                asChild
+                variant={location === "/cart" ? "default" : "ghost"}
+                size="sm"
+                data-testid="link-cart"
+                className={location === "/cart" ? "" : "hover-elevate"}
+              >
+                <Link href="/cart">
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Cart
+                </Link>
+              </Button>
+
+              {/* My Activity Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant={isActivityActive ? "default" : "ghost"}
+                    size="sm"
+                    className={isActivityActive ? "" : "hover-elevate"}
+                    data-testid="dropdown-activity"
+                  >
+                    <History className="h-4 w-4 mr-2" />
+                    My Activity
+                    <ChevronDown className="h-3 w-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild data-testid="link-orders">
+                    <Link href="/orders">
+                      <History className="h-4 w-4 mr-2" />
+                      Orders
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild data-testid="link-bookings">
+                    <Link href="/bookings">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Bookings
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Inquiries Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant={isInquiriesActive ? "default" : "ghost"}
+                    size="sm"
+                    className={isInquiriesActive ? "" : "hover-elevate"}
+                    data-testid="dropdown-inquiries"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Inquiries
+                    <ChevronDown className="h-3 w-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild data-testid="link-design-approvals">
+                    <Link href="/design-approvals">
+                      <FileImage className="h-4 w-4 mr-2" />
+                      Design Approvals
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild data-testid="link-custom-quotes">
+                    <Link href="/quotes">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Custom Quotes
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild data-testid="link-design-library">
+                    <Link href="/design-library">
+                      <Library className="h-4 w-4 mr-2" />
+                      Design Library
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Messages */}
+              <Button
+                asChild
+                variant={location === "/messages" ? "default" : "ghost"}
+                size="sm"
+                data-testid="link-messages"
+                className={location === "/messages" ? "" : "hover-elevate"}
+              >
+                <Link href="/messages">
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Messages
+                </Link>
+              </Button>
+
+              {/* Profile */}
+              <Button
+                asChild
+                variant={location === "/profile" ? "default" : "ghost"}
+                size="sm"
+                data-testid="link-profile"
+                className={location === "/profile" ? "" : "hover-elevate"}
+              >
+                <Link href="/profile">
+                  <User className="h-4 w-4 mr-2" />
+                  Profile
+                </Link>
+              </Button>
             </nav>
             <div className="flex items-center gap-3">
               <span className="text-sm text-muted-foreground hidden sm:block">
@@ -97,21 +196,66 @@ export function BuyerLayout({ children }: BuyerLayoutProps) {
           {mobileMenuOpen && (
             <div className="xl:hidden border-t bg-background/95 backdrop-blur">
               <div className="px-4 py-4 space-y-2">
-                {navItems.map((item) => (
-                  <Button
-                    key={item.href}
-                    asChild
-                    variant={location === item.href ? "default" : "ghost"}
-                    className="w-full justify-start min-h-11"
-                    data-testid={`mobile-${item.testid}`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Link href={item.href}>
-                      <item.icon className="h-4 w-4 mr-2" />
-                      {item.label}
-                    </Link>
-                  </Button>
-                ))}
+                <Button asChild variant="ghost" className="w-full justify-start min-h-11" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-marketplace">
+                  <Link href="/">
+                    <ShoppingBag className="h-4 w-4 mr-2" />
+                    Marketplace
+                  </Link>
+                </Button>
+                <Button asChild variant="ghost" className="w-full justify-start min-h-11" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-cart">
+                  <Link href="/cart">
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Cart
+                  </Link>
+                </Button>
+
+                <div className="text-xs font-semibold text-muted-foreground px-3 py-2">My Activity</div>
+                <Button asChild variant="ghost" className="w-full justify-start pl-6 min-h-11" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-orders">
+                  <Link href="/orders">
+                    <History className="h-4 w-4 mr-2" />
+                    Orders
+                  </Link>
+                </Button>
+                <Button asChild variant="ghost" className="w-full justify-start pl-6 min-h-11" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-bookings">
+                  <Link href="/bookings">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Bookings
+                  </Link>
+                </Button>
+
+                <div className="text-xs font-semibold text-muted-foreground px-3 py-2">Inquiries</div>
+                <Button asChild variant="ghost" className="w-full justify-start pl-6 min-h-11" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-design-approvals">
+                  <Link href="/design-approvals">
+                    <FileImage className="h-4 w-4 mr-2" />
+                    Design Approvals
+                  </Link>
+                </Button>
+                <Button asChild variant="ghost" className="w-full justify-start pl-6 min-h-11" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-custom-quotes">
+                  <Link href="/quotes">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Custom Quotes
+                  </Link>
+                </Button>
+                <Button asChild variant="ghost" className="w-full justify-start pl-6 min-h-11" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-design-library">
+                  <Link href="/design-library">
+                    <Library className="h-4 w-4 mr-2" />
+                    Design Library
+                  </Link>
+                </Button>
+
+                <Button asChild variant="ghost" className="w-full justify-start min-h-11" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-messages">
+                  <Link href="/messages">
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Messages
+                  </Link>
+                </Button>
+                <Button asChild variant="ghost" className="w-full justify-start min-h-11" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-profile">
+                  <Link href="/profile">
+                    <User className="h-4 w-4 mr-2" />
+                    Profile
+                  </Link>
+                </Button>
+
                 <div className="pt-3 border-t">
                   <Button
                     variant="ghost"
