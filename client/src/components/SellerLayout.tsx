@@ -25,8 +25,9 @@ export function SellerLayout({ children }: SellerLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isInventoryActive = location === "/seller/products" || location === "/seller/services";
-  const isSalesActive = location === "/seller/orders" || location === "/seller/bookings" || location === "/seller/returns" || location === "/seller/quotes" || location === "/seller/designs";
-  const isMoreActive = location === "/seller/boost" || location === "/seller/payouts" || location === "/seller/messages" || location === "/profile";
+  const isSalesActive = location === "/seller/orders" || location === "/seller/bookings" || location === "/seller/returns";
+  const isLeadsActive = location === "/seller/quotes" || location === "/seller/designs";
+  const isMoreActive = location === "/seller/boost" || location === "/seller/payouts" || location === "/profile";
 
   return (
     <div className="min-h-screen bg-background">
@@ -110,6 +111,30 @@ export function SellerLayout({ children }: SellerLayoutProps) {
                       Bookings
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild data-testid="link-returns">
+                    <Link href="/seller/returns">
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Returns
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Leads Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant={isLeadsActive ? "default" : "ghost"}
+                    size="sm"
+                    className={isLeadsActive ? "" : "hover-elevate"}
+                    data-testid="dropdown-leads"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Leads
+                    <ChevronDown className="h-3 w-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
                   <DropdownMenuItem asChild data-testid="link-quotes">
                     <Link href="/seller/quotes">
                       <FileText className="h-4 w-4 mr-2" />
@@ -122,14 +147,22 @@ export function SellerLayout({ children }: SellerLayoutProps) {
                       Designs
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild data-testid="link-returns">
-                    <Link href="/seller/returns">
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      Returns
-                    </Link>
-                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              {/* Messages */}
+              <Button
+                asChild
+                variant={location === "/seller/messages" ? "default" : "ghost"}
+                size="sm"
+                data-testid="link-messages"
+                className={location === "/seller/messages" ? "" : "hover-elevate"}
+              >
+                <Link href="/seller/messages">
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Messages
+                </Link>
+              </Button>
 
               {/* More Dropdown */}
               <DropdownMenu>
@@ -155,12 +188,6 @@ export function SellerLayout({ children }: SellerLayoutProps) {
                     <Link href="/seller/payouts">
                       <DollarSign className="h-4 w-4 mr-2" />
                       Payouts
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild data-testid="link-messages">
-                    <Link href="/seller/messages">
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      Messages
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild data-testid="link-profile">
@@ -243,6 +270,14 @@ export function SellerLayout({ children }: SellerLayoutProps) {
                     Bookings
                   </Link>
                 </Button>
+                <Button asChild variant="ghost" size="sm" className="w-full justify-start pl-6" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-returns">
+                  <Link href="/seller/returns">
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Returns
+                  </Link>
+                </Button>
+
+                <div className="text-xs font-semibold text-muted-foreground px-3 py-2">Leads</div>
                 <Button asChild variant="ghost" size="sm" className="w-full justify-start pl-6" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-quotes">
                   <Link href="/seller/quotes">
                     <FileText className="h-4 w-4 mr-2" />
@@ -255,10 +290,11 @@ export function SellerLayout({ children }: SellerLayoutProps) {
                     Designs
                   </Link>
                 </Button>
-                <Button asChild variant="ghost" size="sm" className="w-full justify-start pl-6" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-returns">
-                  <Link href="/seller/returns">
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Returns
+
+                <Button asChild variant="ghost" size="sm" className="w-full justify-start" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-messages">
+                  <Link href="/seller/messages">
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Messages
                   </Link>
                 </Button>
 
@@ -275,10 +311,10 @@ export function SellerLayout({ children }: SellerLayoutProps) {
                     Payouts
                   </Link>
                 </Button>
-                <Button asChild variant="ghost" size="sm" className="w-full justify-start pl-6" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-messages">
-                  <Link href="/seller/messages">
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Messages
+                <Button asChild variant="ghost" size="sm" className="w-full justify-start pl-6" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-profile">
+                  <Link href="/profile">
+                    <User className="h-4 w-4 mr-2" />
+                    Profile
                   </Link>
                 </Button>
 
