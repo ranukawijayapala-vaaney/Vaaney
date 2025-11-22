@@ -354,8 +354,9 @@ export default function Signup() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                          className="absolute right-0 top-0 h-full px-3"
                           onClick={() => setShowPassword(!showPassword)}
+                          aria-label={showPassword ? "Hide password" : "Show password"}
                           data-testid="button-toggle-password"
                         >
                           {showPassword ? (
@@ -389,8 +390,9 @@ export default function Signup() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                          className="absolute right-0 top-0 h-full px-3"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
                           data-testid="button-toggle-confirm-password"
                         >
                           {showConfirmPassword ? (
