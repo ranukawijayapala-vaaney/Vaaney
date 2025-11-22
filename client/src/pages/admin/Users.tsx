@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Search, UserCheck, Users as UsersIcon, DollarSign, Edit2, FileSpreadsheet, Mail, Phone, MapPin, Building2, Calendar, FileText, Eye } from "lucide-react";
+import { Search, UserCheck, Users as UsersIcon, DollarSign, Edit2, FileSpreadsheet, Mail, Phone, MapPin, Building2, Calendar, FileText, Eye, MailCheck } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +67,34 @@ export default function Users() {
     },
     onError: (error: Error) => {
       toast({ title: "Failed to update commission", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const resendVerificationMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to resend verification email");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Verification email sent!",
+        description: "The user will receive a new verification email shortly.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to send email",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -496,6 +524,26 @@ export default function Users() {
                     <Badge variant="secondary" className={getStatusColor(selectedUser.verificationStatus || "")} data-testid="badge-profile-status">
                       {selectedUser.verificationStatus || "none"}
                     </Badge>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground">Email Verified</Label>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={selectedUser.emailVerified ? "default" : "destructive"} data-testid="badge-email-verified">
+                        {selectedUser.emailVerified ? "Verified" : "Not Verified"}
+                      </Badge>
+                      {!selectedUser.emailVerified && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => resendVerificationMutation.mutate(selectedUser.email)}
+                          disabled={resendVerificationMutation.isPending}
+                          data-testid="button-resend-verification-admin"
+                        >
+                          <MailCheck className="h-3 w-3 mr-1" />
+                          {resendVerificationMutation.isPending ? "Sending..." : "Resend Email"}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

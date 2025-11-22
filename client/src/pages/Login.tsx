@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
-import { LogIn, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { LogIn, ArrowLeft, Eye, EyeOff, Mail } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -25,6 +26,9 @@ export default function Login() {
   const [location, navigate] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showResendVerification, setShowResendVerification] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState("");
+  const [isResending, setIsResending] = useState(false);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -49,6 +53,7 @@ export default function Login() {
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
+    setShowResendVerification(false);
     try {
       const response = await fetch("/api/login", {
         method: "POST",
@@ -58,6 +63,14 @@ export default function Login() {
 
       if (!response.ok) {
         const error = await response.json();
+        
+        // Check if the error is due to unverified email
+        const errorMessage = (error.message ?? "").toLowerCase();
+        if (errorMessage.includes("verify") || errorMessage.includes("email not verified")) {
+          setUnverifiedEmail(data.email);
+          setShowResendVerification(true);
+        }
+        
         throw new Error(error.message || "Login failed");
       }
 
@@ -73,6 +86,37 @@ export default function Login() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setIsResending(true);
+    try {
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: unverifiedEmail }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to resend verification email");
+      }
+
+      toast({
+        title: "Email sent!",
+        description: "Please check your inbox for the verification link.",
+      });
+      setShowResendVerification(false);
+    } catch (error: any) {
+      toast({
+        title: "Failed to resend email",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -96,6 +140,27 @@ export default function Login() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {showResendVerification && (
+            <Alert className="mb-4" data-testid="alert-resend-verification">
+              <Mail className="h-4 w-4" />
+              <AlertTitle>Email Verification Required</AlertTitle>
+              <AlertDescription className="space-y-2">
+                <p className="text-sm">
+                  Your email address hasn't been verified yet. Please check your inbox for the verification link.
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleResendVerification}
+                  disabled={isResending}
+                  data-testid="button-resend-verification"
+                  className="w-full"
+                >
+                  {isResending ? "Sending..." : "Resend Verification Email"}
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField

@@ -17,45 +17,125 @@ interface ResendEmailPayload {
   html: string;
 }
 
-export async function sendEmail(options: EmailOptions): Promise<boolean> {
+async function sendEmailAttempt(
+  options: EmailOptions,
+  resendApiKey: string,
+  attemptNumber: number,
+  logPrefix: string
+): Promise<boolean> {
+  const fromEmail = process.env.FROM_EMAIL || "Vaaney <onboarding@resend.dev>";
+  const payload: ResendEmailPayload = {
+    from: fromEmail,
+    to: [options.to],
+    subject: options.subject,
+    html: options.html,
+  };
+
+  console.log(`${logPrefix} Attempt ${attemptNumber}: Calling Resend API`, {
+    from: fromEmail,
+    to: options.to,
+    subject: options.subject,
+  });
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${resendApiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const responseData = await response.text();
+
+  if (!response.ok) {
+    console.error(`${logPrefix} Attempt ${attemptNumber} failed:`, {
+      status: response.status,
+      statusText: response.statusText,
+      to: options.to,
+      subject: options.subject,
+      error: responseData,
+    });
+    return false;
+  }
+
+  let parsedResponse;
+  try {
+    parsedResponse = JSON.parse(responseData);
+  } catch {
+    parsedResponse = responseData;
+  }
+
+  console.log(`${logPrefix} ✅ Attempt ${attemptNumber} succeeded:`, {
+    to: options.to,
+    subject: options.subject,
+    responseId: parsedResponse?.id || 'unknown',
+    response: parsedResponse,
+  });
+  return true;
+}
+
+export async function sendEmail(options: EmailOptions, maxRetries: number = 3): Promise<boolean> {
   const resendApiKey = process.env.RESEND_API_KEY;
   
+  const timestamp = new Date().toISOString();
+  const logPrefix = `[EMAIL ${timestamp}]`;
+  
+  console.log(`${logPrefix} Attempting to send email:`, {
+    to: options.to,
+    subject: options.subject,
+    timestamp,
+    maxRetries,
+  });
+  
   if (!resendApiKey) {
-    console.warn("RESEND_API_KEY not configured. Email not sent:", options.subject);
-    return false;
-  }
-
-  try {
-    // Use Resend sandbox sender for testing (no domain verification required)
-    // For production, set FROM_EMAIL environment variable with verified domain
-    const payload: ResendEmailPayload = {
-      from: process.env.FROM_EMAIL || "Vaaney <onboarding@resend.dev>",
-      to: [options.to],
+    console.error(`${logPrefix} RESEND_API_KEY not configured. Email NOT sent:`, {
+      to: options.to,
       subject: options.subject,
-      html: options.html,
-    };
-
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${resendApiKey}`,
-      },
-      body: JSON.stringify(payload),
     });
-
-    if (!response.ok) {
-      const error = await response.text();
-      console.error("Failed to send email:", error);
-      return false;
-    }
-
-    console.log("Email sent successfully:", options.subject);
-    return true;
-  } catch (error) {
-    console.error("Error sending email:", error);
     return false;
   }
+
+  // Retry logic with exponential backoff
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const success = await sendEmailAttempt(options, resendApiKey, attempt, logPrefix);
+      
+      if (success) {
+        if (attempt > 1) {
+          console.log(`${logPrefix} ✅ Email sent successfully after ${attempt} attempts`);
+        }
+        return true;
+      }
+      
+      // If not the last attempt, wait before retrying
+      if (attempt < maxRetries) {
+        const delayMs = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Exponential backoff, max 5s
+        console.log(`${logPrefix} Waiting ${delayMs}ms before retry ${attempt + 1}/${maxRetries}`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    } catch (error) {
+      console.error(`${logPrefix} ❌ Attempt ${attempt} exception:`, {
+        to: options.to,
+        subject: options.subject,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      
+      // If not the last attempt, wait before retrying
+      if (attempt < maxRetries) {
+        const delayMs = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+        console.log(`${logPrefix} Waiting ${delayMs}ms before retry ${attempt + 1}/${maxRetries}`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+  
+  console.error(`${logPrefix} ❌ Failed to send email after ${maxRetries} attempts:`, {
+    to: options.to,
+    subject: options.subject,
+  });
+  return false;
 }
 
 // Email template generator based on notification type
