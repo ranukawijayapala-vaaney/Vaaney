@@ -25,8 +25,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   const isUsersActive = location === "/admin/users" || location === "/admin/verifications";
   const isShippingActive = location === "/admin/shipping" || location === "/admin/shipment-history" || location === "/admin/returns";
-  const isContentActive = location === "/admin/conversations" || location === "/admin/banners" || location === "/admin/boost-packages" || location === "/admin/boost-items";
-  const isProfileActive = location === "/profile";
+  const isContentActive = location === "/admin/banners" || location === "/admin/boost-packages" || location === "/admin/boost-items";
 
   return (
     <div className="min-h-screen bg-background">
@@ -121,6 +120,19 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              {/* Conversations */}
+              <Link href="/admin/conversations">
+                <Button
+                  variant={location === "/admin/conversations" ? "default" : "ghost"}
+                  size="sm"
+                  data-testid="link-conversations"
+                  className={location === "/admin/conversations" ? "" : "hover-elevate"}
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Conversations
+                </Button>
+              </Link>
+
               {/* Content Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -136,10 +148,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setLocation("/admin/conversations")} data-testid="link-conversations">
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Conversations
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setLocation("/admin/banners")} data-testid="link-banners">
                     <Image className="h-4 w-4 mr-2" />
                     Banners
@@ -158,10 +166,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               {/* Profile */}
               <Link href="/profile">
                 <Button
-                  variant={isProfileActive ? "default" : "ghost"}
+                  variant={location === "/profile" ? "default" : "ghost"}
                   size="sm"
                   data-testid="link-profile"
-                  className={isProfileActive ? "" : "hover-elevate"}
+                  className={location === "/profile" ? "" : "hover-elevate"}
                 >
                   <User className="h-4 w-4 mr-2" />
                   Profile
@@ -246,14 +254,21 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     Shipment History
                   </Button>
                 </Link>
+                <Link href="/admin/returns">
+                  <Button variant="ghost" size="sm" className="w-full justify-start pl-6" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-returns">
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Returns
+                  </Button>
+                </Link>
 
-                <div className="text-xs font-semibold text-muted-foreground px-3 py-2">Content</div>
                 <Link href="/admin/conversations">
-                  <Button variant="ghost" size="sm" className="w-full justify-start pl-6" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-conversations">
+                  <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-conversations">
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Conversations
                   </Button>
                 </Link>
+
+                <div className="text-xs font-semibold text-muted-foreground px-3 py-2">Content</div>
                 <Link href="/admin/banners">
                   <Button variant="ghost" size="sm" className="w-full justify-start pl-6" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-banners">
                     <Image className="h-4 w-4 mr-2" />
@@ -270,6 +285,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   <Button variant="ghost" size="sm" className="w-full justify-start pl-6" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-boost-items">
                     <TrendingUp className="h-4 w-4 mr-2" />
                     Featured Items
+                  </Button>
+                </Link>
+
+                <Link href="/profile">
+                  <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-profile">
+                    <User className="h-4 w-4 mr-2" />
+                    Profile
                   </Button>
                 </Link>
 
