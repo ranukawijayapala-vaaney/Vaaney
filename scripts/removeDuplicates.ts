@@ -1,8 +1,13 @@
 import fetch from 'node-fetch';
 
-const BASE_URL = 'https://vaaney-marketplace.replit.app';
-const SELLER_EMAIL = 'vaaney.info@gmail.com';
-const SELLER_PASSWORD = 'Devindha@11';
+const BASE_URL = process.env.PRODUCTION_URL || 'https://vaaney-marketplace.replit.app';
+const SELLER_EMAIL = process.env.SELLER_EMAIL || 'vaaney.info@gmail.com';
+const SELLER_PASSWORD = process.env.SELLER_PASSWORD;
+
+if (!SELLER_PASSWORD) {
+  console.error('❌ Missing required environment variable: SELLER_PASSWORD');
+  process.exit(1);
+}
 
 class ApiClient {
   private sessionCookie: string | null = null;
@@ -112,7 +117,22 @@ async function main() {
           console.log(`  ✅ Deleted duplicate: ${product.id} (created ${product.createdAt})`);
           deletedProducts++;
         } catch (error: any) {
-          console.error(`  ❌ Failed to delete ${product.id}: ${error.message}`);
+          // If deletion fails due to FK constraint, mark as inactive instead
+          if (error.message.includes('foreign key constraint')) {
+            try {
+              await client.fetch(`/api/seller/products/${product.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isActive: false }),
+              });
+              console.log(`  ⚠️  Marked as inactive (has orders): ${product.id}`);
+              deletedProducts++;
+            } catch (patchError: any) {
+              console.error(`  ❌ Failed to deactivate ${product.id}: ${patchError.message}`);
+            }
+          } else {
+            console.error(`  ❌ Failed to delete ${product.id}: ${error.message}`);
+          }
         }
       }
     }
@@ -145,7 +165,22 @@ async function main() {
           console.log(`  ✅ Deleted duplicate: ${service.id} (created ${service.createdAt})`);
           deletedServices++;
         } catch (error: any) {
-          console.error(`  ❌ Failed to delete ${service.id}: ${error.message}`);
+          // If deletion fails due to FK constraint, mark as inactive instead
+          if (error.message.includes('foreign key constraint')) {
+            try {
+              await client.fetch(`/api/seller/services/${service.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isActive: false }),
+              });
+              console.log(`  ⚠️  Marked as inactive (has bookings): ${service.id}`);
+              deletedServices++;
+            } catch (patchError: any) {
+              console.error(`  ❌ Failed to deactivate ${service.id}: ${patchError.message}`);
+            }
+          } else {
+            console.error(`  ❌ Failed to delete ${service.id}: ${error.message}`);
+          }
         }
       }
     }

@@ -1,8 +1,13 @@
 import fetch from 'node-fetch';
 
-const BASE_URL = 'https://vaaney-marketplace.replit.app';
-const ADMIN_EMAIL = 'ranuka.wijayapala@gmail.com';
-const ADMIN_PASSWORD = 'Devindha@11';
+const BASE_URL = process.env.PRODUCTION_URL || 'https://vaaney-marketplace.replit.app';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+  console.error('❌ Missing required environment variables: ADMIN_EMAIL, ADMIN_PASSWORD');
+  process.exit(1);
+}
 
 class ApiClient {
   private sessionCookie: string | null = null;
