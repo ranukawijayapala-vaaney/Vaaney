@@ -261,29 +261,80 @@ function enhancePromptWithContext(systemPrompt: string, context: ChatContext): s
 }
 
 /**
- * Send a chat message and get AI response
+ * Send a chat message and get AI response with retry logic
  */
 export async function getChatCompletion(
   messages: ChatMessage[],
   context: ChatContext
 ): Promise<string> {
-  try {
-    const systemPrompt = generateSystemPrompt(context);
-    const enhancedPrompt = enhancePromptWithContext(systemPrompt, context);
-    
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. Using gpt-4o-mini for cost efficiency
-      messages: [
-        { role: "system", content: enhancedPrompt },
-        ...messages
-      ],
-      max_completion_tokens: 2048,
-      temperature: 0.7,
-    });
-    
-    return response.choices[0]?.message?.content || "I apologize, but I couldn't generate a response. Please try again.";
-  } catch (error) {
-    console.error("OpenAI API Error:", error);
-    throw new Error("Failed to get AI response. Please try again later.");
+  // Check if AI integration is configured
+  if (!process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || !process.env.AI_INTEGRATIONS_OPENAI_API_KEY) {
+    console.error("AI Integrations not configured - missing environment variables");
+    throw new Error("AI assistant is not configured. Please contact support.");
   }
+
+  const maxRetries = 3;
+  let lastError: any;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const systemPrompt = generateSystemPrompt(context);
+      const enhancedPrompt = enhancePromptWithContext(systemPrompt, context);
+      
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. Using gpt-4o-mini for cost efficiency
+        messages: [
+          { role: "system", content: enhancedPrompt },
+          ...messages
+        ],
+        max_completion_tokens: 2048,
+        temperature: 0.7,
+      });
+      
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error("Empty response from AI");
+      }
+      
+      return content;
+    } catch (error: any) {
+      lastError = error;
+      console.error(`OpenAI API Error (attempt ${attempt}/${maxRetries}):`, {
+        message: error.message,
+        status: error.status,
+        code: error.code,
+        type: error.type
+      });
+
+      // Don't retry on certain errors
+      if (error.status === 401 || error.status === 403) {
+        throw new Error("AI assistant authentication failed. Please contact support.");
+      }
+      
+      if (error.status === 429) {
+        throw new Error("AI assistant is temporarily busy. Please try again in a moment.");
+      }
+
+      // If this isn't the last attempt, wait before retrying
+      if (attempt < maxRetries) {
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Exponential backoff: 1s, 2s, 4s
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+    }
+  }
+
+  // All retries failed
+  console.error("All retry attempts failed:", lastError);
+  
+  // Provide user-friendly error message based on error type
+  if (lastError?.code === 'ECONNREFUSED' || lastError?.code === 'ENOTFOUND') {
+    throw new Error("Unable to connect to AI service. Please check your connection and try again.");
+  }
+  
+  if (lastError?.message?.includes('timeout')) {
+    throw new Error("AI request timed out. Please try a shorter message.");
+  }
+  
+  throw new Error("AI assistant is temporarily unavailable. Please try again in a moment.");
 }

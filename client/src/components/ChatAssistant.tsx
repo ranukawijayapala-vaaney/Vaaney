@@ -162,11 +162,11 @@ export function ChatAssistant() {
       if (response.sessionId && !sessionId) {
         setSessionId(response.sessionId);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending message:", error);
       const errorMessage: Message = {
         role: "assistant",
-        content: "Sorry, I encountered an error. Please try again.",
+        content: error.message || "Sorry, I encountered an error. Please try again.",
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -233,12 +233,12 @@ export function ChatAssistant() {
                   className={`max-w-[80%] rounded-lg p-3 ${
                     message.role === "user"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                      : "bg-muted text-foreground"
                   }`}
                   data-testid={`message-${message.role}-${index}`}
                 >
                   {message.role === "assistant" ? (
-                    <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
+                    <div className="text-sm prose prose-sm dark:prose-invert max-w-none [&>*]:text-foreground">
                       <ReactMarkdown
                         components={{
                           a: ({ node, ...props }) => (
