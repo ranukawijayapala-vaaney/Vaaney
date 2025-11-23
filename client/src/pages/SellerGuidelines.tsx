@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ArrowLeft, ShieldCheck, DollarSign, Package, FileCheck, TrendingUp, AlertCircle, Palette, FileText, MessageSquare, Mail } from "lucide-react";
+import { ArrowLeft, ShieldCheck, DollarSign, Package, FileCheck, TrendingUp, AlertCircle, Palette, FileText, MessageSquare, Mail, Bot, Star, Bell, Zap, Settings } from "lucide-react";
 
 export default function SellerGuidelines() {
   return (
@@ -24,6 +24,54 @@ export default function SellerGuidelines() {
         </div>
 
         <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <Bot className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <CardTitle>AI Assistant - Your Business Helper</CardTitle>
+                  <CardDescription>Get instant help managing your seller account</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex gap-2">
+                  <Bot className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-blue-900 dark:text-blue-100">Context-Aware Business Support</p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                      Click the chat button on any page to get instant help. The AI understands your seller context and can assist with product management, orders, bookings, and more.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">What the AI Assistant Can Help With:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Product and service listing guidance</li>
+                  <li>Order fulfillment and booking management</li>
+                  <li>Design approval workflow questions</li>
+                  <li>Custom quote creation assistance</li>
+                  <li>Digital delivery process guidance</li>
+                  <li>Commission and payout information</li>
+                  <li>Shipping and tracking help</li>
+                  <li>Returns and refunds procedures</li>
+                  <li>Platform feature explanations</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Smart Features:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Remembers conversation history during your session</li>
+                  <li>Automatically understands which product/order/booking you're viewing</li>
+                  <li>Provides personalized answers based on your seller account</li>
+                  <li>Available 24/7 on every page to help grow your business</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <div className="flex items-start gap-3">
@@ -94,6 +142,7 @@ export default function SellerGuidelines() {
                   <li>Create product variants (sizes, colors, options)</li>
                   <li>Set competitive prices in USD</li>
                   <li>Manage stock levels and inventory</li>
+                  <li>Configure workflow settings (design approval requirements)</li>
                   <li>Update product information as needed</li>
                 </ul>
               </div>
@@ -102,9 +151,19 @@ export default function SellerGuidelines() {
                 <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                   <li>Create service descriptions with pricing details</li>
                   <li>Define service packages and options</li>
+                  <li>Configure workflow settings (design approval and/or quote requirements)</li>
                   <li>Set availability and booking schedules</li>
                   <li>Manage service bookings from your dashboard</li>
                   <li>Confirm or decline booking requests</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Workflow Settings:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li><strong>Requires Design Approval:</strong> For print products that need design review before purchase</li>
+                  <li><strong>Requires Quote Request:</strong> For custom work that needs pricing discussion before booking</li>
+                  <li>Both can be enabled simultaneously for products/services needing both workflows</li>
+                  <li>Configure during product/service creation or edit anytime</li>
                 </ul>
               </div>
               <div>
@@ -470,6 +529,169 @@ export default function SellerGuidelines() {
           <Card>
             <CardHeader>
               <div className="flex items-start gap-3">
+                <Star className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <CardTitle>Ratings & Reviews</CardTitle>
+                  <CardDescription>Build your reputation through customer feedback</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <h4 className="font-medium mb-2">How Ratings Work:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Buyers can rate products and services after delivery/completion</li>
+                  <li>Ratings include 1-5 stars, comments, and optional photos</li>
+                  <li>Only verified buyers who completed transactions can leave ratings</li>
+                  <li>Ratings appear on your product/service pages and seller profile</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Managing Ratings:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>View all ratings in your seller dashboard</li>
+                  <li>Monitor average ratings for each product/service</li>
+                  <li>Use feedback to improve your offerings</li>
+                  <li>High ratings increase buyer trust and sales</li>
+                </ul>
+              </div>
+              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                <div className="flex gap-2">
+                  <Star className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-amber-900 dark:text-amber-100">Build Trust Through Quality</p>
+                    <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                      Excellent service and quality products lead to positive ratings, which attract more buyers to your store.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <Bell className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <CardTitle>Notifications</CardTitle>
+                  <CardDescription>Stay updated on your business activity</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <h4 className="font-medium mb-2">Notification Channels:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li><strong>In-App Notifications:</strong> Click the bell icon to see all recent updates</li>
+                  <li><strong>Email Notifications:</strong> Sent for major events to your registered email</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">What You'll Be Notified About:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>New orders and booking requests</li>
+                  <li>Payment confirmations (IPG instant, bank transfer after admin verification)</li>
+                  <li>Design submissions from buyers for approval</li>
+                  <li>Custom quote requests from buyers</li>
+                  <li>New messages from buyers or admin</li>
+                  <li>Return/refund requests from buyers</li>
+                  <li>Payout status updates</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <Zap className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <CardTitle>Boost Your Products & Services</CardTitle>
+                  <CardDescription>Increase visibility with promotional packages</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <h4 className="font-medium mb-2">How Seller Boost Works:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Purchase promotional packages to feature your products/services</li>
+                  <li>Boosted items appear higher in search results</li>
+                  <li>Featured placement on marketplace homepage</li>
+                  <li>Increased visibility leads to more sales</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Promotional Options:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Select which products or services to promote</li>
+                  <li>Choose promotion duration (7 days, 14 days, 30 days)</li>
+                  <li>Pay via IPG or bank transfer</li>
+                  <li>Track promotion performance in your dashboard</li>
+                </ul>
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex gap-2">
+                  <Zap className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-blue-900 dark:text-blue-100">Stand Out From the Competition</p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                      Seller boost packages help your best products get noticed by more potential buyers.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <CardTitle>Returns & Refunds</CardTitle>
+                  <CardDescription>Handle buyer return requests professionally</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <h4 className="font-medium mb-2">Return Request Workflow:</h4>
+                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                  <li>Buyer submits return/refund request with reason and details</li>
+                  <li>You receive notification in your dashboard</li>
+                  <li>Review the request and buyer's explanation</li>
+                  <li>Approve or reject the request with your response</li>
+                  <li>If rejected, admin reviews and makes final decision</li>
+                  <li>If approved (by you or admin), refund is processed automatically</li>
+                  <li>Commission is reversed on approved refunds</li>
+                </ol>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Best Practices:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Review return requests promptly (within 48 hours)</li>
+                  <li>Communicate clearly with buyers about issues</li>
+                  <li>Approve legitimate requests to maintain good ratings</li>
+                  <li>Provide detailed explanations when rejecting requests</li>
+                  <li>Work with admin to resolve disputes fairly</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Refund Impact:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Platform commission is automatically reversed</li>
+                  <li>Full amount returned to buyer's account</li>
+                  <li>Your revenue statistics are updated accordingly</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-3">
                 <AlertCircle className="h-6 w-6 text-primary mt-1" />
                 <div>
                   <CardTitle>Seller Policies</CardTitle>
@@ -479,13 +701,17 @@ export default function SellerGuidelines() {
             </CardHeader>
             <CardContent className="space-y-3">
               <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                <li>Use the AI assistant (chat button) for instant help on any page</li>
                 <li>Maintain honest and accurate product/service descriptions</li>
                 <li>Do not list prohibited or illegal items</li>
                 <li>Honor all confirmed orders and bookings</li>
+                <li>Configure workflow settings correctly (design approval/quote requirements)</li>
+                <li>Respond to messages, bookings, and return requests promptly</li>
                 <li>Provide refunds according to your stated policies</li>
                 <li>Maintain professional communication with buyers</li>
                 <li>Report any suspicious activity to admin</li>
                 <li>Keep your account and payment information updated</li>
+                <li>Monitor notifications for important business updates</li>
               </ul>
             </CardContent>
           </Card>

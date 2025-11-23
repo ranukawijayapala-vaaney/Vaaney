@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ArrowLeft, ShieldCheck, CreditCard, Package, Clock, FileText, AlertCircle, Upload, MessageSquare, Palette, Mail } from "lucide-react";
+import { ArrowLeft, ShieldCheck, CreditCard, Package, Clock, FileText, AlertCircle, Upload, MessageSquare, Palette, Mail, Bot, Star, Bell, Plane, TrendingUp } from "lucide-react";
 
 export default function BuyerGuidelines() {
   return (
@@ -24,6 +24,53 @@ export default function BuyerGuidelines() {
         </div>
 
         <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <Bot className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <CardTitle>AI Assistant - Your Shopping Guide</CardTitle>
+                  <CardDescription>Get instant help throughout your shopping experience</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex gap-2">
+                  <Bot className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-blue-900 dark:text-blue-100">Context-Aware AI Help</p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                      Click the chat button on any page to get instant help. The AI knows where you are and can answer questions about products, orders, bookings, and more.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">What the AI Assistant Can Help With:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Product details and recommendations while browsing</li>
+                  <li>Order status and tracking information</li>
+                  <li>Service booking questions and availability</li>
+                  <li>Design approval process guidance</li>
+                  <li>Custom quote requests and status</li>
+                  <li>Payment methods and shipping options</li>
+                  <li>Return and refund procedures</li>
+                  <li>General platform navigation help</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Smart Features:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Remembers your conversation history during your session</li>
+                  <li>Automatically understands which product or order you're viewing</li>
+                  <li>Provides personalized answers based on your buyer account</li>
+                  <li>Available 24/7 on every page of the platform</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <div className="flex items-start gap-3">
@@ -340,6 +387,124 @@ export default function BuyerGuidelines() {
           <Card>
             <CardHeader>
               <div className="flex items-start gap-3">
+                <Star className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <CardTitle>Rate Your Experience</CardTitle>
+                  <CardDescription>Share feedback and help the community</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <h4 className="font-medium mb-2">Why Rating Matters:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Help other buyers make informed decisions</li>
+                  <li>Reward excellent sellers with positive reviews</li>
+                  <li>Provide constructive feedback to improve services</li>
+                  <li>Build trust and transparency in the marketplace</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">How to Rate:</h4>
+                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                  <li>After receiving your order or service completion</li>
+                  <li>Click "Leave Rating" in your order/booking details</li>
+                  <li>Select 1-5 stars based on your experience</li>
+                  <li>Write an optional comment with specific feedback</li>
+                  <li>Upload photos of the product or deliverables (optional)</li>
+                  <li>Submit your rating - it will appear on the product/service page</li>
+                </ol>
+              </div>
+              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                <div className="flex gap-2">
+                  <Star className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-amber-900 dark:text-amber-100">Verified Ratings Only</p>
+                    <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                      Only buyers who have completed transactions can leave ratings, ensuring authentic reviews.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <Bell className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <CardTitle>Notifications</CardTitle>
+                  <CardDescription>Stay updated on your orders and messages</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <h4 className="font-medium mb-2">Notification Channels:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li><strong>In-App Notifications:</strong> Click the bell icon to see all recent updates</li>
+                  <li><strong>Email Notifications:</strong> Sent for major events to your registered email</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">What You'll Be Notified About:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Order status changes (payment confirmed, shipped, delivered)</li>
+                  <li>Service booking confirmations and completions</li>
+                  <li>Design approval status updates (approved, changes requested, rejected)</li>
+                  <li>Custom quote responses from sellers</li>
+                  <li>New messages from sellers or admin</li>
+                  <li>Digital deliverables ready for download</li>
+                  <li>Return/refund status updates</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <Plane className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <CardTitle>International Shipping with Aramex</CardTitle>
+                  <CardDescription>Fast, reliable delivery to the Maldives</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <h4 className="font-medium mb-2">How Shipping Works:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Shipping costs are calculated automatically based on weight and destination</li>
+                  <li>Aramex handles all international deliveries for physical products</li>
+                  <li>Track your shipment in real-time through your order dashboard</li>
+                  <li>Consolidation available for multiple items from different sellers</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Managing Shipping Addresses:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Add multiple shipping addresses in your profile</li>
+                  <li>Set a default address for faster checkout</li>
+                  <li>Edit or update addresses any time before purchase</li>
+                  <li>Select which address to use during checkout</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Delivery Timeline:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Standard international shipping: 5-7 business days</li>
+                  <li>Tracking information provided once shipped</li>
+                  <li>Customs clearance handled by Aramex</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-3">
                 <AlertCircle className="h-6 w-6 text-primary mt-1" />
                 <div>
                   <CardTitle>Returns & Refunds</CardTitle>
@@ -386,11 +551,13 @@ export default function BuyerGuidelines() {
             <CardContent className="space-y-3">
               <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                 <li>All prices are displayed in USD</li>
-                <li>Shipping costs calculated based on weight and destination</li>
+                <li>Use the AI assistant (chat button) for instant help on any page</li>
+                <li>Shipping costs calculated automatically using Aramex international delivery</li>
                 <li>Design approvals required for print products before purchasing</li>
                 <li>Custom quotes must be accepted before purchase</li>
                 <li>Digital services delivered via email upon completion</li>
                 <li>Rate sellers after delivery to help the community</li>
+                <li>Notifications sent for all major events (in-app and email)</li>
                 <li>Contact support for any issues or disputes</li>
               </ul>
             </CardContent>
