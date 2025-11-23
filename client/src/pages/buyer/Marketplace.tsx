@@ -734,12 +734,12 @@ export default function Marketplace() {
                           )}
                           {service.requiresDesignApproval && !service.hasApprovedDesign && (
                             <Badge variant="outline" className="text-xs border-orange-500 text-orange-700 dark:text-orange-400">
-                              Design Required
+                              Design Approval Required
                             </Badge>
                           )}
                           {service.requiresQuote && !service.hasAcceptedQuote && (
                             <Badge variant="outline" className="text-xs border-blue-500 text-blue-700 dark:text-blue-400">
-                              Quote Required
+                              Custom Quote Available
                             </Badge>
                           )}
                         </div>
@@ -885,12 +885,12 @@ export default function Marketplace() {
                                 )}
                                 {service.requiresDesignApproval && !service.hasApprovedDesign && (
                                   <Badge variant="outline" className="text-xs border-orange-500 text-orange-700 dark:text-orange-400">
-                                    Design Required
+                                    Design Approval Required
                                   </Badge>
                                 )}
                                 {service.requiresQuote && !service.hasAcceptedQuote && (
                                   <Badge variant="outline" className="text-xs border-blue-500 text-blue-700 dark:text-blue-400">
-                                    Quote Required
+                                    Custom Quote Available
                                   </Badge>
                                 )}
                               </div>
