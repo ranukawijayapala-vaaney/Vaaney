@@ -145,7 +145,7 @@ export function ChatAssistant() {
 
     try {
       const context = getPageContext();
-      const response = await apiRequest("/api/chat", "POST", {
+      const response = await apiRequest("POST", "/api/chat", {
         message: userMessage.content,
         sessionId,
         context,
