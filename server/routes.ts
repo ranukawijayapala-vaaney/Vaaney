@@ -572,7 +572,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             chatContext.currentOrder = {
               id: order.id,
               status: order.status,
-              price: order.price,
+              totalAmount: order.totalAmount,
+              unitPrice: order.unitPrice,
               productName: product?.name,
               quantity: order.quantity,
               createdAt: order.createdAt,
