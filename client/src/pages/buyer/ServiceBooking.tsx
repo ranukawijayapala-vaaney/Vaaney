@@ -291,14 +291,14 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
   });
 
   const handlePackageSelect = (packageId: string) => {
-    // If design approval is required, show design approval gate
+    // If design approval is required AND no approved design exists, show design approval gate
     if (service?.requiresDesignApproval && !approvedDesign) {
       setPendingPackageSelection({ packageId, isCustomQuote: false });
       setShowDesignApprovalGate(true);
       return;
     }
     
-    // For normal packages (no design approval needed), show pre-purchase dialog
+    // For all other cases (including when there ARE existing approvals), show pre-purchase dialog
     setPendingPackageId(packageId);
     setShowPrePurchaseDialog(true);
   };
@@ -317,6 +317,22 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
     setShowPrePurchaseDialog(false);
     setShowContactDialog(true);
     // Don't clear pendingPackageId yet - we'll need it after they send message
+  };
+
+  const handleUploadNewDesign = () => {
+    if (!pendingPackageId) return;
+    setPendingPackageSelection({ packageId: pendingPackageId, isCustomQuote: false });
+    setShowPrePurchaseDialog(false);
+    setShowDesignApprovalGate(true);
+  };
+
+  const handleRequestNewQuote = () => {
+    setShowPrePurchaseDialog(false);
+    setPendingPackageId(null);
+    // Navigate to request new quote workflow
+    if (service) {
+      requestQuoteMutation.mutate();
+    }
   };
 
   const handleCustomQuoteSelect = () => {
@@ -1202,34 +1218,114 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
       <Dialog open={showPrePurchaseDialog} onOpenChange={setShowPrePurchaseDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Before You Continue</DialogTitle>
+            <DialogTitle>
+              {(approvedDesign || activeQuote) ? "Booking Options Available" : "Before You Continue"}
+            </DialogTitle>
             <DialogDescription>
-              We recommend contacting the seller first to clarify any questions about this service
+              {(approvedDesign || activeQuote) 
+                ? "You have existing approvals. Choose how you'd like to proceed:"
+                : "We recommend contacting the seller first to clarify any questions about this service"
+              }
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <p className="text-sm">
-              Would you like to ask the seller any questions before proceeding with your booking?
-            </p>
+            {(approvedDesign || activeQuote) ? (
+              <>
+                {/* Show existing approvals badges */}
+                <div className="flex flex-wrap gap-2">
+                  {approvedDesign && (
+                    <Badge variant="default" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500">
+                      <Check className="h-3 w-3 mr-1" />
+                      Design Approved
+                    </Badge>
+                  )}
+                  {activeQuote && (
+                    <Badge variant="default" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500">
+                      <Check className="h-3 w-3 mr-1" />
+                      Quote Accepted
+                    </Badge>
+                  )}
+                </div>
+                
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    You can continue with your existing approvals or start a new workflow if your requirements have changed.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  {/* Primary action - continue with existing */}
+                  <Button
+                    className="w-full justify-start min-h-11"
+                    onClick={handleContinueToPurchase}
+                    data-testid="button-continue-to-purchase"
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Continue with Existing Approvals
+                  </Button>
+
+                  {/* Secondary actions */}
+                  {service?.requiresDesignApproval && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start min-h-11"
+                      onClick={handleUploadNewDesign}
+                      data-testid="button-upload-new-design"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload New Design for Approval
+                    </Button>
+                  )}
+
+                  {service?.requiresQuote && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start min-h-11"
+                      onClick={handleRequestNewQuote}
+                      data-testid="button-request-new-quote"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Request New Custom Quote
+                    </Button>
+                  )}
+
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start min-h-11"
+                    onClick={handleContactSellerFirst}
+                    data-testid="button-contact-seller-first"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Contact Seller First
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm">
+                  Would you like to ask the seller any questions before proceeding with your booking?
+                </p>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    variant="outline"
+                    className="w-full min-h-11"
+                    onClick={handleContactSellerFirst}
+                    data-testid="button-contact-seller-first"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Contact Seller First
+                  </Button>
+                  <Button
+                    className="w-full min-h-11"
+                    onClick={handleContinueToPurchase}
+                    data-testid="button-continue-to-purchase"
+                  >
+                    Continue to Purchase
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              className="min-h-11 w-full sm:w-auto"
-              onClick={handleContactSellerFirst}
-              data-testid="button-contact-seller-first"
-            >
-              <MessageCircle className="h-4 w-4 mr-2" />
-              Contact Seller First
-            </Button>
-            <Button
-              className="min-h-11 w-full sm:w-auto"
-              onClick={handleContinueToPurchase}
-              data-testid="button-continue-to-purchase"
-            >
-              Continue to Purchase
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
