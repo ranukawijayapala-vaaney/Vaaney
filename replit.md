@@ -6,6 +6,13 @@ Vaaney is a full-stack e-commerce marketplace platform for the Maldivian market,
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (November 23, 2025)
+### AI Assistant Improvements
+- **Button Styling**: Changed AI assistant floating button from teal to vibrant lime green (#bcd42f) for better visibility and brand consistency
+- **Position**: Button positioned in bottom right corner (70px size) with pulsing animation
+- **Chat Panel**: Opens cleanly above the button without overlapping header
+- **Bug Fixes**: Fixed 500 errors in chat endpoint by correcting property access (product.price, service.requiresQuote, booking.amount, order.totalAmount/unitPrice)
+
 ## System Architecture
 
 ### Monorepo Structure
