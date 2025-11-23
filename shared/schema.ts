@@ -1542,3 +1542,24 @@ export const bookingDeliverablesRelations = relations(bookingDeliverables, ({ on
 
 export type BookingDeliverable = typeof bookingDeliverables.$inferSelect;
 export type InsertBookingDeliverable = typeof bookingDeliverables.$inferInsert;
+
+// Chat Sessions table - for AI assistant conversation history
+export const chatSessions = pgTable("chat_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  sessionId: varchar("session_id", { length: 255 }).notNull(), // UUID for session tracking
+  messages: jsonb("messages").notNull().default('[]'), // Array of {role: string, content: string, timestamp: string}
+  context: jsonb("context"), // Page context, user role, relevant IDs
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const chatSessionsRelations = relations(chatSessions, ({ one }) => ({
+  user: one(users, {
+    fields: [chatSessions.userId],
+    references: [users.id],
+  }),
+}));
+
+export type ChatSession = typeof chatSessions.$inferSelect;
+export type InsertChatSession = typeof chatSessions.$inferInsert;

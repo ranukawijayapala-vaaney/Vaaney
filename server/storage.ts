@@ -86,6 +86,9 @@ import {
   bookingDeliverables,
   type BookingDeliverable,
   type InsertBookingDeliverable,
+  chatSessions,
+  type ChatSession,
+  type InsertChatSession,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, lt, gte, inArray } from "drizzle-orm";
@@ -332,6 +335,11 @@ export interface IStorage {
   updateBankAccount(id: string, account: UpdateBankAccount & { updatedByAdminId: string }): Promise<BankAccount>;
   deleteBankAccount(id: string): Promise<void>;
   setDefaultBankAccount(id: string): Promise<BankAccount>;
+  
+  // Chat Session management (for AI assistant)
+  createChatSession(userId: string, sessionId: string, context: any): Promise<ChatSession>;
+  getChatSession(userId: string, sessionId: string): Promise<ChatSession | undefined>;
+  updateChatSession(id: string, messages: any[], context: any): Promise<ChatSession>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3053,6 +3061,51 @@ export class DatabaseStorage implements IStorage {
       status: a.status,
       approvedAt: a.approvedAt
     }));
+  }
+
+  // Chat Session methods for AI assistant
+  async createChatSession(userId: string, sessionId: string, context: any): Promise<ChatSession> {
+    const [session] = await db
+      .insert(chatSessions)
+      .values({
+        userId,
+        sessionId,
+        messages: [],
+        context,
+      })
+      .returning();
+    return session;
+  }
+
+  async getChatSession(userId: string, sessionId: string): Promise<ChatSession | undefined> {
+    const [session] = await db
+      .select()
+      .from(chatSessions)
+      .where(
+        and(
+          eq(chatSessions.userId, userId),
+          eq(chatSessions.sessionId, sessionId)
+        )
+      );
+    return session;
+  }
+
+  async updateChatSession(id: string, messages: any[], context: any): Promise<ChatSession> {
+    const [session] = await db
+      .update(chatSessions)
+      .set({
+        messages,
+        context,
+        updatedAt: new Date(),
+      })
+      .where(eq(chatSessions.id, id))
+      .returning();
+    
+    if (!session) {
+      throw new Error("Chat session not found");
+    }
+    
+    return session;
   }
 }
 

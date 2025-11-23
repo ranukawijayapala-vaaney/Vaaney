@@ -484,6 +484,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Chat Assistant Routes
+  app.post("/api/chat", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    const userId = (req.user as any)?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const { message, sessionId, context } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      // Get or create chat session
+      let session = sessionId 
+        ? await storage.getChatSession(userId, sessionId)
+        : null;
+
+      if (!session) {
+        // Create new session
+        const newSessionId = crypto.randomUUID();
+        session = await storage.createChatSession(userId, newSessionId, context || {});
+      }
+
+      // Get user details for context
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Build chat context
+      const chatContext = {
+        userRole: user.role,
+        userId: user.id,
+        sellerVerificationStatus: user.verificationStatus,
+        commissionRate: user.commissionRate,
+        ...context,
+      };
+
+      // Get chat history from session
+      const messages = (session.messages as any[]) || [];
+      
+      // Add user message to history
+      messages.push({
+        role: "user",
+        content: message,
+        timestamp: new Date().toISOString()
+      });
+
+      // Import OpenAI service dynamically
+      const { getChatCompletion } = await import("./services/openaiService");
+      
+      // Get AI response
+      const aiResponse = await getChatCompletion(
+        messages.map(m => ({ role: m.role, content: m.content })),
+        chatContext
+      );
+
+      // Add AI response to history
+      messages.push({
+        role: "assistant",
+        content: aiResponse,
+        timestamp: new Date().toISOString()
+      });
+
+      // Update session with new messages
+      await storage.updateChatSession(session.id, messages, chatContext);
+
+      res.json({
+        message: aiResponse,
+        sessionId: session.sessionId
+      });
+    } catch (error: any) {
+      console.error("Error in chat endpoint:", error);
+      res.status(500).json({ message: "Failed to process chat message. Please try again." });
+    }
+  });
+
+  app.get("/api/chat/history/:sessionId", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    const userId = (req.user as any)?.id;
+    const { sessionId } = req.params;
+    
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const session = await storage.getChatSession(userId, sessionId);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      res.json({
+        messages: session.messages || [],
+        context: session.context
+      });
+    } catch (error: any) {
+      console.error("Error fetching chat history:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Object Storage Routes
   app.post("/api/object-storage/upload-url", isAuthenticated, async (req: AuthRequest, res: Response) => {
     try {
