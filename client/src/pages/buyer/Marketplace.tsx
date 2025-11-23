@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Product, Service, BoostedItem } from "@shared/schema";
+import type { Product, EnrichedService, BoostedItem } from "@shared/schema";
 import { Link, useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AddToCartModal, type ApprovedVariant } from "@/components/cart/AddToCartModal";
@@ -33,7 +33,7 @@ export default function Marketplace() {
     queryKey: ["/api/products"],
   });
 
-  const { data: allServices = [], isLoading: servicesLoading } = useQuery<(Service & { seller: { firstName: string; lastName: string } })[]>({
+  const { data: allServices = [], isLoading: servicesLoading } = useQuery<(EnrichedService & { seller: { firstName: string; lastName: string } })[]>({
     queryKey: ["/api/services"],
   });
 
@@ -720,24 +720,24 @@ export default function Marketplace() {
                         </div>
                         {/* Workflow Status Badges */}
                         <div className="flex flex-wrap items-center gap-2">
-                          {(service as any).hasApprovedDesign && (
+                          {service.hasApprovedDesign && (
                             <Badge variant="default" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Design Approved
                             </Badge>
                           )}
-                          {(service as any).hasAcceptedQuote && (
+                          {service.hasAcceptedQuote && (
                             <Badge variant="default" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Quote Accepted
                             </Badge>
                           )}
-                          {service.requiresDesignApproval && !(service as any).hasApprovedDesign && (
+                          {service.requiresDesignApproval && !service.hasApprovedDesign && (
                             <Badge variant="outline" className="text-xs border-orange-500 text-orange-700 dark:text-orange-400">
                               Design Required
                             </Badge>
                           )}
-                          {service.requiresQuote && !(service as any).hasAcceptedQuote && (
+                          {service.requiresQuote && !service.hasAcceptedQuote && (
                             <Badge variant="outline" className="text-xs border-blue-500 text-blue-700 dark:text-blue-400">
                               Quote Required
                             </Badge>
@@ -756,8 +756,8 @@ export default function Marketplace() {
                               - Design required AND approved, OR  
                               - Quote required AND accepted */}
                           {(!service.requiresQuote && !service.requiresDesignApproval) ||
-                           (service.requiresDesignApproval && (service as any).hasApprovedDesign) ||
-                           (service.requiresQuote && (service as any).hasAcceptedQuote) ? (
+                           (service.requiresDesignApproval && service.hasApprovedDesign) ||
+                           (service.requiresQuote && service.hasAcceptedQuote) ? (
                             <Button
                               className="w-full min-h-11"
                               onClick={(e) => {
@@ -771,7 +771,7 @@ export default function Marketplace() {
                           ) : null}
                           
                           {/* Show Upload Design only if service requires design approval AND no approved design yet */}
-                          {service.requiresDesignApproval && !(service as any).hasApprovedDesign && (
+                          {service.requiresDesignApproval && !service.hasApprovedDesign && (
                             <Button
                               className="w-full min-h-11"
                               onClick={(e) => {
@@ -787,9 +787,9 @@ export default function Marketplace() {
                           )}
                           
                           {/* Show Request Quote if service requires quote AND no accepted quote yet */}
-                          {service.requiresQuote && !(service as any).hasAcceptedQuote && (
+                          {service.requiresQuote && !service.hasAcceptedQuote && (
                             <Button
-                              variant={(service.requiresDesignApproval && (service as any).hasApprovedDesign) ? "outline" : "default"}
+                              variant={(service.requiresDesignApproval && service.hasApprovedDesign) ? "outline" : "default"}
                               className="w-full min-h-11"
                               onClick={(e) => {
                                 e.preventDefault();
@@ -871,24 +871,24 @@ export default function Marketplace() {
                               </div>
                               {/* Workflow Status Badges */}
                               <div className="flex flex-wrap items-center gap-2">
-                                {(service as any).hasApprovedDesign && (
+                                {service.hasApprovedDesign && (
                                   <Badge variant="default" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500">
                                     <CheckCircle className="h-3 w-3 mr-1" />
                                     Design Approved
                                   </Badge>
                                 )}
-                                {(service as any).hasAcceptedQuote && (
+                                {service.hasAcceptedQuote && (
                                   <Badge variant="default" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500">
                                     <CheckCircle className="h-3 w-3 mr-1" />
                                     Quote Accepted
                                   </Badge>
                                 )}
-                                {service.requiresDesignApproval && !(service as any).hasApprovedDesign && (
+                                {service.requiresDesignApproval && !service.hasApprovedDesign && (
                                   <Badge variant="outline" className="text-xs border-orange-500 text-orange-700 dark:text-orange-400">
                                     Design Required
                                   </Badge>
                                 )}
-                                {service.requiresQuote && !(service as any).hasAcceptedQuote && (
+                                {service.requiresQuote && !service.hasAcceptedQuote && (
                                   <Badge variant="outline" className="text-xs border-blue-500 text-blue-700 dark:text-blue-400">
                                     Quote Required
                                   </Badge>
@@ -907,8 +907,8 @@ export default function Marketplace() {
                                     - Design required AND approved, OR  
                                     - Quote required AND accepted */}
                                 {(!service.requiresQuote && !service.requiresDesignApproval) ||
-                                 (service.requiresDesignApproval && (service as any).hasApprovedDesign) ||
-                                 (service.requiresQuote && (service as any).hasAcceptedQuote) ? (
+                                 (service.requiresDesignApproval && service.hasApprovedDesign) ||
+                                 (service.requiresQuote && service.hasAcceptedQuote) ? (
                                   <Button
                                     size="sm"
                                     className="w-full"
@@ -923,7 +923,7 @@ export default function Marketplace() {
                                 ) : null}
                                 
                                 {/* Show Upload Design only if service requires design approval AND no approved design yet */}
-                                {service.requiresDesignApproval && !(service as any).hasApprovedDesign && (
+                                {service.requiresDesignApproval && !service.hasApprovedDesign && (
                                   <Button
                                     size="sm"
                                     className="w-full"
@@ -940,10 +940,10 @@ export default function Marketplace() {
                                 )}
                                 
                                 {/* Show Request Quote if service requires quote AND no accepted quote yet */}
-                                {service.requiresQuote && !(service as any).hasAcceptedQuote && (
+                                {service.requiresQuote && !service.hasAcceptedQuote && (
                                   <Button
                                     size="sm"
-                                    variant={(service.requiresDesignApproval && (service as any).hasApprovedDesign) ? "outline" : "default"}
+                                    variant={(service.requiresDesignApproval && service.hasApprovedDesign) ? "outline" : "default"}
                                     className="w-full"
                                     onClick={(e) => {
                                       e.preventDefault();

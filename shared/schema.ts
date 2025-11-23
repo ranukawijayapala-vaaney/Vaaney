@@ -256,6 +256,12 @@ export const insertServiceSchema = createInsertSchema(services, {
 export type Service = typeof services.$inferSelect;
 export type InsertService = z.infer<typeof insertServiceSchema>;
 
+// Enriched service type with buyer-specific workflow status
+export type EnrichedService = Service & {
+  hasApprovedDesign?: boolean; // For buyers: Whether they have an approved design for this service
+  hasAcceptedQuote?: boolean; // For buyers: Whether they have an accepted quote for this service
+};
+
 // Service packages table
 export const servicePackages = pgTable("service_packages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

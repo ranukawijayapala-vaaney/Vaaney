@@ -26,6 +26,7 @@ import {
   type CartItem,
   type InsertCartItem,
   type Service,
+  type EnrichedService,
   type InsertService,
   type ServicePackage,
   type InsertServicePackage,
@@ -138,7 +139,7 @@ export interface IStorage {
   clearCart(buyerId: string): Promise<void>;
   
   createService(service: InsertService & { sellerId: string }): Promise<Service>;
-  getServices(filters?: { sellerId?: string; buyerId?: string }): Promise<Service[]>;
+  getServices(filters?: { sellerId?: string; buyerId?: string }): Promise<EnrichedService[]>;
   getService(id: string): Promise<Service | undefined>;
   
   createServicePackage(pkg: InsertServicePackage): Promise<ServicePackage>;
@@ -639,7 +640,7 @@ export class DatabaseStorage implements IStorage {
     return service;
   }
 
-  async getServices(filters?: { sellerId?: string; buyerId?: string }): Promise<Service[]> {
+  async getServices(filters?: { sellerId?: string; buyerId?: string }): Promise<EnrichedService[]> {
     let baseServices: Service[];
     
     if (filters?.sellerId) {
@@ -650,27 +651,35 @@ export class DatabaseStorage implements IStorage {
     
     // Enrich services with approval status for buyers
     if (filters?.buyerId) {
-      const enrichedServices = await Promise.all(
-        baseServices.map(async (service: any) => {
+      const enrichedServices: EnrichedService[] = await Promise.all(
+        baseServices.map(async (service): Promise<EnrichedService> => {
+          let hasApprovedDesign: boolean | undefined;
+          let hasAcceptedQuote: boolean | undefined;
+          
           // Check for approved design
           if (service.requiresDesignApproval) {
             const approvedDesign = await this.getApprovedDesignForItem(filters.buyerId!, undefined, service.id);
-            service.hasApprovedDesign = !!approvedDesign;
+            hasApprovedDesign = !!approvedDesign;
           }
           
           // Check for active accepted quote
           if (service.requiresQuote) {
             const activeQuote = await this.getActiveQuoteForItem(filters.buyerId!, undefined, service.id);
-            service.hasAcceptedQuote = activeQuote?.status === "accepted";
+            hasAcceptedQuote = activeQuote?.status === "accepted";
           }
           
-          return service;
+          return {
+            ...service,
+            hasApprovedDesign,
+            hasAcceptedQuote,
+          };
         })
       );
       return enrichedServices;
     }
     
-    return baseServices;
+    // Return base services without enrichment
+    return baseServices.map(service => ({ ...service }));
   }
 
   async getService(id: string): Promise<Service | undefined> {
