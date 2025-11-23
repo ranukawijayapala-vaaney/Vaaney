@@ -1,4 +1,4 @@
-import { Package, LayoutDashboard, Store, Calendar as CalendarIcon, DollarSign, MessageCircle, LogOut, ShoppingBag, Package2, Menu, X, Rocket, ChevronDown, Truck, User, AlertCircle, RotateCcw, FileText, FileImage } from "lucide-react";
+import { LayoutDashboard, Store, Calendar as CalendarIcon, DollarSign, MessageCircle, LogOut, ShoppingBag, Package2, Menu, X, Rocket, ChevronDown, Truck, User, AlertCircle, RotateCcw, FileText, FileImage } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

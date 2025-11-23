@@ -1,4 +1,4 @@
-import { Package, LayoutDashboard, Users, ShieldCheck, DollarSign, MessageCircle, Image, LogOut, Menu, X, TrendingUp, Zap, ChevronDown, Truck, History, User, RotateCcw } from "lucide-react";
+import { LayoutDashboard, Users, ShieldCheck, DollarSign, MessageCircle, Image, LogOut, Menu, X, TrendingUp, Zap, ChevronDown, Truck, History, User, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

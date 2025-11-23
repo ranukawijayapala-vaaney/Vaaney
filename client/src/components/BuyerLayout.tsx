@@ -1,4 +1,4 @@
-import { Package, ShoppingCart, ShoppingBag, History, Calendar, MessageCircle, LogOut, Menu, X, User, FileImage, FileText, Library, ChevronDown } from "lucide-react";
+import { ShoppingCart, ShoppingBag, History, Calendar, MessageCircle, LogOut, Menu, X, User, FileImage, FileText, Library, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";

@@ -1,5 +1,5 @@
 import { 
-  ArrowRight, ShieldCheck, DollarSign, Users, Package, 
+  ArrowRight, ShieldCheck, DollarSign, Users, ShoppingBag,
   Globe, Sparkles, TrendingUp, CheckCircle2, 
   Printer, Code, Megaphone, PenTool, Video, FileText,
   Music, BarChart3, Leaf, Clock, Target, Award, Menu, X, ChevronLeft, ChevronRight
@@ -415,7 +415,7 @@ export default function Landing() {
               {boostedProducts.length > 0 && (
                 <div className="mb-12">
                   <div className="flex items-center gap-2 mb-6">
-                    <Package className="h-5 w-5 text-primary" />
+                    <ShoppingBag className="h-5 w-5 text-primary" />
                     <h3 className="text-2xl font-semibold">Featured Products</h3>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -434,7 +434,7 @@ export default function Landing() {
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
-                              <Package className="h-16 w-16 text-muted-foreground/50" />
+                              <ShoppingBag className="h-16 w-16 text-muted-foreground/50" />
                             </div>
                           )}
                           <Badge className="absolute top-3 right-3 bg-primary/90 backdrop-blur">
@@ -616,9 +616,8 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Package className="h-6 w-6 text-primary" />
-                <span className="font-bold font-display text-lg">Vaaney</span>
+              <div className="flex items-center">
+                <img src={vaaneyLogo} alt="Vaaney" className="h-8" />
               </div>
               <p className="text-sm text-muted-foreground">
                 Connecting Maldivian buyers with Sri Lankan sellers through a trusted, secure marketplace.
