@@ -536,7 +536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               id: product.id,
               name: product.name,
               category: product.category,
-              price: product.basePrice,
+              price: product.price,
               description: product.description,
               stock: product.stock,
             };
@@ -556,7 +556,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               category: service.category,
               description: service.description,
               requiresDesignApproval: service.requiresDesignApproval,
-              requiresCustomQuote: service.requiresCustomQuote,
+              requiresQuote: service.requiresQuote,
             };
           }
         }
@@ -572,7 +572,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             chatContext.currentOrder = {
               id: order.id,
               status: order.status,
-              totalPrice: order.totalPrice,
+              price: order.price,
               productName: product?.name,
               quantity: order.quantity,
               createdAt: order.createdAt,
@@ -593,7 +593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             chatContext.currentBooking = {
               id: booking.id,
               status: booking.status,
-              totalPrice: booking.totalPrice,
+              amount: booking.amount,
               serviceName: service?.name,
               createdAt: booking.createdAt,
             };
