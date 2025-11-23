@@ -28,6 +28,7 @@ export default function Marketplace() {
   const [approvedVariants, setApprovedVariants] = useState<ApprovedVariant[]>([]);
   const [askSellerDialog, setAskSellerDialog] = useState<{ type: "product" | "service"; item: any } | null>(null);
   const [inquiryMessage, setInquiryMessage] = useState("");
+  const [preBookingDialog, setPreBookingDialog] = useState<{ service: EnrichedService } | null>(null);
 
   const { data: allProducts = [], isLoading: productsLoading } = useQuery<any[]>({
     queryKey: ["/api/products"],
@@ -279,6 +280,51 @@ export default function Marketplace() {
       productId: askSellerDialog.type === "product" ? askSellerDialog.item.id : undefined,
       serviceId: askSellerDialog.type === "service" ? askSellerDialog.item.id : undefined,
     });
+  };
+
+  const handleBookNowClick = (e: React.MouseEvent, service: EnrichedService) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Check if service has approved design or accepted quote
+    const hasApprovedWorkflow = service.hasApprovedDesign || service.hasAcceptedQuote;
+    
+    if (hasApprovedWorkflow) {
+      // Show pre-booking dialog with options
+      setPreBookingDialog({ service });
+    } else {
+      // Standard service - navigate directly
+      navigate(`/book-service/${service.id}`);
+    }
+  };
+
+  const handlePreBookingAction = (action: 'proceed' | 'new-design' | 'new-quote' | 'contact') => {
+    if (!preBookingDialog) return;
+    
+    const serviceId = preBookingDialog.service.id;
+    
+    switch (action) {
+      case 'proceed':
+        // Navigate to booking page - buyer will select package there
+        navigate(`/book-service/${serviceId}`);
+        setPreBookingDialog(null);
+        break;
+      case 'new-design':
+        // Navigate to booking page and trigger new design upload workflow
+        navigate(`/book-service/${serviceId}?action=upload-design&new=true`);
+        setPreBookingDialog(null);
+        break;
+      case 'new-quote':
+        // Navigate to booking page and trigger new quote request
+        navigate(`/book-service/${serviceId}?action=request-quote&new=true`);
+        setPreBookingDialog(null);
+        break;
+      case 'contact':
+        // Close pre-booking and open seller dialog
+        setPreBookingDialog(null);
+        setAskSellerDialog({ type: "service", item: preBookingDialog.service });
+        break;
+    }
   };
 
   return (
@@ -760,10 +806,7 @@ export default function Marketplace() {
                            (service.requiresQuote && service.hasAcceptedQuote) ? (
                             <Button
                               className="w-full min-h-11"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                              }}
+                              onClick={(e) => handleBookNowClick(e, service)}
                               data-testid={`button-book-service-${service.id}`}
                             >
                               Book Now
@@ -912,10 +955,7 @@ export default function Marketplace() {
                                   <Button
                                     size="sm"
                                     className="w-full"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                    }}
+                                    onClick={(e) => handleBookNowClick(e, service)}
                                     data-testid={`button-book-service-${service.id}`}
                                   >
                                     Book Now
@@ -1059,6 +1099,107 @@ export default function Marketplace() {
                   data-testid="button-send-inquiry"
                 >
                   {createInquiryMutation.isPending ? "Sending..." : "Send Message"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Pre-Booking Dialog for Services with Existing Approvals */}
+      <Dialog 
+        open={!!preBookingDialog} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setPreBookingDialog(null);
+          }
+        }}
+      >
+        <DialogContent data-testid="dialog-pre-booking">
+          <DialogHeader>
+            <DialogTitle>Booking Options Available</DialogTitle>
+          </DialogHeader>
+          {preBookingDialog && (
+            <div className="space-y-4">
+              <div className="flex gap-4">
+                {preBookingDialog.service.images && preBookingDialog.service.images[0] && (
+                  <img
+                    src={preBookingDialog.service.images[0]}
+                    alt={preBookingDialog.service.name}
+                    className="w-20 h-20 object-cover rounded"
+                  />
+                )}
+                <div className="flex-1">
+                  <h3 className="font-semibold">{preBookingDialog.service.name}</h3>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {preBookingDialog.service.hasApprovedDesign && (
+                      <Badge variant="default" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Design Approved
+                      </Badge>
+                    )}
+                    {preBookingDialog.service.hasAcceptedQuote && (
+                      <Badge variant="default" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Quote Accepted
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2 bg-muted/50 p-4 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  You have existing approvals for this service. Choose how you'd like to proceed:
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                {/* Continue with existing approvals */}
+                <Button
+                  className="w-full justify-start"
+                  onClick={() => handlePreBookingAction('proceed')}
+                  data-testid="button-proceed-booking"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Continue with Existing Approvals
+                </Button>
+
+                {/* Upload new design (only if service requires design approval) */}
+                {preBookingDialog.service.requiresDesignApproval && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => handlePreBookingAction('new-design')}
+                    data-testid="button-upload-new-design"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload New Design for Approval
+                  </Button>
+                )}
+
+                {/* Request new quote (only if service offers custom quotes) */}
+                {preBookingDialog.service.requiresQuote && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => handlePreBookingAction('new-quote')}
+                    data-testid="button-request-new-quote"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Request New Custom Quote
+                  </Button>
+                )}
+
+                {/* Contact seller */}
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => handlePreBookingAction('contact')}
+                  data-testid="button-contact-seller"
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Contact Seller First
                 </Button>
               </div>
             </div>

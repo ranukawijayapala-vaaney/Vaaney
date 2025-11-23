@@ -173,25 +173,6 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
       setTransferSlipObjectPath("");
     }
   }, [paymentMethod, bankAccounts, selectedBankAccountId]);
-
-  // Handle action query parameters from marketplace (upload-design, request-quote)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const action = params.get('action');
-    
-    // Guard against repeated executions and wait for auth
-    if (!service || !action || !canNavigateToMessages) return;
-    
-    if (action === 'upload-design' && service.requiresDesignApproval && !approvedDesign) {
-      // Trigger design upload workflow, then clear action parameter
-      navigateToMessages();
-      window.history.replaceState({}, '', window.location.pathname);
-    } else if (action === 'request-quote' && service.requiresQuote && (!activeQuote || activeQuote.status !== "accepted") && !requestQuoteMutation.isPending) {
-      // Trigger quote request workflow, then clear action parameter
-      requestQuoteMutation.mutate();
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-  }, [service, approvedDesign, activeQuote, requestQuoteMutation.isPending, canNavigateToMessages]);
   
   // Handle return from design approval flow
   useEffect(() => {
@@ -411,6 +392,34 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
     setShowDesignApprovalGate(false);
     setPendingPackageSelection(null);
   };
+
+  // Handle action query parameters from marketplace (upload-design, request-quote)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get('action');
+    const isNew = params.get('new') === 'true';
+    
+    // Guard against repeated executions and wait for auth
+    if (!service || !action || !canNavigateToMessages) return;
+    
+    if (action === 'upload-design' && service.requiresDesignApproval) {
+      if (isNew) {
+        // Create a new design approval conversation for fresh upload
+        createDesignApprovalConversationMutation.mutate({
+          packageId: undefined,
+          isCustomQuote: false,
+        });
+      } else {
+        // Navigate to existing design workflow
+        navigateToMessages();
+      }
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (action === 'request-quote' && service.requiresQuote && !requestQuoteMutation.isPending) {
+      // Trigger quote request workflow (allows requesting new quote even if one exists)
+      requestQuoteMutation.mutate();
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [service, canNavigateToMessages, createDesignApprovalConversationMutation, requestQuoteMutation]);
 
   const handleUploadSlip = async (file: File) => {
     try {
