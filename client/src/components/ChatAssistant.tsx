@@ -188,7 +188,8 @@ export function ChatAssistant() {
     <>
       {/* Floating Chat Button - Large and Prominent with Vaaney Lime Green */}
       <Button
-        className="fixed bottom-6 right-6 h-[70px] w-[70px] rounded-full shadow-2xl z-50 bg-[#bcd42f] hover:bg-[#a8bf2a] text-[#222326] border-2 border-[#a8bf2a] animate-pulse-slow"
+        className="h-[70px] w-[70px] rounded-full shadow-2xl bg-[#bcd42f] hover:bg-[#a8bf2a] text-[#222326] border-2 border-[#a8bf2a] animate-pulse-slow"
+        style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999 }}
         size="icon"
         onClick={() => setIsOpen(!isOpen)}
         data-testid="button-chat-assistant"
@@ -198,7 +199,7 @@ export function ChatAssistant() {
 
       {/* Chat Panel - Proper positioning to avoid header overlap */}
       {isOpen && (
-        <Card className="fixed bottom-24 right-6 w-96 max-h-[calc(100vh-180px)] shadow-2xl z-50 flex flex-col">
+        <Card className="w-96 max-h-[calc(100vh-180px)] shadow-2xl flex flex-col" style={{ position: 'fixed', bottom: '110px', right: '24px', zIndex: 9999 }}>
           {/* Header - Improved visibility with darker text */}
           <div className="p-4 border-b bg-gradient-to-r from-[#217588]/5 to-transparent">
             <div className="flex items-center gap-2">
