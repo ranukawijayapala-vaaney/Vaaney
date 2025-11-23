@@ -429,15 +429,25 @@ export default function Marketplace() {
                           </>
                         )}
                       </div>
-                      {product.requiresDesignApproval && product.approvedVariantCount > 0 && (
-                        <div className="flex items-center gap-2">
-                          <Badge variant="default" className="text-xs">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Design Approved
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {product.approvedVariantCount} {product.approvedVariantCount === 1 ? 'variant' : 'variants'}
-                          </span>
+                      {/* Workflow Status Badges */}
+                      {(product.requiresDesignApproval || product.requiresQuote) && (
+                        <div className="flex flex-wrap items-center gap-2">
+                          {product.requiresDesignApproval && product.approvedVariantCount > 0 && (
+                            <Badge variant="default" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Design Approved ({product.approvedVariantCount})
+                            </Badge>
+                          )}
+                          {product.requiresDesignApproval && (!product.approvedVariantCount || product.approvedVariantCount === 0) && (
+                            <Badge variant="outline" className="text-xs border-orange-500 text-orange-700 dark:text-orange-400">
+                              Design Approval Required
+                            </Badge>
+                          )}
+                          {product.requiresQuote && (
+                            <Badge variant="outline" className="text-xs border-blue-500 text-blue-700 dark:text-blue-400">
+                              Custom Quote Available
+                            </Badge>
+                          )}
                         </div>
                       )}
                     </CardContent>
@@ -558,15 +568,25 @@ export default function Marketplace() {
                                 </>
                               )}
                             </div>
-                            {product.requiresDesignApproval && product.approvedVariantCount > 0 && (
-                              <div className="flex items-center gap-2">
-                                <Badge variant="default" className="text-xs">
-                                  <CheckCircle className="h-3 w-3 mr-1" />
-                                  Design Approved
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  {product.approvedVariantCount} {product.approvedVariantCount === 1 ? 'variant' : 'variants'}
-                                </span>
+                            {/* Workflow Status Badges */}
+                            {(product.requiresDesignApproval || product.requiresQuote) && (
+                              <div className="flex flex-wrap items-center gap-2">
+                                {product.requiresDesignApproval && product.approvedVariantCount > 0 && (
+                                  <Badge variant="default" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Design Approved ({product.approvedVariantCount})
+                                  </Badge>
+                                )}
+                                {product.requiresDesignApproval && (!product.approvedVariantCount || product.approvedVariantCount === 0) && (
+                                  <Badge variant="outline" className="text-xs border-orange-500 text-orange-700 dark:text-orange-400">
+                                    Design Approval Required
+                                  </Badge>
+                                )}
+                                {product.requiresQuote && (
+                                  <Badge variant="outline" className="text-xs border-blue-500 text-blue-700 dark:text-blue-400">
+                                    Custom Quote Available
+                                  </Badge>
+                                )}
                               </div>
                             )}
                           </CardContent>
