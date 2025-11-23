@@ -186,9 +186,9 @@ export function ChatAssistant() {
 
   return (
     <>
-      {/* Floating Chat Button - Large and Prominent with Vaaney Teal */}
+      {/* Floating Chat Button - Large and Prominent with Vaaney Lime Green */}
       <Button
-        className="fixed bottom-6 right-6 h-[70px] w-[70px] rounded-full shadow-2xl z-50 bg-[#217588] hover:bg-[#1a5f6f] text-white border-2 border-[#1a5f6f] animate-pulse-slow"
+        className="fixed bottom-6 right-6 h-[70px] w-[70px] rounded-full shadow-2xl z-50 bg-[#bcd42f] hover:bg-[#a8bf2a] text-[#222326] border-2 border-[#a8bf2a] animate-pulse-slow"
         size="icon"
         onClick={() => setIsOpen(!isOpen)}
         data-testid="button-chat-assistant"
