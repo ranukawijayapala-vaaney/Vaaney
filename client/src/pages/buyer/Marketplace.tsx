@@ -718,28 +718,104 @@ export default function Marketplace() {
                             </>
                           )}
                         </div>
+                        {/* Workflow Status Badges */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          {(service as any).hasApprovedDesign && (
+                            <Badge variant="default" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Design Approved
+                            </Badge>
+                          )}
+                          {(service as any).hasAcceptedQuote && (
+                            <Badge variant="default" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Quote Accepted
+                            </Badge>
+                          )}
+                          {service.requiresDesignApproval && !(service as any).hasApprovedDesign && (
+                            <Badge variant="outline" className="text-xs border-orange-500 text-orange-700 dark:text-orange-400">
+                              Design Required
+                            </Badge>
+                          )}
+                          {service.requiresQuote && !(service as any).hasAcceptedQuote && (
+                            <Badge variant="outline" className="text-xs border-blue-500 text-blue-700 dark:text-blue-400">
+                              Quote Required
+                            </Badge>
+                          )}
+                        </div>
                       </CardContent>
                       <CardFooter className="p-4 pt-0 flex flex-col gap-2">
                         <div className="flex justify-between items-center gap-2 w-full">
                           <p className="text-lg font-semibold text-primary">
-                            {minPrice ? `From $${minPrice.toFixed(2)}` : "Price TBD"}
+                            {minPrice ? `From $${minPrice.toFixed(2)}` : service.requiresQuote ? "Custom Quote" : "Price TBD"}
                           </p>
-                          <Button className="min-h-11" data-testid={`button-book-service-${service.id}`}>
-                            Book Now
+                        </div>
+                        <div className="flex flex-col gap-2 w-full">
+                          {/* Show Book Now if:
+                              - Standard service (no quote, no design required), OR
+                              - Design required AND approved, OR  
+                              - Quote required AND accepted */}
+                          {(!service.requiresQuote && !service.requiresDesignApproval) ||
+                           (service.requiresDesignApproval && (service as any).hasApprovedDesign) ||
+                           (service.requiresQuote && (service as any).hasAcceptedQuote) ? (
+                            <Button
+                              className="w-full min-h-11"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                              data-testid={`button-book-service-${service.id}`}
+                            >
+                              Book Now
+                            </Button>
+                          ) : null}
+                          
+                          {/* Show Upload Design only if service requires design approval AND no approved design yet */}
+                          {service.requiresDesignApproval && !(service as any).hasApprovedDesign && (
+                            <Button
+                              className="w-full min-h-11"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                navigate(`/book-service/${service.id}?action=upload-design`);
+                              }}
+                              data-testid={`button-upload-design-${service.id}`}
+                            >
+                              <Upload className="h-4 w-4 mr-1" />
+                              Upload Design
+                            </Button>
+                          )}
+                          
+                          {/* Show Request Quote if service requires quote AND no accepted quote yet */}
+                          {service.requiresQuote && !(service as any).hasAcceptedQuote && (
+                            <Button
+                              variant={(service.requiresDesignApproval && (service as any).hasApprovedDesign) ? "outline" : "default"}
+                              className="w-full min-h-11"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                navigate(`/book-service/${service.id}?action=request-quote`);
+                              }}
+                              data-testid={`button-request-quote-${service.id}`}
+                            >
+                              <FileText className="h-4 w-4 mr-1" />
+                              Get Custom Quote
+                            </Button>
+                          )}
+                          
+                          <Button
+                            variant="outline"
+                            className="w-full min-h-11"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleAskSeller(e, "service", service);
+                            }}
+                            data-testid={`button-ask-seller-service-${service.id}`}
+                          >
+                            <MessageCircle className="h-4 w-4 mr-2" />
+                            Ask Seller
                           </Button>
                         </div>
-                        <Button
-                          variant="outline"
-                          className="w-full min-h-11"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleAskSeller(e, "service", service);
-                          }}
-                          data-testid={`button-ask-seller-service-${service.id}`}
-                        >
-                          <MessageCircle className="h-4 w-4 mr-2" />
-                          Ask Seller
-                        </Button>
                       </CardFooter>
                     </Card>
                   </Link>
@@ -793,29 +869,108 @@ export default function Marketplace() {
                                   </>
                                 )}
                               </div>
+                              {/* Workflow Status Badges */}
+                              <div className="flex flex-wrap items-center gap-2">
+                                {(service as any).hasApprovedDesign && (
+                                  <Badge variant="default" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Design Approved
+                                  </Badge>
+                                )}
+                                {(service as any).hasAcceptedQuote && (
+                                  <Badge variant="default" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Quote Accepted
+                                  </Badge>
+                                )}
+                                {service.requiresDesignApproval && !(service as any).hasApprovedDesign && (
+                                  <Badge variant="outline" className="text-xs border-orange-500 text-orange-700 dark:text-orange-400">
+                                    Design Required
+                                  </Badge>
+                                )}
+                                {service.requiresQuote && !(service as any).hasAcceptedQuote && (
+                                  <Badge variant="outline" className="text-xs border-blue-500 text-blue-700 dark:text-blue-400">
+                                    Quote Required
+                                  </Badge>
+                                )}
+                              </div>
                             </CardContent>
                             <CardFooter className="p-4 pt-0 flex flex-col gap-2">
                               <div className="flex justify-between items-center gap-2 w-full">
                                 <p className="text-lg font-semibold text-primary">
-                                  {minPrice ? `From $${minPrice.toFixed(2)}` : "Price TBD"}
+                                  {minPrice ? `From $${minPrice.toFixed(2)}` : service.requiresQuote ? "Custom Quote" : "Price TBD"}
                                 </p>
-                                <Button size="sm" data-testid={`button-book-service-${service.id}`}>
-                                  Book Now
+                              </div>
+                              <div className="flex flex-col gap-2 w-full">
+                                {/* Show Book Now if:
+                                    - Standard service (no quote, no design required), OR
+                                    - Design required AND approved, OR  
+                                    - Quote required AND accepted */}
+                                {(!service.requiresQuote && !service.requiresDesignApproval) ||
+                                 (service.requiresDesignApproval && (service as any).hasApprovedDesign) ||
+                                 (service.requiresQuote && (service as any).hasAcceptedQuote) ? (
+                                  <Button
+                                    size="sm"
+                                    className="w-full"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                    }}
+                                    data-testid={`button-book-service-${service.id}`}
+                                  >
+                                    Book Now
+                                  </Button>
+                                ) : null}
+                                
+                                {/* Show Upload Design only if service requires design approval AND no approved design yet */}
+                                {service.requiresDesignApproval && !(service as any).hasApprovedDesign && (
+                                  <Button
+                                    size="sm"
+                                    className="w-full"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      navigate(`/book-service/${service.id}?action=upload-design`);
+                                    }}
+                                    data-testid={`button-upload-design-${service.id}`}
+                                  >
+                                    <Upload className="h-4 w-4 mr-1" />
+                                    Upload Design
+                                  </Button>
+                                )}
+                                
+                                {/* Show Request Quote if service requires quote AND no accepted quote yet */}
+                                {service.requiresQuote && !(service as any).hasAcceptedQuote && (
+                                  <Button
+                                    size="sm"
+                                    variant={(service.requiresDesignApproval && (service as any).hasApprovedDesign) ? "outline" : "default"}
+                                    className="w-full"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      navigate(`/book-service/${service.id}?action=request-quote`);
+                                    }}
+                                    data-testid={`button-request-quote-${service.id}`}
+                                  >
+                                    <FileText className="h-4 w-4 mr-1" />
+                                    Get Custom Quote
+                                  </Button>
+                                )}
+                                
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleAskSeller(e, "service", service);
+                                  }}
+                                  data-testid={`button-ask-seller-service-${service.id}`}
+                                >
+                                  <MessageCircle className="h-4 w-4 mr-2" />
+                                  Ask Seller
                                 </Button>
                               </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  handleAskSeller(e, "service", service);
-                                }}
-                                data-testid={`button-ask-seller-service-${service.id}`}
-                              >
-                                <MessageCircle className="h-4 w-4 mr-2" />
-                                Ask Seller
-                              </Button>
                             </CardFooter>
                           </Card>
                         </Link>

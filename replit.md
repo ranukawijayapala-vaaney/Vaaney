@@ -38,7 +38,8 @@ Google Cloud Storage manages user-uploaded files, authenticated via the Replit s
 - **Admin User Profile Management:** Admins can view profiles and adjust seller commission rates.
 - **Returns & Refunds System:** Workflow for buyer-initiated returns/refunds, seller response, admin resolution, and automated refunds with commission reversal.
 - **Rating System:** Verified post-transaction rating for orders and bookings (1-5 stars, comments, photo uploads).
-- **Quote Request & Design Approval System:** Pre-purchase workflow for customized products, allowing buyers to request quotes and sellers to provide pricing, supporting standard variants and custom specifications. Accepted quotes can be purchased directly, calculating real-time shipping costs. Includes design library for reusing approved designs across variants.
+- **Quote Request & Design Approval System:** Pre-purchase workflow for customized products and services, allowing buyers to request quotes and sellers to provide pricing, supporting standard variants and custom specifications. Accepted quotes can be purchased/booked directly, calculating real-time shipping costs. Includes design library for reusing approved designs across variants.
+  - **Service Workflow Guidance:** Service cards and detail pages show context-aware workflow buttons (Upload Design, Request Quote, Book Now) based on pre-purchase requirements. Backend enriches service data with approval status (hasApprovedDesign, hasAcceptedQuote) for authenticated buyers. Color-coded workflow alerts guide buyers through combined design + quote requirements with step-by-step instructions and visual status badges.
 - **Digital Delivery System:** Sellers upload deliverable files for completed bookings, which buyers access in-app and via email notifications. Files are securely stored in Google Cloud Storage.
 - **Notification System:** Comprehensive system with in-app (bell icon) and email notifications for major events.
 

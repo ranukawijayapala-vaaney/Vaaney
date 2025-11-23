@@ -138,7 +138,7 @@ export interface IStorage {
   clearCart(buyerId: string): Promise<void>;
   
   createService(service: InsertService & { sellerId: string }): Promise<Service>;
-  getServices(sellerId?: string): Promise<Service[]>;
+  getServices(filters?: { sellerId?: string; buyerId?: string }): Promise<Service[]>;
   getService(id: string): Promise<Service | undefined>;
   
   createServicePackage(pkg: InsertServicePackage): Promise<ServicePackage>;
@@ -639,11 +639,38 @@ export class DatabaseStorage implements IStorage {
     return service;
   }
 
-  async getServices(sellerId?: string): Promise<Service[]> {
-    if (sellerId) {
-      return await db.select().from(services).where(eq(services.sellerId, sellerId));
+  async getServices(filters?: { sellerId?: string; buyerId?: string }): Promise<Service[]> {
+    let baseServices: Service[];
+    
+    if (filters?.sellerId) {
+      baseServices = await db.select().from(services).where(eq(services.sellerId, filters.sellerId));
+    } else {
+      baseServices = await db.select().from(services).where(eq(services.isActive, true));
     }
-    return await db.select().from(services).where(eq(services.isActive, true));
+    
+    // Enrich services with approval status for buyers
+    if (filters?.buyerId) {
+      const enrichedServices = await Promise.all(
+        baseServices.map(async (service: any) => {
+          // Check for approved design
+          if (service.requiresDesignApproval) {
+            const approvedDesign = await this.getApprovedDesignForItem(filters.buyerId!, undefined, service.id);
+            service.hasApprovedDesign = !!approvedDesign;
+          }
+          
+          // Check for active accepted quote
+          if (service.requiresQuote) {
+            const activeQuote = await this.getActiveQuoteForItem(filters.buyerId!, undefined, service.id);
+            service.hasAcceptedQuote = activeQuote?.status === "accepted";
+          }
+          
+          return service;
+        })
+      );
+      return enrichedServices;
+    }
+    
+    return baseServices;
   }
 
   async getService(id: string): Promise<Service | undefined> {

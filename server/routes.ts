@@ -651,7 +651,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/services", async (req: Request, res: Response) => {
     try {
-      const services = await storage.getServices();
+      // Pass buyerId if user is authenticated as a buyer to enrich with approval status
+      const user = (req as any).user;
+      const buyerId = user?.role === "buyer" ? user.id : undefined;
+      
+      const services = await storage.getServices({ buyerId });
       const servicesWithDetails = await Promise.all(
         services.map(async (service) => {
           const packages = await storage.getServicePackages(service.id);
@@ -1982,7 +1986,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const userId = (req.user as any)?.id;
     try {
       const products = await storage.getProducts(userId);
-      const services = await storage.getServices(userId);
+      const services = await storage.getServices({ sellerId: userId });
       const orders = await storage.getOrders(undefined, userId);
       const bookings = await storage.getBookings(undefined, userId);
       
@@ -2164,7 +2168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/seller/services", isAuthenticated, requireRole(["seller"]), async (req: AuthRequest, res: Response) => {
     const userId = (req.user as any)?.id;
     try {
-      const services = await storage.getServices(userId);
+      const services = await storage.getServices({ sellerId: userId });
       res.json(services);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -3018,7 +3022,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allOrders = await storage.getOrders();
       const allBookings = await storage.getBookings();
       const allProducts = await storage.getProducts();
-      const allServices = await storage.getServices();
+      const allServices = await storage.getServices({});
       
       // Calculate actual revenue and commissions from paid transactions only
       const allTransactions = await db.select().from(transactions);

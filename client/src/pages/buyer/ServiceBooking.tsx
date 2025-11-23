@@ -129,6 +129,25 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
     }
   }, [paymentMethod, bankAccounts, selectedBankAccountId]);
 
+  // Handle action query parameters from marketplace (upload-design, request-quote)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get('action');
+    
+    // Guard against repeated executions and wait for auth
+    if (!service || !action || !canNavigateToMessages) return;
+    
+    if (action === 'upload-design' && service.requiresDesignApproval && !approvedDesign) {
+      // Trigger design upload workflow, then clear action parameter
+      navigateToMessages();
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (action === 'request-quote' && service.requiresQuote && (!activeQuote || activeQuote.status !== "accepted") && !requestQuoteMutation.isPending) {
+      // Trigger quote request workflow, then clear action parameter
+      requestQuoteMutation.mutate();
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [service, approvedDesign, activeQuote, requestQuoteMutation.isPending, canNavigateToMessages]);
+  
   // Handle return from design approval flow
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -529,6 +548,9 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
 
   // Check if design approval blocks everything
   const isBlockedByDesignApproval = service.requiresDesignApproval && !approvedDesign;
+  const isBlockedByQuote = service.requiresQuote && (!activeQuote || activeQuote.status !== "accepted");
+  const hasApprovedDesign = service.requiresDesignApproval && !!approvedDesign;
+  const hasAcceptedQuote = service.requiresQuote && activeQuote?.status === "accepted";
 
   const selectedBankAccount = bankAccounts.find((acc: any) => String(acc.id) === selectedBankAccountId);
 
@@ -536,8 +558,8 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
     <div className="container max-w-7xl mx-auto px-4 py-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
-          {/* Design Approval Gate */}
-          {isBlockedByDesignApproval && (
+          {/* Design Approval Required Alert */}
+          {isBlockedByDesignApproval && !isBlockedByQuote && (
             <Alert className="border-orange-500 bg-orange-500/10">
               <Upload className="h-4 w-4" />
               <AlertDescription className="flex items-center justify-between">
@@ -556,6 +578,112 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
                   <Upload className="h-4 w-4 mr-2" />
                   Upload Design
                 </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {/* Quote Required Alert */}
+          {isBlockedByQuote && !isBlockedByDesignApproval && (
+            <Alert className="border-blue-500 bg-blue-500/10">
+              <FileText className="h-4 w-4" />
+              <AlertDescription className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Custom Quote Required</p>
+                  <p className="text-sm mt-1">This service requires a custom quote. Request a quote from the seller to get pricing for your specific requirements.</p>
+                </div>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => requestQuoteMutation.mutate()}
+                  disabled={requestQuoteMutation.isPending}
+                  className="ml-4 flex-shrink-0"
+                  data-testid="button-request-quote-alert"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  {requestQuoteMutation.isPending ? "Sending..." : "Request Quote"}
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {/* Combined: Design + Quote Required */}
+          {isBlockedByDesignApproval && isBlockedByQuote && (
+            <Alert className="border-purple-500 bg-purple-500/10">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <div>
+                  <p className="font-medium">Design Approval & Quote Required</p>
+                  <p className="text-sm mt-1 mb-3">This service requires both design approval and a custom quote.</p>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-start gap-2">
+                      <span className="text-sm font-medium text-purple-600 dark:text-purple-400">1.</span>
+                      <p className="text-sm flex-1">Upload your design files for seller approval</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-sm font-medium text-purple-600 dark:text-purple-400">2.</span>
+                      <p className="text-sm flex-1">Request a custom quote for your requirements</p>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-sm font-medium text-purple-600 dark:text-purple-400">3.</span>
+                      <p className="text-sm flex-1">Once both are approved, you can book the service</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={navigateToMessages}
+                      disabled={!canNavigateToMessages}
+                      data-testid="button-upload-design-combined"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Design
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => requestQuoteMutation.mutate()}
+                      disabled={requestQuoteMutation.isPending}
+                      data-testid="button-request-quote-combined"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Request Quote
+                    </Button>
+                  </div>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {/* Success: Design Approved */}
+          {hasApprovedDesign && !hasAcceptedQuote && service.requiresQuote && (
+            <Alert className="border-green-500 bg-green-500/10">
+              <Check className="h-4 w-4" />
+              <AlertDescription>
+                <p className="font-medium text-green-700 dark:text-green-400">Design Approved ✓</p>
+                <p className="text-sm mt-1">Your design has been approved! Now request a custom quote to proceed with booking.</p>
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {/* Success: Quote Accepted */}
+          {hasAcceptedQuote && !hasApprovedDesign && service.requiresDesignApproval && (
+            <Alert className="border-green-500 bg-green-500/10">
+              <Check className="h-4 w-4" />
+              <AlertDescription>
+                <p className="font-medium text-green-700 dark:text-green-400">Quote Accepted ✓</p>
+                <p className="text-sm mt-1">Your quote has been accepted! Now upload your design for approval to proceed with booking.</p>
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {/* Success: Both Completed */}
+          {hasApprovedDesign && hasAcceptedQuote && (
+            <Alert className="border-green-500 bg-green-500/10">
+              <Check className="h-4 w-4" />
+              <AlertDescription>
+                <p className="font-medium text-green-700 dark:text-green-400">Ready to Book! ✓</p>
+                <p className="text-sm mt-1">Your design is approved and quote is accepted. You can now proceed with booking this service.</p>
               </AlertDescription>
             </Alert>
           )}
