@@ -187,9 +187,10 @@ export function ChatAssistant() {
   return (
     <>
       {/* Floating Chat Button - Large and Prominent with Vaaney Lime Green */}
+      {/* Mobile: Above bottom nav (84px). Desktop: Bottom right corner (24px) */}
       <Button
-        className="h-[70px] w-[70px] rounded-full shadow-2xl bg-[#bcd42f] hover:bg-[#a8bf2a] text-[#222326] border-2 border-[#a8bf2a] animate-pulse-slow"
-        style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999 }}
+        className="bottom-[84px] right-4 xl:bottom-6 xl:right-6 h-[70px] w-[70px] rounded-full shadow-2xl bg-[#bcd42f] hover:bg-[#a8bf2a] text-[#222326] border-2 border-[#a8bf2a] animate-pulse-slow"
+        style={{ position: 'fixed', zIndex: 9999 }}
         size="icon"
         onClick={() => setIsOpen(!isOpen)}
         data-testid="button-chat-assistant"
@@ -197,9 +198,13 @@ export function ChatAssistant() {
         {isOpen ? <X className="h-7 w-7" /> : <MessageCircle className="h-7 w-7" />}
       </Button>
 
-      {/* Chat Panel - Proper positioning to avoid header overlap */}
+      {/* Chat Panel - Mobile responsive */}
+      {/* Mobile: Full width with margins, above button. Desktop: Fixed width (384px), above button */}
       {isOpen && (
-        <Card className="w-96 max-h-[calc(100vh-180px)] shadow-2xl flex flex-col" style={{ position: 'fixed', bottom: '110px', right: '24px', zIndex: 9999 }}>
+        <Card 
+          className="bottom-[170px] left-4 right-4 xl:bottom-[110px] xl:left-auto xl:right-6 xl:w-96 max-h-[calc(100vh-270px)] xl:max-h-[calc(100vh-180px)] shadow-2xl flex flex-col"
+          style={{ position: 'fixed', zIndex: 9999 }}
+        >
           {/* Header - Improved visibility with darker text */}
           <div className="p-4 border-b bg-gradient-to-r from-[#217588]/5 to-transparent">
             <div className="flex items-center gap-2">
