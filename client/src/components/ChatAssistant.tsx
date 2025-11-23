@@ -19,7 +19,10 @@ export function ChatAssistant() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(() => {
+    // Load sessionId from localStorage on mount
+    return localStorage.getItem('chatSessionId');
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [location] = useLocation();
 
@@ -37,22 +40,92 @@ export function ChatAssistant() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Extract context from current page
+  // Save sessionId to localStorage whenever it changes
+  useEffect(() => {
+    if (sessionId) {
+      localStorage.setItem('chatSessionId', sessionId);
+    }
+  }, [sessionId]);
+
+  // Load chat history when opening the assistant and sessionId exists
+  useEffect(() => {
+    if (isOpen && sessionId && messages.length === 0) {
+      const loadHistory = async () => {
+        try {
+          const response = await fetch(`/api/chat/history/${sessionId}`, {
+            credentials: 'include',
+          });
+          if (response.ok) {
+            const data = await response.json();
+            if (data.messages && Array.isArray(data.messages)) {
+              setMessages(data.messages);
+            }
+          }
+        } catch (error) {
+          console.error("Error loading chat history:", error);
+        }
+      };
+      loadHistory();
+    }
+  }, [isOpen, sessionId]);
+
+  // Extract context from current page - expanded to cover all routes
   const getPageContext = () => {
     const context: any = {
       currentPage: location,
     };
 
-    // Extract IDs from URL
-    const productMatch = location.match(/\/product\/([^\/]+)/);
-    const serviceMatch = location.match(/\/book-service\/([^\/]+)/);
-    const orderMatch = location.match(/\/orders\/([^\/]+)/);
-    const bookingMatch = location.match(/\/bookings\/([^\/]+)/);
+    // Extract IDs from URL patterns
+    const patterns = [
+      { regex: /\/product\/([^/?]+)/, key: 'productId' },
+      { regex: /\/book-service\/([^/?]+)/, key: 'serviceId' },
+      { regex: /\/orders\/([^/?]+)/, key: 'orderId' },
+      { regex: /\/bookings\/([^/?]+)/, key: 'bookingId' },
+      { regex: /\/seller\/products\/([^/?]+)/, key: 'productId' },
+      { regex: /\/seller\/services\/([^/?]+)/, key: 'serviceId' },
+      { regex: /\/admin\/orders\/([^/?]+)/, key: 'orderId' },
+      { regex: /\/admin\/bookings\/([^/?]+)/, key: 'bookingId' },
+    ];
 
-    if (productMatch) context.productId = productMatch[1];
-    if (serviceMatch) context.serviceId = serviceMatch[1];
-    if (orderMatch) context.orderId = orderMatch[1];
-    if (bookingMatch) context.bookingId = bookingMatch[1];
+    for (const pattern of patterns) {
+      const match = location.match(pattern.regex);
+      if (match) {
+        context[pattern.key] = match[1];
+      }
+    }
+
+    // Add friendly page names for better context
+    if (location === '/') context.currentPage = 'Landing Page';
+    else if (location === '/marketplace') context.currentPage = 'Marketplace';
+    else if (location === '/cart') context.currentPage = 'Shopping Cart';
+    else if (location === '/checkout') context.currentPage = 'Checkout';
+    else if (location.startsWith('/product/')) context.currentPage = 'Product Detail';
+    else if (location.startsWith('/book-service/')) context.currentPage = 'Service Booking';
+    else if (location.startsWith('/orders')) context.currentPage = 'Order History';
+    else if (location.startsWith('/service-history')) context.currentPage = 'Service History';
+    else if (location.startsWith('/design-approvals')) context.currentPage = 'Design Approvals';
+    else if (location.startsWith('/custom-quotes')) context.currentPage = 'Custom Quotes';
+    else if (location.startsWith('/design-library')) context.currentPage = 'Design Library';
+    else if (location.startsWith('/messages')) context.currentPage = 'Messages';
+    else if (location.startsWith('/profile')) context.currentPage = 'Profile';
+    else if (location.startsWith('/seller/dashboard')) context.currentPage = 'Seller Dashboard';
+    else if (location.startsWith('/seller/products')) context.currentPage = 'Seller Products';
+    else if (location.startsWith('/seller/services')) context.currentPage = 'Seller Services';
+    else if (location.startsWith('/seller/orders')) context.currentPage = 'Seller Orders';
+    else if (location.startsWith('/seller/bookings')) context.currentPage = 'Seller Bookings';
+    else if (location.startsWith('/seller/payouts')) context.currentPage = 'Seller Payouts';
+    else if (location.startsWith('/seller/boost')) context.currentPage = 'Seller Boost';
+    else if (location.startsWith('/seller/messages')) context.currentPage = 'Seller Messages';
+    else if (location.startsWith('/seller/returns')) context.currentPage = 'Seller Returns';
+    else if (location.startsWith('/seller/quotes')) context.currentPage = 'Seller Quotes';
+    else if (location.startsWith('/seller/designs')) context.currentPage = 'Seller Designs';
+    else if (location.startsWith('/admin/dashboard')) context.currentPage = 'Admin Dashboard';
+    else if (location.startsWith('/admin/users')) context.currentPage = 'Admin Users';
+    else if (location.startsWith('/admin/verifications')) context.currentPage = 'Admin Verifications';
+    else if (location.startsWith('/admin/transactions')) context.currentPage = 'Admin Transactions';
+    else if (location.startsWith('/admin/shipping')) context.currentPage = 'Admin Shipping';
+    else if (location.startsWith('/admin/returns')) context.currentPage = 'Admin Returns';
+    else if (location.startsWith('/admin/conversations')) context.currentPage = 'Admin Conversations';
 
     return context;
   };

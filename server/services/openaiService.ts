@@ -175,28 +175,75 @@ ${context.commissionRate ? `- Your current commission rate: ${context.commission
  * Enhance system prompt with current page context
  */
 function enhancePromptWithContext(systemPrompt: string, context: ChatContext): string {
-  const { currentPage, productId, serviceId, orderId, bookingId, sellerVerificationStatus, profileComplete } = context;
+  const { 
+    currentPage, 
+    sellerVerificationStatus, 
+    profileComplete, 
+    currentProduct, 
+    currentService, 
+    currentOrder, 
+    currentBooking,
+    summary,
+    userName,
+    userEmail
+  } = context;
   
   let contextAddition = "\n\n**Current Context:**\n";
   
+  if (userName) {
+    contextAddition += `- User: ${userName} (${userEmail})\n`;
+  }
+  
   if (currentPage) {
-    contextAddition += `- User is on: ${currentPage}\n`;
+    contextAddition += `- Current page: ${currentPage}\n`;
   }
   
-  if (productId) {
-    contextAddition += `- Viewing Product ID: ${productId}\n`;
+  if (summary) {
+    contextAddition += `- User summary:\n`;
+    Object.entries(summary).forEach(([key, value]) => {
+      contextAddition += `  - ${key}: ${value}\n`;
+    });
   }
   
-  if (serviceId) {
-    contextAddition += `- Viewing Service ID: ${serviceId}\n`;
+  if (currentProduct) {
+    contextAddition += `- Viewing Product:\n`;
+    contextAddition += `  - Name: ${currentProduct.name}\n`;
+    contextAddition += `  - Category: ${currentProduct.category}\n`;
+    contextAddition += `  - Price: MVR ${currentProduct.price}\n`;
+    contextAddition += `  - Stock: ${currentProduct.stock}\n`;
+    if (currentProduct.description) {
+      contextAddition += `  - Description: ${currentProduct.description}\n`;
+    }
   }
   
-  if (orderId) {
-    contextAddition += `- Viewing Order ID: ${orderId}\n`;
+  if (currentService) {
+    contextAddition += `- Viewing Service:\n`;
+    contextAddition += `  - Name: ${currentService.name}\n`;
+    contextAddition += `  - Category: ${currentService.category}\n`;
+    if (currentService.requiresDesignApproval) {
+      contextAddition += `  - Requires design approval before booking\n`;
+    }
+    if (currentService.requiresCustomQuote) {
+      contextAddition += `  - Requires custom quote request\n`;
+    }
+    if (currentService.description) {
+      contextAddition += `  - Description: ${currentService.description}\n`;
+    }
   }
   
-  if (bookingId) {
-    contextAddition += `- Viewing Booking ID: ${bookingId}\n`;
+  if (currentOrder) {
+    contextAddition += `- Viewing Order:\n`;
+    contextAddition += `  - Product: ${currentOrder.productName}\n`;
+    contextAddition += `  - Status: ${currentOrder.status}\n`;
+    contextAddition += `  - Total: MVR ${currentOrder.totalPrice}\n`;
+    contextAddition += `  - Quantity: ${currentOrder.quantity}\n`;
+  }
+  
+  if (currentBooking) {
+    contextAddition += `- Viewing Booking:\n`;
+    contextAddition += `  - Service: ${currentBooking.serviceName}\n`;
+    contextAddition += `  - Status: ${currentBooking.status}\n`;
+    contextAddition += `  - Total: MVR ${currentBooking.totalPrice}\n`;
   }
   
   if (sellerVerificationStatus && context.userRole === "seller") {

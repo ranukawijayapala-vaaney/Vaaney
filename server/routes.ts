@@ -515,14 +515,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Build chat context
-      const chatContext = {
+      // Build rich chat context based on URL and user role
+      const chatContext: any = {
         userRole: user.role,
         userId: user.id,
+        userEmail: user.email,
+        userName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
         sellerVerificationStatus: user.verificationStatus,
         commissionRate: user.commissionRate,
+        currentPage: context?.currentPage || 'unknown',
         ...context,
       };
+
+      // Fetch additional context based on IDs in the context - wrapped in try-catch to prevent crashes
+      try {
+        if (context?.productId) {
+          const product = await storage.getProduct(context.productId);
+          if (product) {
+            chatContext.currentProduct = {
+              id: product.id,
+              name: product.name,
+              category: product.category,
+              price: product.basePrice,
+              description: product.description,
+              stock: product.stock,
+            };
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching product context:", error);
+      }
+
+      try {
+        if (context?.serviceId) {
+          const service = await storage.getService(context.serviceId);
+          if (service) {
+            chatContext.currentService = {
+              id: service.id,
+              name: service.name,
+              category: service.category,
+              description: service.description,
+              requiresDesignApproval: service.requiresDesignApproval,
+              requiresCustomQuote: service.requiresCustomQuote,
+            };
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching service context:", error);
+      }
+
+      try {
+        if (context?.orderId) {
+          const order = await storage.getOrder(context.orderId);
+          if (order) {
+            const product = await storage.getProduct(order.productId);
+            chatContext.currentOrder = {
+              id: order.id,
+              status: order.status,
+              totalPrice: order.totalPrice,
+              productName: product?.name,
+              quantity: order.quantity,
+              createdAt: order.createdAt,
+            };
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching order context:", error);
+      }
+
+      try {
+        if (context?.bookingId) {
+          const booking = await db.query.bookings.findFirst({
+            where: eq(bookings.id, context.bookingId),
+          });
+          if (booking) {
+            const service = await storage.getService(booking.serviceId);
+            chatContext.currentBooking = {
+              id: booking.id,
+              status: booking.status,
+              totalPrice: booking.totalPrice,
+              serviceName: service?.name,
+              createdAt: booking.createdAt,
+            };
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching booking context:", error);
+      }
+
+      // Add role-specific data summaries - wrapped in try-catch to prevent crashes
+      try {
+        if (user.role === 'buyer') {
+          // Get recent orders count using existing method
+          const buyerOrders = await storage.getOrders(userId);
+          const buyerBookings = await storage.getBookings(userId); // Use storage method with buyerId param
+          chatContext.summary = {
+            totalOrders: buyerOrders.length,
+            totalBookings: buyerBookings.length,
+          };
+        } else if (user.role === 'seller') {
+          // Get seller's products and services using existing methods
+          const sellerProducts = await storage.getProducts(userId);
+          const sellerServices = await storage.getServices({ sellerId: userId });
+          const sellerOrders = await storage.getOrders(undefined, userId);
+          const sellerBookings = await storage.getBookings(undefined, userId); // Use correct signature
+          chatContext.summary = {
+            totalProducts: sellerProducts.length,
+            totalServices: sellerServices.length,
+            totalOrders: sellerOrders.length,
+            totalBookings: sellerBookings.length,
+          };
+        } else if (user.role === 'admin') {
+          // Get platform statistics using existing methods
+          const allUsers = await storage.getAllUsers();
+          const allProducts = await storage.getProducts(); // No sellerId = all products
+          chatContext.summary = {
+            totalUsers: allUsers.length,
+            totalProducts: allProducts.length,
+          };
+        }
+      } catch (summaryError) {
+        console.error("Error fetching role summary:", summaryError);
+        // Continue without summary - don't crash the endpoint
+      }
 
       // Get chat history from session
       const messages = (session.messages as any[]) || [];
