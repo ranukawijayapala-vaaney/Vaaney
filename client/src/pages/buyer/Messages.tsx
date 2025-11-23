@@ -7,7 +7,7 @@ import { ConversationList } from "@/components/messaging/ConversationList";
 import { MessageThread } from "@/components/messaging/MessageThread";
 import { MessageInput } from "@/components/messaging/MessageInput";
 import { WorkflowPanel } from "@/components/messaging/WorkflowPanel";
-import { MessageCircle, Plus, CheckCircle, ArrowLeft } from "lucide-react";
+import { MessageCircle, Plus, CheckCircle, ArrowLeft, HeadphonesIcon, Package } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useConversationContext } from "@/hooks/use-conversation-context";
@@ -223,9 +223,9 @@ export default function BuyerMessages() {
           <h1 className="text-4xl font-bold font-display">Messages</h1>
           <p className="text-muted-foreground mt-2">Communicate with sellers and support</p>
         </div>
-        <Button onClick={() => setIsNewConversationDialogOpen(true)} data-testid="button-new-conversation">
-          <Plus className="h-4 w-4 mr-2" />
-          New Conversation
+        <Button onClick={() => setIsNewConversationDialogOpen(true)} data-testid="button-contact-admin">
+          <HeadphonesIcon className="h-4 w-4 mr-2" />
+          Contact Admin Support
         </Button>
       </div>
 
@@ -240,12 +240,33 @@ export default function BuyerMessages() {
             <p className="text-xs text-muted-foreground mt-1">{conversations.length} total</p>
           </div>
           <div className="flex-1 overflow-y-auto">
-            <ConversationList
-              conversations={allConversations}
-              currentConversationId={selectedConversationId}
-              onSelectConversation={setSelectedConversationId}
-              currentUserRole="buyer"
-            />
+            {conversations.length === 0 ? (
+              <div className="p-6 text-center space-y-4">
+                <MessageCircle className="h-12 w-12 mx-auto opacity-30" />
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">No messages yet</p>
+                  <p className="text-xs text-muted-foreground">
+                    To message a seller, visit their product or service page
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setLocation("/")}
+                  className="mt-4"
+                  data-testid="button-browse-products"
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  Browse Products
+                </Button>
+              </div>
+            ) : (
+              <ConversationList
+                conversations={allConversations}
+                currentConversationId={selectedConversationId}
+                onSelectConversation={setSelectedConversationId}
+                currentUserRole="buyer"
+              />
+            )}
           </div>
         </Card>
 
@@ -374,7 +395,7 @@ export default function BuyerMessages() {
       <Dialog open={isNewConversationDialogOpen} onOpenChange={setIsNewConversationDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>New Conversation</DialogTitle>
+            <DialogTitle>Contact Admin Support</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">

@@ -7,7 +7,7 @@ import { ConversationList } from "@/components/messaging/ConversationList";
 import { MessageThread } from "@/components/messaging/MessageThread";
 import { MessageInput } from "@/components/messaging/MessageInput";
 import { WorkflowPanel } from "@/components/messaging/WorkflowPanel";
-import { MessageCircle, CheckCircle, Plus } from "lucide-react";
+import { MessageCircle, CheckCircle, Plus, HeadphonesIcon, Store } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useConversationContext } from "@/hooks/use-conversation-context";
@@ -27,7 +27,7 @@ import type { Conversation, Message, User } from "@shared/schema";
 
 export default function SellerMessages() {
   const { toast } = useToast();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [selectedConversationId, setSelectedConversationId] = useState<string>();
   const [isNewConversationDialogOpen, setIsNewConversationDialogOpen] = useState(false);
   const [conversationType, setConversationType] = useState<string>("general_inquiry");
@@ -233,9 +233,9 @@ export default function SellerMessages() {
           <h1 className="text-4xl font-bold font-display">Messages & Inquiries</h1>
           <p className="text-muted-foreground mt-2">Respond to buyer inquiries and manage communications</p>
         </div>
-        <Button onClick={() => setIsNewConversationDialogOpen(true)} data-testid="button-new-conversation">
-          <Plus className="h-4 w-4 mr-2" />
-          New Conversation
+        <Button onClick={() => setIsNewConversationDialogOpen(true)} data-testid="button-contact-admin">
+          <HeadphonesIcon className="h-4 w-4 mr-2" />
+          Contact Admin Support
         </Button>
       </div>
 
@@ -247,12 +247,27 @@ export default function SellerMessages() {
             <p className="text-xs text-muted-foreground mt-1">{conversations.length} total</p>
           </div>
           <div className="flex-1 overflow-y-auto">
-            <ConversationList
-              conversations={allConversations}
-              currentConversationId={selectedConversationId}
-              onSelectConversation={setSelectedConversationId}
-              currentUserRole="seller"
-            />
+            {conversations.length === 0 ? (
+              <div className="p-6 text-center space-y-4">
+                <MessageCircle className="h-12 w-12 mx-auto opacity-30" />
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">No messages yet</p>
+                  <p className="text-xs text-muted-foreground">
+                    Buyer messages will appear here when they contact you
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Need help? Contact admin support above
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <ConversationList
+                conversations={allConversations}
+                currentConversationId={selectedConversationId}
+                onSelectConversation={setSelectedConversationId}
+                currentUserRole="seller"
+              />
+            )}
           </div>
         </Card>
 
@@ -326,9 +341,9 @@ export default function SellerMessages() {
       </div>
 
       <Dialog open={isNewConversationDialogOpen} onOpenChange={setIsNewConversationDialogOpen}>
-        <DialogContent data-testid="dialog-new-conversation">
+        <DialogContent data-testid="dialog-contact-admin">
           <DialogHeader>
-            <DialogTitle>New Conversation</DialogTitle>
+            <DialogTitle>Contact Admin Support</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">

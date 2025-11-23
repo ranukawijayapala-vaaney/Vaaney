@@ -435,7 +435,7 @@ export const conversationsRelations = relations(conversations, ({ one, many }) =
 
 export const insertConversationSchema = createInsertSchema(conversations, {
   type: z.enum(["pre_purchase_product", "pre_purchase_service", "general_inquiry", "complaint", "order", "booking"]),
-  subject: z.string().min(3, "Subject must be at least 3 characters"),
+  subject: z.string().min(2, "Subject must be at least 2 characters"),
 }).omit({ id: true, buyerId: true, sellerId: true, lastMessageAt: true, createdAt: true, updatedAt: true, status: true }).extend({
   productId: z.string().optional(),
   serviceId: z.string().optional(),
