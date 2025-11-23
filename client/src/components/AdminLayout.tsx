@@ -13,6 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import vaaneyLogo from "@assets/Vaaney logo (2)_1763908268914.png";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -33,9 +34,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <Link href="/admin/dashboard" className="flex items-center gap-2 hover-elevate active-elevate-2 rounded-md px-2 py-1 -ml-2 cursor-pointer" data-testid="link-home-logo">
-              <Package className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold font-display">Vaaney</span>
-              <Badge variant="destructive" className="ml-2 text-xs">Admin</Badge>
+              <img src={vaaneyLogo} alt="Vaaney" className="h-10" />
+              <Badge variant="destructive" className="text-xs">Admin</Badge>
             </Link>
             <nav className="hidden lg:flex items-center gap-1">
               {/* Dashboard */}
