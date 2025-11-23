@@ -47,6 +47,8 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
   const [isUploadingSlip, setIsUploadingSlip] = useState(false);
   const [showDesignApprovalGate, setShowDesignApprovalGate] = useState(false);
   const [pendingPackageSelection, setPendingPackageSelection] = useState<{ packageId?: string; isCustomQuote: boolean } | null>(null);
+  const [showPrePurchaseDialog, setShowPrePurchaseDialog] = useState(false);
+  const [pendingPackageId, setPendingPackageId] = useState<string | null>(null);
 
   // Get current user to determine messages route
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -308,14 +310,32 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
   });
 
   const handlePackageSelect = (packageId: string) => {
+    // If design approval is required, show design approval gate
     if (service?.requiresDesignApproval && !approvedDesign) {
       setPendingPackageSelection({ packageId, isCustomQuote: false });
       setShowDesignApprovalGate(true);
       return;
     }
-    setSelectedPackageId(packageId);
-    setIsCustomQuoteSelected(false);
-    setActiveTab("review");
+    
+    // For normal packages (no design approval needed), show pre-purchase dialog
+    setPendingPackageId(packageId);
+    setShowPrePurchaseDialog(true);
+  };
+  
+  const handleContinueToPurchase = () => {
+    if (pendingPackageId) {
+      setSelectedPackageId(pendingPackageId);
+      setIsCustomQuoteSelected(false);
+      setActiveTab("review");
+    }
+    setShowPrePurchaseDialog(false);
+    setPendingPackageId(null);
+  };
+  
+  const handleContactSellerFirst = () => {
+    setShowPrePurchaseDialog(false);
+    setShowContactDialog(true);
+    // Don't clear pendingPackageId yet - we'll need it after they send message
   };
 
   const handleCustomQuoteSelect = () => {
@@ -1164,6 +1184,41 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
               data-testid="button-send-message"
             >
               {sendMessageMutation.isPending ? "Sending..." : "Send Message"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pre-Purchase Confirmation Dialog */}
+      <Dialog open={showPrePurchaseDialog} onOpenChange={setShowPrePurchaseDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Before You Continue</DialogTitle>
+            <DialogDescription>
+              We recommend contacting the seller first to clarify any questions about this service
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm">
+              Would you like to ask the seller any questions before proceeding with your booking?
+            </p>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              className="min-h-11 w-full sm:w-auto"
+              onClick={handleContactSellerFirst}
+              data-testid="button-contact-seller-first"
+            >
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Contact Seller First
+            </Button>
+            <Button
+              className="min-h-11 w-full sm:w-auto"
+              onClick={handleContinueToPurchase}
+              data-testid="button-continue-to-purchase"
+            >
+              Continue to Purchase
             </Button>
           </DialogFooter>
         </DialogContent>
