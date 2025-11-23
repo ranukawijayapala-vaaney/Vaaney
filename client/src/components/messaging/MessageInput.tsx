@@ -81,7 +81,7 @@ export function MessageInput({
             onChange={(e) => setMessage(e.target.value)}
             placeholder={placeholder}
             disabled={disabled || isSending}
-            className="resize-none min-h-[60px] flex-1"
+            className="resize-none min-h-[60px] flex-1 placeholder:text-foreground/50 focus:border-[#217588] focus:ring-[#217588]"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -118,6 +118,7 @@ export function MessageInput({
           <Button
             type="submit"
             disabled={(!message.trim() && files.length === 0) || disabled || isSending}
+            className="bg-[#bcd42f] hover:bg-[#a8bf2a] text-[#222326] border border-[#a8bf2a]"
             data-testid="button-send-message"
           >
             <Send className="h-4 w-4 mr-2" />

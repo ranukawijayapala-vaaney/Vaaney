@@ -186,26 +186,26 @@ export function ChatAssistant() {
 
   return (
     <>
-      {/* Floating Chat Button */}
+      {/* Floating Chat Button - Large and Prominent with Vaaney Teal */}
       <Button
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 hover-elevate active-elevate-2"
+        className="fixed bottom-6 right-6 h-[70px] w-[70px] rounded-full shadow-2xl z-50 bg-[#217588] hover:bg-[#1a5f6f] text-white border-2 border-[#1a5f6f] animate-pulse-slow"
         size="icon"
         onClick={() => setIsOpen(!isOpen)}
         data-testid="button-chat-assistant"
       >
-        {isOpen ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
+        {isOpen ? <X className="h-7 w-7" /> : <MessageCircle className="h-7 w-7" />}
       </Button>
 
-      {/* Chat Panel */}
+      {/* Chat Panel - Proper positioning to avoid header overlap */}
       {isOpen && (
-        <Card className="fixed bottom-24 right-6 w-96 h-[600px] shadow-2xl z-50 flex flex-col">
-          {/* Header */}
-          <div className="p-4 border-b">
+        <Card className="fixed bottom-24 right-6 w-96 max-h-[calc(100vh-180px)] shadow-2xl z-50 flex flex-col">
+          {/* Header - Improved visibility with darker text */}
+          <div className="p-4 border-b bg-gradient-to-r from-[#217588]/5 to-transparent">
             <div className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5 text-primary" />
+              <MessageCircle className="h-5 w-5 text-[#217588]" />
               <div>
-                <h3 className="font-semibold">Vaaney AI Assistant</h3>
-                <p className="text-xs text-muted-foreground">
+                <h3 className="font-bold text-[#222326] text-base">Vaaney AI Assistant</h3>
+                <p className="text-xs text-foreground/70">
                   {user.role === "buyer" && "Find products, get help shopping"}
                   {user.role === "seller" && "Business insights & guidance"}
                   {user.role === "admin" && "Platform management support"}
@@ -217,10 +217,10 @@ export function ChatAssistant() {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.length === 0 && (
-              <div className="text-center text-sm text-muted-foreground mt-8">
-                <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Hi! I'm your Vaaney AI assistant.</p>
-                <p className="mt-2">How can I help you today?</p>
+              <div className="text-center text-sm text-foreground mt-8">
+                <MessageCircle className="h-12 w-12 mx-auto mb-4 text-[#217588]/60" />
+                <p className="font-medium text-[#222326]">Hi! I'm your Vaaney AI assistant.</p>
+                <p className="mt-2 text-foreground/80">How can I help you today?</p>
               </div>
             )}
             
@@ -268,7 +268,7 @@ export function ChatAssistant() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
+          {/* Input - Vaaney brand colors */}
           <div className="p-4 border-t">
             <div className="flex gap-2">
               <Textarea
@@ -276,7 +276,7 @@ export function ChatAssistant() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask me anything..."
-                className="resize-none min-h-[60px]"
+                className="resize-none min-h-[60px] placeholder:text-foreground/50 focus:border-[#217588] focus:ring-[#217588]"
                 disabled={isLoading}
                 data-testid="input-chat-message"
               />
@@ -284,13 +284,13 @@ export function ChatAssistant() {
                 onClick={handleSendMessage}
                 disabled={!input.trim() || isLoading}
                 size="icon"
-                className="min-h-[60px]"
+                className="min-h-[60px] bg-[#bcd42f] hover:bg-[#a8bf2a] text-[#222326] border border-[#a8bf2a]"
                 data-testid="button-send-message"
               >
                 <Send className="h-4 w-4" />
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-xs text-foreground/60 mt-2">
               Press Enter to send, Shift+Enter for new line
             </p>
           </div>
