@@ -115,6 +115,49 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
     queryKey: ["/api/bank-accounts"],
   });
 
+  // Request quote mutation - MUST be declared before useEffect that uses it
+  const requestQuoteMutation = useMutation({
+    mutationFn: async () => {
+      if (!service) throw new Error("Service not found");
+      const conversation: any = await apiRequest("POST", "/api/conversations", {
+        type: "pre_purchase_service",
+        subject: `Quote Request for ${service.name}`,
+        serviceId: service.id,
+      });
+      
+      if (conversation?.id) {
+        await apiRequest("POST", `/api/conversations/${conversation.id}/messages`, {
+          content: `Hi, I'm interested in booking ${service.name}. The standard packages don't meet my requirements. Could you please provide me with a custom quote?`,
+        });
+        await queryClient.invalidateQueries({ queryKey: ["/api/conversations", conversation.id] });
+      }
+      
+      return conversation;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotes/active", serviceId] });
+      toast({ 
+        title: "Quote request sent!", 
+        description: "The seller will respond with a custom quote in your messages.",
+        ...(canNavigateToMessages && {
+          action: (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={navigateToMessages}
+            >
+              View Messages
+            </Button>
+          )
+        })
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to send quote request", description: error.message, variant: "destructive" });
+    },
+  });
+
   // Auto-select default bank account when bank transfer is selected
   useEffect(() => {
     if (paymentMethod === "bank_transfer" && bankAccounts.length > 0 && !selectedBankAccountId) {
@@ -220,48 +263,6 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
     },
     onError: (error: Error) => {
       toast({ title: "Failed to create booking", description: error.message, variant: "destructive" });
-    },
-  });
-
-  const requestQuoteMutation = useMutation({
-    mutationFn: async () => {
-      if (!service) throw new Error("Service not found");
-      const conversation: any = await apiRequest("POST", "/api/conversations", {
-        type: "pre_purchase_service",
-        subject: `Quote Request for ${service.name}`,
-        serviceId: service.id,
-      });
-      
-      if (conversation?.id) {
-        await apiRequest("POST", `/api/conversations/${conversation.id}/messages`, {
-          content: `Hi, I'm interested in booking ${service.name}. The standard packages don't meet my requirements. Could you please provide me with a custom quote?`,
-        });
-        await queryClient.invalidateQueries({ queryKey: ["/api/conversations", conversation.id] });
-      }
-      
-      return conversation;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/quotes/active", serviceId] });
-      toast({ 
-        title: "Quote request sent!", 
-        description: "The seller will respond with a custom quote in your messages.",
-        ...(canNavigateToMessages && {
-          action: (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={navigateToMessages}
-            >
-              View Messages
-            </Button>
-          )
-        })
-      });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Failed to send quote request", description: error.message, variant: "destructive" });
     },
   });
 
