@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,13 @@ interface MessageThreadProps {
 }
 
 export function MessageThread({ messages, currentUserId }: MessageThreadProps) {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to latest message when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
   if (messages.length === 0) {
     return (
       <div className="flex items-center justify-center h-full p-8 text-muted-foreground">
@@ -136,6 +144,8 @@ export function MessageThread({ messages, currentUserId }: MessageThreadProps) {
           </div>
         );
       })}
+      {/* Invisible scroll target */}
+      <div ref={messagesEndRef} />
     </div>
   );
 }
