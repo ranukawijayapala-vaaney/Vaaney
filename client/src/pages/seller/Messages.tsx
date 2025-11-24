@@ -7,7 +7,7 @@ import { ConversationList } from "@/components/messaging/ConversationList";
 import { MessageThread } from "@/components/messaging/MessageThread";
 import { MessageInput } from "@/components/messaging/MessageInput";
 import { WorkflowPanel } from "@/components/messaging/WorkflowPanel";
-import { MessageCircle, CheckCircle, Plus, HeadphonesIcon, Store } from "lucide-react";
+import { MessageCircle, CheckCircle, Plus, HeadphonesIcon, Store, ArrowLeft } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useConversationContext } from "@/hooks/use-conversation-context";
@@ -228,7 +228,7 @@ export default function SellerMessages() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className={`flex items-center justify-between ${selectedConversationId ? 'hidden xl:flex' : 'flex'}`}>
         <div>
           <h1 className="text-4xl font-bold font-display">Messages & Inquiries</h1>
           <p className="text-muted-foreground mt-2">Respond to buyer inquiries and manage communications</p>
@@ -239,9 +239,9 @@ export default function SellerMessages() {
         </Button>
       </div>
 
-      <div className="grid md:grid-cols-[320px_1fr_360px] gap-6">
+      <div className="flex flex-col xl:grid xl:grid-cols-[320px_1fr_360px] gap-6">
         {/* Conversation List - Left Column */}
-        <Card className="overflow-hidden flex flex-col" style={{ height: "calc(100vh - 140px)" }}>
+        <Card className={`overflow-hidden flex flex-col ${selectedConversationId ? 'hidden xl:flex' : 'flex'}`} style={{ height: "calc(100vh - 220px)" }}>
           <div className="border-b p-4">
             <h3 className="font-semibold">All Conversations</h3>
             <p className="text-xs text-muted-foreground mt-1">{conversations.length} total</p>
@@ -272,28 +272,58 @@ export default function SellerMessages() {
         </Card>
 
         {/* Message Thread - Center Column */}
-        <Card className="flex flex-col" style={{ height: "calc(100vh - 140px)" }}>
-          {!selectedConversationId ? (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8 text-muted-foreground">
-              <MessageCircle className="h-16 w-16 mb-4 opacity-50" />
-              <p data-testid="text-select-conversation">Select a conversation to view and respond</p>
-            </div>
-          ) : (
-            <>
-              {conversationData?.conversation?.status !== "resolved" && (
-                <div className="border-b p-3 bg-muted/50 flex justify-end">
+        <div className={`${!selectedConversationId ? 'hidden xl:block' : 'block'}`}>
+          <Card className="flex flex-col" style={{ height: "calc(100vh - 220px)" }}>
+            {!selectedConversationId ? (
+              <div className="flex flex-col items-center justify-center h-full text-center p-8 text-muted-foreground">
+                <MessageCircle className="h-16 w-16 mb-4 opacity-50" />
+                <p data-testid="text-select-conversation">Select a conversation to view and respond</p>
+              </div>
+            ) : (
+              <>
+                {/* Mobile back button header */}
+                <div className="xl:hidden border-b p-3 bg-muted/50 flex items-center gap-3">
                   <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => resolveConversationMutation.mutate(selectedConversationId)}
-                    disabled={resolveConversationMutation.isPending}
-                    data-testid="button-mark-resolved"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelectedConversationId(undefined)}
+                    data-testid="button-back-to-conversations"
                   >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Mark as Resolved
+                    <ArrowLeft className="h-5 w-5" />
                   </Button>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold truncate">
+                      {conversationData?.conversation?.subject || "Conversation"}
+                    </h3>
+                  </div>
+                  {conversationData?.conversation?.status !== "resolved" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => resolveConversationMutation.mutate(selectedConversationId)}
+                      disabled={resolveConversationMutation.isPending}
+                      data-testid="button-mark-resolved-mobile"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
-              )}
+
+                {/* Desktop resolve button - hidden on mobile */}
+                {conversationData?.conversation?.status !== "resolved" && (
+                  <div className="hidden xl:flex border-b p-3 bg-muted/50 justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => resolveConversationMutation.mutate(selectedConversationId)}
+                      disabled={resolveConversationMutation.isPending}
+                      data-testid="button-mark-resolved"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Mark as Resolved
+                    </Button>
+                  </div>
+                )}
               
               <div className="flex-1 overflow-y-auto" style={{ minHeight: "200px" }}>
                 <MessageThread
@@ -319,6 +349,7 @@ export default function SellerMessages() {
             </>
           )}
         </Card>
+        </div>
 
         {/* Workflow Panel - Right Column (Desktop), Drawer (Mobile) */}
         {selectedConversationId && conversationContext && (
