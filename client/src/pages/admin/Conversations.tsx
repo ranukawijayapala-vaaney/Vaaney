@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ConversationList } from "@/components/messaging/ConversationList";
 import { MessageThread } from "@/components/messaging/MessageThread";
 import { MessageInput } from "@/components/messaging/MessageInput";
-import { MessageCircle, Settings, CheckCircle, Archive } from "lucide-react";
+import { MessageCircle, Settings, CheckCircle, Archive, ArrowLeft } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -198,7 +198,7 @@ export default function AdminConversations() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className={`flex items-center justify-between ${selectedConversationId ? 'hidden xl:flex' : 'flex'}`}>
         <div>
           <h1 className="text-4xl font-bold font-display">All Conversations</h1>
           <p className="text-muted-foreground mt-2">Monitor and manage all platform communications</p>
@@ -291,7 +291,7 @@ export default function AdminConversations() {
         </Dialog>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className={`flex items-center gap-4 ${selectedConversationId ? 'hidden xl:flex' : 'flex'}`}>
         <Label className="text-sm font-medium">Filter by Type:</Label>
         <Select value={filterType} onValueChange={setFilterType}>
           <SelectTrigger className="w-[250px]" data-testid="select-filter-type">
@@ -309,8 +309,8 @@ export default function AdminConversations() {
         </Select>
       </div>
 
-      <div className="grid md:grid-cols-[320px_1fr] gap-6">
-        <Card className="overflow-hidden flex flex-col" style={{ height: "calc(100vh - 200px)" }}>
+      <div className="flex flex-col xl:grid xl:grid-cols-[320px_1fr] gap-6">
+        <Card className={`overflow-hidden flex flex-col ${selectedConversationId ? 'hidden xl:flex' : 'flex'}`} style={{ height: "calc(100vh - 220px)" }}>
           <div className="border-b p-4">
             <h3 className="font-semibold">All Conversations</h3>
             <p className="text-xs text-muted-foreground mt-1">{filteredConversations.length} total</p>
@@ -325,62 +325,105 @@ export default function AdminConversations() {
           </div>
         </Card>
 
-        <Card className="flex flex-col" style={{ height: "calc(100vh - 200px)" }}>
-          {!selectedConversationId ? (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8 text-muted-foreground">
-              <MessageCircle className="h-16 w-16 mb-4 opacity-50" />
-              <p data-testid="text-select-conversation">Select a conversation to view and intervene</p>
-            </div>
-          ) : (
-            <>
-              <div className="border-b p-4 flex items-center justify-between bg-muted/50">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">Conversation Actions:</span>
-                </div>
-                <div className="flex gap-2">
-                  {templates.length > 0 && (
-                    <Select onValueChange={(templateId) => {
-                      const template = templates.find(t => t.id === templateId);
-                      if (template) handleUseTemplate(template);
-                    }}>
-                      <SelectTrigger className="w-[200px]" data-testid="select-quick-reply">
-                        <SelectValue placeholder="Quick Reply" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {templates.map((template) => (
-                          <SelectItem key={template.id} value={template.id}>
-                            {template.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  {conversationData?.conversation?.status !== "resolved" && conversationData?.conversation?.status !== "archived" && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={handleResolveConversation}
-                      disabled={updateStatusMutation.isPending}
-                      data-testid="button-mark-resolved"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Mark Resolved
-                    </Button>
-                  )}
-                  {conversationData?.conversation?.status !== "archived" && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={handleArchiveConversation}
-                      disabled={updateStatusMutation.isPending}
-                      data-testid="button-archive"
-                    >
-                      <Archive className="h-4 w-4 mr-2" />
-                      Archive
-                    </Button>
-                  )}
-                </div>
+        <div className={`${!selectedConversationId ? 'hidden xl:block' : 'block'}`}>
+          <Card className="flex flex-col" style={{ height: "calc(100vh - 220px)" }}>
+            {!selectedConversationId ? (
+              <div className="flex flex-col items-center justify-center h-full text-center p-8 text-muted-foreground">
+                <MessageCircle className="h-16 w-16 mb-4 opacity-50" />
+                <p data-testid="text-select-conversation">Select a conversation to view and intervene</p>
               </div>
+            ) : (
+              <>
+                {/* Mobile back button header */}
+                <div className="xl:hidden border-b p-3 bg-muted/50 flex items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelectedConversationId(undefined)}
+                    data-testid="button-back-to-conversations"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold truncate">
+                      {conversationData?.conversation?.subject || "Conversation"}
+                    </h3>
+                  </div>
+                  <div className="flex gap-2">
+                    {conversationData?.conversation?.status !== "resolved" && conversationData?.conversation?.status !== "archived" && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleResolveConversation}
+                        disabled={updateStatusMutation.isPending}
+                        data-testid="button-mark-resolved-mobile"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {conversationData?.conversation?.status !== "archived" && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleArchiveConversation}
+                        disabled={updateStatusMutation.isPending}
+                        data-testid="button-archive-mobile"
+                      >
+                        <Archive className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Desktop action buttons - hidden on mobile */}
+                <div className="hidden xl:flex border-b p-4 items-center justify-between bg-muted/50">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Conversation Actions:</span>
+                  </div>
+                  <div className="flex gap-2">
+                    {templates.length > 0 && (
+                      <Select onValueChange={(templateId) => {
+                        const template = templates.find(t => t.id === templateId);
+                        if (template) handleUseTemplate(template);
+                      }}>
+                        <SelectTrigger className="w-[200px]" data-testid="select-quick-reply">
+                          <SelectValue placeholder="Quick Reply" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {templates.map((template) => (
+                            <SelectItem key={template.id} value={template.id}>
+                              {template.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    {conversationData?.conversation?.status !== "resolved" && conversationData?.conversation?.status !== "archived" && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleResolveConversation}
+                        disabled={updateStatusMutation.isPending}
+                        data-testid="button-mark-resolved"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Mark Resolved
+                      </Button>
+                    )}
+                    {conversationData?.conversation?.status !== "archived" && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleArchiveConversation}
+                        disabled={updateStatusMutation.isPending}
+                        data-testid="button-archive"
+                      >
+                        <Archive className="h-4 w-4 mr-2" />
+                        Archive
+                      </Button>
+                    )}
+                  </div>
+                </div>
 
               <div className="flex-1 overflow-y-auto">
                 <MessageThread
@@ -405,6 +448,7 @@ export default function AdminConversations() {
             </>
           )}
         </Card>
+        </div>
       </div>
     </div>
   );
