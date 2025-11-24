@@ -6,8 +6,16 @@ Vaaney is a full-stack e-commerce marketplace platform for the Maldivian market,
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
-## Recent Changes (November 23, 2025)
-### AI Assistant Improvements
+## Recent Changes (November 24, 2025)
+### Mobile Messaging Improvements
+- **Auto-Scroll Feature**: Implemented automatic scrolling to latest messages in MessageThread component using useRef and scrollIntoView - messages now auto-scroll to bottom when conversation opens
+- **Seller Mobile Layout**: Updated SellerMessages page with mobile-responsive layout - conversation list hides when chat is open, shows back button, and displays full-screen thread (matches buyer pattern)
+- **Admin Mobile Layout**: Updated AdminConversations page with same mobile pattern - conditional hiding, back button navigation, and full-screen message view
+- **Admin Template Access**: Added quick reply template selector to admin mobile header to ensure template functionality is accessible on mobile devices (data-testid="select-quick-reply-mobile")
+- **Mobile Pattern**: All roles now use consistent mobile messaging experience with `calc(100vh - 220px)` height, `hidden xl:flex` conditional display, and ArrowLeft back button
+- **Desktop Unchanged**: 3-column grid layouts preserved for desktop views (>= 1280px width)
+
+### AI Assistant Improvements (November 23, 2025)
 - **Button Styling**: Changed AI assistant floating button from teal to vibrant lime green (#bcd42f) for better visibility and brand consistency
 - **Position**: Button positioned in bottom right corner (70px size) with pulsing animation
 - **Chat Panel**: Opens cleanly above the button without overlapping header
