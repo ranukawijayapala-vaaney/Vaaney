@@ -350,6 +350,23 @@ export default function AdminConversations() {
                     </h3>
                   </div>
                   <div className="flex gap-2">
+                    {templates.length > 0 && (
+                      <Select onValueChange={(templateId) => {
+                        const template = templates.find(t => t.id === templateId);
+                        if (template) handleUseTemplate(template);
+                      }}>
+                        <SelectTrigger className="w-[120px]" data-testid="select-quick-reply-mobile">
+                          <SelectValue placeholder="Template" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {templates.map((template) => (
+                            <SelectItem key={template.id} value={template.id}>
+                              {template.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                     {conversationData?.conversation?.status !== "resolved" && conversationData?.conversation?.status !== "archived" && (
                       <Button 
                         variant="outline" 
