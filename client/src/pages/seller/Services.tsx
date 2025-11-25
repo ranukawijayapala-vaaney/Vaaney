@@ -503,145 +503,147 @@ export default function Services() {
       )}
 
       <Dialog open={showServiceDialog} onOpenChange={setShowServiceDialog}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto" data-testid="dialog-service">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-2xl p-0 flex flex-col max-h-[90vh]" data-testid="dialog-service">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
             <DialogTitle>{selectedService ? "Edit Service" : "Create Service"}</DialogTitle>
           </DialogHeader>
           <Form {...serviceForm}>
-            <form onSubmit={serviceForm.handleSubmit(handleServiceSubmit)} className="space-y-4">
-              <FormField
-                control={serviceForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Service Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Logo Design" {...field} data-testid="input-service-name" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={serviceForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Describe your service..." 
-                        {...field} 
-                        rows={4}
-                        data-testid="input-service-description"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={serviceForm.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Graphic Design" {...field} data-testid="input-service-category" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={serviceForm.control}
-                name="images"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Service Images</FormLabel>
-                    <FormControl>
-                      <MultiImageUploader
-                        initialImages={field.value}
-                        onImagesChange={field.onChange}
-                        maxImages={10}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={serviceForm.control}
-                name="isActive"
-                render={({ field }) => (
-                  <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                    <div>
-                      <FormLabel>Active Status</FormLabel>
-                      <p className="text-sm text-muted-foreground">Make this service visible to buyers</p>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        data-testid="switch-service-active"
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              
-              <div className="space-y-4 border-t pt-4">
-                <h4 className="text-sm font-semibold">Purchase Requirements</h4>
-                <p className="text-xs text-muted-foreground">
-                  Configure special requirements for buyers before they can purchase this service.
-                </p>
-                
+            <form onSubmit={serviceForm.handleSubmit(handleServiceSubmit)} className="flex flex-col flex-1 min-h-0">
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
                 <FormField
                   control={serviceForm.control}
-                  name="requiresQuote"
+                  name="name"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormItem>
+                      <FormLabel>Service Name</FormLabel>
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          data-testid="checkbox-service-requires-quote"
+                        <Input placeholder="e.g., Logo Design" {...field} data-testid="input-service-name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={serviceForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Describe your service..." 
+                          {...field} 
+                          rows={4}
+                          data-testid="input-service-description"
                         />
                       </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Requires Custom Quote</FormLabel>
-                        <FormDescription>
-                          Buyers must request and accept a custom quote before they can book. Useful for custom projects or variable pricing.
-                        </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={serviceForm.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Graphic Design" {...field} data-testid="input-service-category" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={serviceForm.control}
+                  name="images"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Service Images</FormLabel>
+                      <FormControl>
+                        <MultiImageUploader
+                          initialImages={field.value}
+                          onImagesChange={field.onChange}
+                          maxImages={10}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={serviceForm.control}
+                  name="isActive"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                      <div>
+                        <FormLabel>Active Status</FormLabel>
+                        <p className="text-sm text-muted-foreground">Make this service visible to buyers</p>
                       </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="switch-service-active"
+                        />
+                      </FormControl>
                     </FormItem>
                   )}
                 />
                 
-                <FormField
-                  control={serviceForm.control}
-                  name="requiresDesignApproval"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          data-testid="checkbox-service-requires-design-approval"
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Requires Design Approval</FormLabel>
-                        <FormDescription>
-                          Buyers must upload design files and receive your approval before they can book. Essential for custom design services.
-                        </FormDescription>
-                      </div>
-                    </FormItem>
-                  )}
-                />
+                <div className="space-y-4 border-t pt-4">
+                  <h4 className="text-sm font-semibold">Purchase Requirements</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Configure special requirements for buyers before they can purchase this service.
+                  </p>
+                  
+                  <FormField
+                    control={serviceForm.control}
+                    name="requiresQuote"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-service-requires-quote"
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>Requires Custom Quote</FormLabel>
+                          <FormDescription>
+                            Buyers must request and accept a custom quote before they can book. Useful for custom projects or variable pricing.
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={serviceForm.control}
+                    name="requiresDesignApproval"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-service-requires-design-approval"
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>Requires Design Approval</FormLabel>
+                          <FormDescription>
+                            Buyers must upload design files and receive your approval before they can book. Essential for custom design services.
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
               
-              <div className="flex gap-2 justify-end">
+              <div className="flex gap-2 justify-end px-6 py-4 border-t shrink-0 bg-background">
                 <Button
                   type="button"
                   variant="outline"
