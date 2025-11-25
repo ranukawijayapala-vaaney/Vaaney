@@ -503,7 +503,7 @@ export default function Services() {
       )}
 
       <Dialog open={showServiceDialog} onOpenChange={setShowServiceDialog}>
-        <DialogContent className="sm:max-w-2xl p-0 flex flex-col max-h-[90vh]" data-testid="dialog-service">
+        <DialogContent className="sm:max-w-2xl p-0 flex flex-col max-h-[90vh] overflow-hidden" data-testid="dialog-service">
           <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
             <DialogTitle>{selectedService ? "Edit Service" : "Create Service"}</DialogTitle>
           </DialogHeader>
