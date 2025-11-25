@@ -178,6 +178,8 @@ export const insertProductSchema = createInsertSchema(products, {
   name: z.string().min(1, "Product name is required"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   images: z.array(z.string()).min(1, "At least one image is required"),
+  price: z.union([z.number(), z.string(), z.null()]).transform(val => val === null || val === '' ? null : String(val)).optional(),
+  stock: z.union([z.number(), z.string(), z.null()]).transform(val => val === null || val === '' ? 0 : (typeof val === 'string' ? parseInt(val, 10) : val)).optional(),
 }).omit({ id: true, sellerId: true, createdAt: true, updatedAt: true });
 
 export type Product = typeof products.$inferSelect;
