@@ -52,6 +52,27 @@ const variantFormSchema = z.object({
 type ProductForm = z.infer<typeof productFormSchema>;
 type VariantForm = z.infer<typeof variantFormSchema>;
 
+// API payload types with numeric values (forms use strings, API expects numbers)
+type ProductApiPayload = Omit<ProductForm, 'price' | 'stock' | 'weight' | 'length' | 'width' | 'height'> & {
+  price: number;
+  stock: number;
+  weight?: number;
+  length?: number;
+  width?: number;
+  height?: number;
+};
+
+type VariantApiPayload = Omit<VariantForm, 'price' | 'inventory' | 'weight' | 'length' | 'width' | 'height'> & {
+  price: number;
+  inventory: number;
+  weight?: number;
+  length?: number;
+  width?: number;
+  height?: number;
+  productId?: string;
+  variantId?: string;
+};
+
 export default function Products() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showProductDialog, setShowProductDialog] = useState(false);
@@ -102,7 +123,7 @@ export default function Products() {
   });
 
   const createProductMutation = useMutation({
-    mutationFn: async (data: ProductForm) => {
+    mutationFn: async (data: ProductApiPayload) => {
       return await apiRequest("POST", "/api/seller/products", data);
     },
     onSuccess: () => {
@@ -117,7 +138,7 @@ export default function Products() {
   });
 
   const updateProductMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: ProductForm }) => {
+    mutationFn: async ({ id, data }: { id: string; data: ProductApiPayload }) => {
       return await apiRequest("PUT", `/api/seller/products/${id}`, data);
     },
     onSuccess: () => {
@@ -164,7 +185,7 @@ export default function Products() {
   });
 
   const createVariantMutation = useMutation({
-    mutationFn: async (data: VariantForm & { productId: string }) => {
+    mutationFn: async (data: VariantApiPayload) => {
       return await apiRequest("POST", "/api/seller/product-variants", data);
     },
     onSuccess: () => {
@@ -182,7 +203,7 @@ export default function Products() {
   });
 
   const updateVariantMutation = useMutation({
-    mutationFn: async (data: VariantForm & { variantId: string }) => {
+    mutationFn: async (data: VariantApiPayload) => {
       const { variantId, ...variantData } = data;
       return await apiRequest("PUT", `/api/seller/product-variants/${variantId}`, variantData);
     },
@@ -251,17 +272,17 @@ export default function Products() {
       name: data.name,
       description: data.description,
       category: data.category,
-      price: data.price,
-      stock: data.stock,
+      price: parseFloat(data.price),
+      stock: parseInt(data.stock, 10),
       images: data.images,
       isActive: data.isActive,
       requiresQuote: data.requiresQuote,
       requiresDesignApproval: data.requiresDesignApproval,
       // Include optional shipping dimensions for default variant
-      weight: data.weight || undefined,
-      length: data.length || undefined,
-      width: data.width || undefined,
-      height: data.height || undefined,
+      weight: data.weight ? parseFloat(data.weight) : undefined,
+      length: data.length ? parseFloat(data.length) : undefined,
+      width: data.width ? parseFloat(data.width) : undefined,
+      height: data.height ? parseFloat(data.height) : undefined,
     };
     
     if (selectedProduct) {
@@ -272,19 +293,27 @@ export default function Products() {
   };
 
   const handleVariantSubmit = (data: VariantForm) => {
+    const variantPayload: VariantApiPayload = {
+      name: data.name,
+      sku: data.sku,
+      price: parseFloat(data.price),
+      inventory: parseInt(data.inventory, 10),
+      imageUrls: data.imageUrls,
+      weight: data.weight ? parseFloat(data.weight) : undefined,
+      length: data.length ? parseFloat(data.length) : undefined,
+      width: data.width ? parseFloat(data.width) : undefined,
+      height: data.height ? parseFloat(data.height) : undefined,
+    };
+
     if (isEditingVariant && selectedVariant) {
       updateVariantMutation.mutate({ 
-        ...data, 
+        ...variantPayload, 
         variantId: selectedVariant.id,
-        price: data.price,
-        inventory: data.inventory,
       });
     } else if (selectedProduct) {
       createVariantMutation.mutate({ 
-        ...data, 
+        ...variantPayload, 
         productId: selectedProduct.id,
-        price: data.price,
-        inventory: data.inventory,
       });
     }
   };
