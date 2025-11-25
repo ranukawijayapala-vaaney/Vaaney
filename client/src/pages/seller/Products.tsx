@@ -268,21 +268,43 @@ export default function Products() {
       return;
     }
 
-    const submitData = {
+    // Convert string values to proper numbers with explicit coercion
+    const priceNum = Number(data.price);
+    const stockNum = Math.floor(Number(data.stock));
+    
+    // Validate numeric conversions
+    if (isNaN(priceNum) || priceNum < 0) {
+      toast({
+        title: "Invalid price",
+        description: "Please enter a valid price",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (isNaN(stockNum) || stockNum < 0) {
+      toast({
+        title: "Invalid stock",
+        description: "Please enter a valid stock quantity",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const submitData: ProductApiPayload = {
       name: data.name,
       description: data.description,
       category: data.category,
-      price: parseFloat(data.price),
-      stock: parseInt(data.stock, 10),
+      price: priceNum,
+      stock: stockNum,
       images: data.images,
       isActive: data.isActive,
       requiresQuote: data.requiresQuote,
       requiresDesignApproval: data.requiresDesignApproval,
-      // Include optional shipping dimensions for default variant
-      weight: data.weight ? parseFloat(data.weight) : undefined,
-      length: data.length ? parseFloat(data.length) : undefined,
-      width: data.width ? parseFloat(data.width) : undefined,
-      height: data.height ? parseFloat(data.height) : undefined,
+      weight: data.weight ? Number(data.weight) : undefined,
+      length: data.length ? Number(data.length) : undefined,
+      width: data.width ? Number(data.width) : undefined,
+      height: data.height ? Number(data.height) : undefined,
     };
     
     if (selectedProduct) {
@@ -293,16 +315,39 @@ export default function Products() {
   };
 
   const handleVariantSubmit = (data: VariantForm) => {
+    // Convert string values to proper numbers with explicit coercion
+    const priceNum = Number(data.price);
+    const inventoryNum = Math.floor(Number(data.inventory));
+    
+    // Validate numeric conversions
+    if (isNaN(priceNum) || priceNum < 0) {
+      toast({
+        title: "Invalid price",
+        description: "Please enter a valid price",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (isNaN(inventoryNum) || inventoryNum < 0) {
+      toast({
+        title: "Invalid inventory",
+        description: "Please enter a valid inventory quantity",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const variantPayload: VariantApiPayload = {
       name: data.name,
       sku: data.sku,
-      price: parseFloat(data.price),
-      inventory: parseInt(data.inventory, 10),
+      price: priceNum,
+      inventory: inventoryNum,
       imageUrls: data.imageUrls,
-      weight: data.weight ? parseFloat(data.weight) : undefined,
-      length: data.length ? parseFloat(data.length) : undefined,
-      width: data.width ? parseFloat(data.width) : undefined,
-      height: data.height ? parseFloat(data.height) : undefined,
+      weight: data.weight ? Number(data.weight) : undefined,
+      length: data.length ? Number(data.length) : undefined,
+      width: data.width ? Number(data.width) : undefined,
+      height: data.height ? Number(data.height) : undefined,
     };
 
     if (isEditingVariant && selectedVariant) {
