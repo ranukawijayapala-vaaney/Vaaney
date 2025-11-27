@@ -43,6 +43,10 @@ export async function sendVerificationEmail(
   
   const verificationUrl = `${baseUrl}/verify-email?token=${token}`;
 
+  // Brand constants
+  const brandColor = "#217588";
+  const logoUrl = `${baseUrl}/vaaney-logo.png`;
+  
   // Send verification email
   const subject = "Verify Your Email - Vaaney Marketplace";
   const html = `
@@ -51,32 +55,35 @@ export async function sendVerificationEmail(
       <head>
         <meta charset="utf-8">
         <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background-color: #4F46E5; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
-          .content { background-color: #f9fafb; padding: 30px; border-radius: 0 0 5px 5px; }
-          .button { display: inline-block; background-color: #4F46E5; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-          .footer { text-align: center; margin-top: 20px; color: #6B7280; font-size: 14px; }
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+          .container { max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+          .header { background-color: #f9fafb; padding: 24px; text-align: center; }
+          .header img { height: 50px; width: auto; }
+          .content { padding: 30px; }
+          .button { display: inline-block; background-color: ${brandColor}; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .footer { text-align: center; padding: 20px; margin-top: 24px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 13px; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h1>Welcome to Vaaney!</h1>
+            <img src="${logoUrl}" alt="Vaaney" />
           </div>
           <div class="content">
+            <h2 style="color: ${brandColor}; margin-top: 0;">Welcome to Vaaney!</h2>
             <p>Hello ${firstName},</p>
             <p>Thank you for creating an account with Vaaney Marketplace. To complete your registration and activate your account, please verify your email address by clicking the button below:</p>
             <p style="text-align: center;">
-              <a href="${verificationUrl}" class="button">Verify Email Address</a>
+              <a href="${verificationUrl}" class="button" style="color: white;">Verify Email Address</a>
             </p>
             <p>Or copy and paste this link into your browser:</p>
-            <p style="word-break: break-all; color: #4F46E5;">${verificationUrl}</p>
+            <p style="word-break: break-all; color: ${brandColor};">${verificationUrl}</p>
             <p><strong>This link will expire in 24 hours.</strong></p>
             <p>If you didn't create an account with Vaaney, please ignore this email.</p>
           </div>
           <div class="footer">
-            <p>&copy; ${new Date().getFullYear()} Vaaney Marketplace. All rights reserved.</p>
+            <p style="margin: 0 0 8px 0;">&copy; ${new Date().getFullYear()} Vaaney Marketplace. All rights reserved.</p>
+            <p style="margin: 0;">Connecting Maldivian buyers with trusted sellers.</p>
           </div>
         </div>
       </body>
