@@ -194,7 +194,7 @@ export const productVariants = pgTable("product_variants", {
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   inventory: integer("inventory").notNull().default(0),
   attributes: jsonb("attributes").$type<Record<string, string>>(), // { "size": "A4", "finish": "Glossy" }
-  imageUrls: text("image_urls").array(), // Optional variant-specific images (GCS URLs)
+  imageUrls: text("image_urls").array().notNull().default(sql`ARRAY[]::text[]`), // Variant-specific images (GCS URLs)
   // Shipping dimensions
   weight: decimal("weight", { precision: 10, scale: 3 }), // Weight in KG (e.g., 1.500)
   length: decimal("length", { precision: 10, scale: 2 }), // Length in CM
@@ -215,7 +215,7 @@ export const insertProductVariantSchema = createInsertSchema(productVariants, {
   name: z.string().min(1, "Variant name is required"),
   price: z.union([z.number(), z.string()]).transform(val => typeof val === 'string' ? parseFloat(val) : val),
   inventory: z.union([z.number(), z.string()]).transform(val => typeof val === 'string' ? parseInt(val, 10) : val),
-  imageUrls: z.array(z.string()).optional(),
+  imageUrls: z.array(z.string()).default([]),
   weight: z.union([z.number(), z.string(), z.null()]).transform(val => val === null || val === '' ? null : (typeof val === 'string' ? parseFloat(val) : val)).optional(),
   length: z.union([z.number(), z.string(), z.null()]).transform(val => val === null || val === '' ? null : (typeof val === 'string' ? parseFloat(val) : val)).optional(),
   width: z.union([z.number(), z.string(), z.null()]).transform(val => val === null || val === '' ? null : (typeof val === 'string' ? parseFloat(val) : val)).optional(),

@@ -472,6 +472,7 @@ export class DatabaseStorage implements IStorage {
     const values: any = {
       ...variantData,
       price: toDecimalString(variantData.price)!,  // Required field, non-null assertion safe
+      imageUrls: variantData.imageUrls || [],  // Always include imageUrls (defaults to empty array)
     };
     
     // Optional decimal fields - only include if defined
@@ -516,6 +517,11 @@ export class DatabaseStorage implements IStorage {
     if (variantData.length !== undefined) values.length = toDecimalString(variantData.length, 2);
     if (variantData.width !== undefined) values.width = toDecimalString(variantData.width, 2);
     if (variantData.height !== undefined) values.height = toDecimalString(variantData.height, 2);
+    
+    // imageUrls is included only when explicitly provided (preserves existing images otherwise)
+    if (variantData.imageUrls !== undefined) {
+      values.imageUrls = variantData.imageUrls;
+    }
 
     const [updated] = await db
       .update(productVariants)

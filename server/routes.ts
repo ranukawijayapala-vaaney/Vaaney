@@ -2367,10 +2367,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/seller/product-variants/:id", isAuthenticated, requireRole(["seller"]), async (req: AuthRequest, res: Response) => {
     const userId = (req.user as any)?.id;
     try {
+      // Check if imageUrls was explicitly provided in the request
+      const imageUrlsProvided = 'imageUrls' in req.body;
+      
       const variantData = insertProductVariantSchema.partial().parse(req.body);
       
       // Security: Prevent reassignment to different products
       const { productId, ...allowedUpdates } = variantData;
+      
+      // Only include imageUrls if it was explicitly provided in the request
+      // This prevents wiping existing images when updating other fields
+      if (!imageUrlsProvided) {
+        delete allowedUpdates.imageUrls;
+      }
       
       // Ensure at least one field is present for update
       if (Object.keys(allowedUpdates).length === 0) {
