@@ -3324,20 +3324,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const seller = await storage.getUser(order.sellerId);
           const items = await db.select().from(orderItems).where(eq(orderItems.orderId, order.id));
           
-          // Enrich items with product and variant names
-          const enrichedItems = await Promise.all(
-            items.map(async (item) => {
-              const product = item.productId ? await storage.getProduct(item.productId) : null;
-              const variant = item.variantId ? await storage.getProductVariantById(item.variantId) : null;
-              
-              return {
-                ...item,
-                productName: product?.name || 'Unknown Product',
-                variantName: variant?.name || null,
-                productImages: product?.images || [],
-              };
-            })
-          );
+          // If no order_items exist, derive item from the order row itself (legacy data)
+          let enrichedItems: any[] = [];
+          
+          if (items.length > 0) {
+            // Enrich items with product and variant names
+            enrichedItems = await Promise.all(
+              items.map(async (item) => {
+                const product = item.productId ? await storage.getProduct(item.productId) : null;
+                const variant = item.variantId ? await storage.getProductVariantById(item.variantId) : null;
+                
+                return {
+                  ...item,
+                  productName: product?.name || 'Unknown Product',
+                  variantName: variant?.name || null,
+                  productImages: product?.images || [],
+                };
+              })
+            );
+          } else if (order.productId) {
+            // Derive item from order row data (legacy orders without order_items entries)
+            const product = await storage.getProduct(order.productId);
+            const variant = order.variantId ? await storage.getProductVariantById(order.variantId) : null;
+            
+            // Calculate correct unit price: if unitPrice exists use it, otherwise derive from totalAmount/quantity
+            const quantity = order.quantity || 1;
+            const unitPrice = order.unitPrice 
+              ? String(order.unitPrice) 
+              : (parseFloat(order.totalAmount) / quantity).toFixed(2);
+            
+            enrichedItems = [{
+              id: `derived-${order.id}`,
+              orderId: order.id,
+              productId: order.productId,
+              variantId: order.variantId,
+              quantity: quantity,
+              pricePerUnit: unitPrice,
+              price: unitPrice,
+              sellerId: order.sellerId,
+              productName: product?.name || 'Unknown Product',
+              variantName: variant?.name || null,
+              productImages: product?.images || [],
+            }];
+          }
           
           return {
             ...order,

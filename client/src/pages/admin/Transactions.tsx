@@ -38,7 +38,8 @@ interface OrderDetails {
     productName: string;
     variantName: string | null;
     quantity: number;
-    price: string;
+    price?: string;
+    pricePerUnit?: string;
   }>;
 }
 
@@ -1262,17 +1263,20 @@ export default function Transactions() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {currentOrder.items.map((item, idx) => (
-                          <TableRow key={idx}>
-                            <TableCell>{item.productName}</TableCell>
-                            <TableCell>{item.variantName || '-'}</TableCell>
-                            <TableCell>{item.quantity}</TableCell>
-                            <TableCell>${item.price}</TableCell>
-                            <TableCell className="font-medium">
-                              ${(parseFloat(item.price) * item.quantity).toFixed(2)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {currentOrder.items.map((item, idx) => {
+                          const itemPrice = item.price || item.pricePerUnit || '0';
+                          return (
+                            <TableRow key={idx}>
+                              <TableCell>{item.productName}</TableCell>
+                              <TableCell>{item.variantName || '-'}</TableCell>
+                              <TableCell>{item.quantity}</TableCell>
+                              <TableCell>${itemPrice}</TableCell>
+                              <TableCell className="font-medium">
+                                ${(parseFloat(itemPrice) * item.quantity).toFixed(2)}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </CardContent>
