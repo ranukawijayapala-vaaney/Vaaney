@@ -49,6 +49,7 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
   const [pendingPackageSelection, setPendingPackageSelection] = useState<{ packageId?: string; isCustomQuote: boolean } | null>(null);
   const [showPrePurchaseDialog, setShowPrePurchaseDialog] = useState(false);
   const [pendingPackageId, setPendingPackageId] = useState<string | null>(null);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
   // Get current user to determine messages route
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -648,12 +649,16 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
                 {/* Service Image */}
                 <div className="w-full md:w-1/3 flex-shrink-0">
                   <div className="aspect-square rounded-lg overflow-hidden bg-muted">
-                    {service.images && service.images.length > 0 ? (
+                    {service.images && service.images.length > 0 && service.images[selectedImageIndex] && !failedImages.has(service.images[selectedImageIndex]) ? (
                       <img
                         src={service.images[selectedImageIndex]}
                         alt={service.name}
                         className="w-full h-full object-cover"
                         data-testid="img-service-main"
+                        onError={(e) => {
+                          const src = (e.target as HTMLImageElement).src;
+                          setFailedImages(prev => new Set(prev).add(src));
+                        }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -663,7 +668,7 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
                   </div>
                   {service.images && service.images.length > 1 && (
                     <div className="flex gap-2 mt-3">
-                      {service.images.map((_, index) => (
+                      {service.images.map((imgUrl, index) => (
                         <button
                           key={index}
                           onClick={() => setSelectedImageIndex(index)}
@@ -672,7 +677,21 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
                           }`}
                           data-testid={`button-service-image-thumb-${index}`}
                         >
-                          <img src={service.images[index]} alt="" className="w-full h-full object-cover rounded-sm" />
+                          {failedImages.has(imgUrl) ? (
+                            <div className="w-full h-full flex items-center justify-center bg-muted rounded-sm">
+                              <PackageIcon className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                          ) : (
+                            <img 
+                              src={imgUrl} 
+                              alt="" 
+                              className="w-full h-full object-cover rounded-sm"
+                              onError={(e) => {
+                                const src = (e.target as HTMLImageElement).src;
+                                setFailedImages(prev => new Set(prev).add(src));
+                              }}
+                            />
+                          )}
                         </button>
                       ))}
                     </div>

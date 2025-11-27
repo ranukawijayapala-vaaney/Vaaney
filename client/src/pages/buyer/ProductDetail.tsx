@@ -26,6 +26,7 @@ export default function ProductDetail() {
   const [showAskSellerDialog, setShowAskSellerDialog] = useState(false);
   const [inquiryMessage, setInquiryMessage] = useState("");
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   
   // Parse query params for workflow actions
   const urlParams = new URLSearchParams(window.location.search);
@@ -377,11 +378,15 @@ export default function ProductDetail() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-3">
           <div className="aspect-square overflow-hidden rounded-md bg-muted">
-            {displayImages && displayImages[selectedImageIndex] ? (
+            {displayImages && displayImages[selectedImageIndex] && !failedImages.has(displayImages[selectedImageIndex]) ? (
               <img
                 src={displayImages[selectedImageIndex]}
                 alt={product.name}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  const src = (e.target as HTMLImageElement).src;
+                  setFailedImages(prev => new Set(prev).add(src));
+                }}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -404,11 +409,21 @@ export default function ProductDetail() {
                   }`}
                   data-testid={`button-image-thumb-${index}`}
                 >
-                  <img
-                    src={image}
-                    alt={`${product.name} ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
+                  {failedImages.has(image) ? (
+                    <div className="w-full h-full flex items-center justify-center bg-muted">
+                      <Package className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  ) : (
+                    <img
+                      src={image}
+                      alt={`${product.name} ${index + 1}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const src = (e.target as HTMLImageElement).src;
+                        setFailedImages(prev => new Set(prev).add(src));
+                      }}
+                    />
+                  )}
                 </button>
               ))}
             </div>
