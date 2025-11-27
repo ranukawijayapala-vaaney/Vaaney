@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Package, User, Calendar, DollarSign } from "lucide-react";
+import { Package, User, Calendar, DollarSign, Store, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface OrderItem {
   id: string;
@@ -28,16 +30,31 @@ interface Order {
     firstName: string | null;
     lastName: string | null;
   };
+  seller?: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    businessName: string | null;
+    phone: string | null;
+  };
   itemCount: number;
   items: OrderItem[];
 }
 
 export default function AdminOrders() {
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [showOrderDetails, setShowOrderDetails] = useState(false);
 
   const { data: orders = [], isLoading } = useQuery<Order[]>({
     queryKey: ["/api/admin/orders"],
   });
+
+  const handleViewOrder = (order: Order) => {
+    setSelectedOrder(order);
+    setShowOrderDetails(true);
+  };
 
   const filteredOrders = orders.filter((order: Order) => {
     return statusFilter === "all" || order.status === statusFilter;
@@ -108,11 +125,12 @@ export default function AdminOrders() {
                     <TableRow>
                       <TableHead>Order ID</TableHead>
                       <TableHead>Buyer</TableHead>
+                      <TableHead>Seller</TableHead>
                       <TableHead>Items</TableHead>
                       <TableHead>Total</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Shipping Address</TableHead>
                       <TableHead>Date</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -132,6 +150,19 @@ export default function AdminOrders() {
                               </div>
                               <div className="text-xs text-muted-foreground" data-testid={`text-buyer-email-${order.id}`}>
                                 {order.buyer.email}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Store className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <div className="font-medium text-sm" data-testid={`text-seller-name-${order.id}`}>
+                                {order.seller?.businessName || `${order.seller?.firstName || ''} ${order.seller?.lastName || ''}`.trim() || 'N/A'}
+                              </div>
+                              <div className="text-xs text-muted-foreground" data-testid={`text-seller-email-${order.id}`}>
+                                {order.seller?.email || 'N/A'}
                               </div>
                             </div>
                           </div>
@@ -160,14 +191,19 @@ export default function AdminOrders() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="text-sm max-w-[200px] truncate" data-testid={`text-address-${order.id}`}>
-                            {order.shippingAddress}
-                          </div>
-                        </TableCell>
-                        <TableCell>
                           <div className="text-sm" data-testid={`text-date-${order.id}`}>
                             {new Date(order.createdAt).toLocaleDateString()}
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleViewOrder(order)}
+                            data-testid={`button-view-order-${order.id}`}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -190,7 +226,7 @@ export default function AdminOrders() {
                               {order.status.replace('_', ' ')}
                             </Badge>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 mb-2">
                             <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                             <div className="min-w-0">
                               <p className="font-medium text-sm truncate" data-testid={`text-buyer-name-${order.id}`}>
@@ -198,6 +234,17 @@ export default function AdminOrders() {
                               </p>
                               <p className="text-xs text-muted-foreground truncate" data-testid={`text-buyer-email-${order.id}`}>
                                 {order.buyer.email}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Store className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm truncate" data-testid={`text-seller-name-${order.id}`}>
+                                {order.seller?.businessName || `${order.seller?.firstName || ''} ${order.seller?.lastName || ''}`.trim() || 'N/A'}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate" data-testid={`text-seller-email-${order.id}`}>
+                                {order.seller?.email || 'N/A'}
                               </p>
                             </div>
                           </div>
@@ -232,6 +279,15 @@ export default function AdminOrders() {
                           {order.shippingAddress}
                         </p>
                       </div>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => handleViewOrder(order)}
+                        data-testid={`button-view-order-mobile-${order.id}`}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Details
+                      </Button>
                     </CardContent>
                   </Card>
                 ))}
@@ -240,6 +296,116 @@ export default function AdminOrders() {
           )}
         </CardContent>
       </Card>
+
+      {/* Order Details Modal */}
+      <Dialog open={showOrderDetails} onOpenChange={setShowOrderDetails}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Order Details</DialogTitle>
+            <DialogDescription>
+              Order #{selectedOrder?.id.slice(0, 8)}...
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedOrder && (
+            <div className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <Badge variant="secondary" className={getStatusColor(selectedOrder.status)}>
+                    {selectedOrder.status.replace('_', ' ')}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Amount</p>
+                  <p className="font-semibold">${selectedOrder.totalAmount}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Order Date</p>
+                  <p className="text-sm">{new Date(selectedOrder.createdAt).toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Buyer Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-1">
+                      <p className="font-medium">{selectedOrder.buyer.firstName} {selectedOrder.buyer.lastName}</p>
+                      <p className="text-sm text-muted-foreground">{selectedOrder.buyer.email}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Store className="h-4 w-4" />
+                      Seller Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-1">
+                      <p className="font-medium">
+                        {selectedOrder.seller?.businessName || `${selectedOrder.seller?.firstName || ''} ${selectedOrder.seller?.lastName || ''}`.trim() || 'N/A'}
+                      </p>
+                      <p className="text-sm text-muted-foreground">{selectedOrder.seller?.email || 'N/A'}</p>
+                      {selectedOrder.seller?.phone && (
+                        <p className="text-sm text-muted-foreground">{selectedOrder.seller.phone}</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Shipping Address</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm">{selectedOrder.shippingAddress}</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Order Items ({selectedOrder.itemCount})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Product</TableHead>
+                        <TableHead>Variant</TableHead>
+                        <TableHead className="text-right">Qty</TableHead>
+                        <TableHead className="text-right">Price</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedOrder.items.map((item, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell className="font-medium">{item.productName}</TableCell>
+                          <TableCell>{item.variantName || '-'}</TableCell>
+                          <TableCell className="text-right">{item.quantity}</TableCell>
+                          <TableCell className="text-right">${item.price}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

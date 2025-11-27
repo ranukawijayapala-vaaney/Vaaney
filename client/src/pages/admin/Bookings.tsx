@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, User, Clock, DollarSign } from "lucide-react";
+import { Calendar, User, Clock, DollarSign, Store, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Booking {
   id: string;
@@ -24,6 +26,14 @@ interface Booking {
     firstName: string | null;
     lastName: string | null;
   };
+  seller?: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    businessName: string | null;
+    phone: string | null;
+  };
   service: {
     id: string;
     name: string;
@@ -37,10 +47,17 @@ interface Booking {
 
 export default function AdminBookings() {
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [showBookingDetails, setShowBookingDetails] = useState(false);
 
   const { data: bookings = [], isLoading } = useQuery<Booking[]>({
     queryKey: ["/api/admin/bookings"],
   });
+
+  const handleViewBooking = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setShowBookingDetails(true);
+  };
 
   const filteredBookings = bookings.filter((booking: Booking) => {
     return statusFilter === "all" || booking.status === statusFilter;
@@ -105,18 +122,19 @@ export default function AdminBookings() {
               </p>
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Booking ID</TableHead>
                     <TableHead>Customer</TableHead>
+                    <TableHead>Seller</TableHead>
                     <TableHead>Service</TableHead>
                     <TableHead>Package</TableHead>
                     <TableHead>Scheduled</TableHead>
                     <TableHead>Total</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Booked On</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -136,6 +154,19 @@ export default function AdminBookings() {
                             </div>
                             <div className="text-xs text-muted-foreground" data-testid={`text-customer-email-${booking.id}`}>
                               {booking.customer.email}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Store className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <div className="font-medium text-sm" data-testid={`text-seller-name-${booking.id}`}>
+                              {booking.seller?.businessName || `${booking.seller?.firstName || ''} ${booking.seller?.lastName || ''}`.trim() || 'N/A'}
+                            </div>
+                            <div className="text-xs text-muted-foreground" data-testid={`text-seller-email-${booking.id}`}>
+                              {booking.seller?.email || 'N/A'}
                             </div>
                           </div>
                         </div>
@@ -180,9 +211,14 @@ export default function AdminBookings() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm" data-testid={`text-created-${booking.id}`}>
-                          {new Date(booking.createdAt).toLocaleDateString()}
-                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleViewBooking(booking)}
+                          data-testid={`button-view-booking-${booking.id}`}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -192,6 +228,116 @@ export default function AdminBookings() {
           )}
         </CardContent>
       </Card>
+
+      {/* Booking Details Modal */}
+      <Dialog open={showBookingDetails} onOpenChange={setShowBookingDetails}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Booking Details</DialogTitle>
+            <DialogDescription>
+              Booking #{selectedBooking?.id.slice(0, 8)}...
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedBooking && (
+            <div className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <Badge variant="secondary" className={getStatusColor(selectedBooking.status)}>
+                    {selectedBooking.status.replace('_', ' ')}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Amount</p>
+                  <p className="font-semibold">${selectedBooking.totalAmount}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Scheduled Date</p>
+                  <p className="text-sm">{new Date(selectedBooking.scheduledDate).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Scheduled Time</p>
+                  <p className="text-sm">{selectedBooking.scheduledTime}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Customer Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-1">
+                      <p className="font-medium">{selectedBooking.customer.firstName} {selectedBooking.customer.lastName}</p>
+                      <p className="text-sm text-muted-foreground">{selectedBooking.customer.email}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Store className="h-4 w-4" />
+                      Seller Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-1">
+                      <p className="font-medium">
+                        {selectedBooking.seller?.businessName || `${selectedBooking.seller?.firstName || ''} ${selectedBooking.seller?.lastName || ''}`.trim() || 'N/A'}
+                      </p>
+                      <p className="text-sm text-muted-foreground">{selectedBooking.seller?.email || 'N/A'}</p>
+                      {selectedBooking.seller?.phone && (
+                        <p className="text-sm text-muted-foreground">{selectedBooking.seller.phone}</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Service Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Service</p>
+                      <p className="font-medium">{selectedBooking.service.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Category</p>
+                      <p className="text-sm">{selectedBooking.service.category}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Package</p>
+                      <p className="text-sm">{selectedBooking.package?.name || 'Custom'}</p>
+                    </div>
+                    {selectedBooking.requirements && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Requirements</p>
+                        <p className="text-sm">{selectedBooking.requirements}</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div>
+                <p className="text-sm text-muted-foreground">Booked On</p>
+                <p className="text-sm">{new Date(selectedBooking.createdAt).toLocaleString()}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

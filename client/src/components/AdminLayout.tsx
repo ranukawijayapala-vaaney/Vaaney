@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, ShieldCheck, DollarSign, MessageCircle, Image, LogOut, Menu, X, TrendingUp, Zap, ChevronDown, Truck, History, User, RotateCcw } from "lucide-react";
+import { LayoutDashboard, Users, ShieldCheck, DollarSign, MessageCircle, Image, LogOut, Menu, X, TrendingUp, Zap, ChevronDown, Truck, History, User, RotateCcw, Package, Calendar } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isUsersActive = location === "/admin/users" || location === "/admin/verifications";
+  const isSalesActive = location === "/admin/orders" || location === "/admin/bookings";
   const isShippingActive = location === "/admin/shipping" || location === "/admin/shipment-history" || location === "/admin/returns";
   const isContentActive = location === "/admin/banners" || location === "/admin/boost-packages" || location === "/admin/boost-items";
 
@@ -89,6 +90,32 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   Transactions
                 </Button>
               </Link>
+
+              {/* Sales Dropdown (Orders & Bookings) */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant={isSalesActive ? "default" : "ghost"}
+                    size="sm"
+                    className={isSalesActive ? "" : "hover-elevate"}
+                    data-testid="dropdown-sales"
+                  >
+                    <Package className="h-4 w-4 mr-2" />
+                    Sales
+                    <ChevronDown className="h-3 w-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setLocation("/admin/orders")} data-testid="link-orders">
+                    <Package className="h-4 w-4 mr-2" />
+                    Orders
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLocation("/admin/bookings")} data-testid="link-bookings">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Bookings
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               {/* Shipping Dropdown */}
               <DropdownMenu>
@@ -238,6 +265,20 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-transactions">
                     <DollarSign className="h-4 w-4 mr-2" />
                     Transactions
+                  </Button>
+                </Link>
+
+                <div className="text-xs font-semibold text-muted-foreground px-3 py-2">Sales</div>
+                <Link href="/admin/orders">
+                  <Button variant="ghost" size="sm" className="w-full justify-start pl-6" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-orders">
+                    <Package className="h-4 w-4 mr-2" />
+                    Orders
+                  </Button>
+                </Link>
+                <Link href="/admin/bookings">
+                  <Button variant="ghost" size="sm" className="w-full justify-start pl-6" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-bookings">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Bookings
                   </Button>
                 </Link>
 

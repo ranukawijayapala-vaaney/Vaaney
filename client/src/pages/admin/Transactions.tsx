@@ -25,6 +25,14 @@ interface OrderDetails {
     firstName: string | null;
     lastName: string | null;
   };
+  seller?: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    businessName: string | null;
+    phone: string | null;
+  };
   itemCount: number;
   items: Array<{
     productName: string;

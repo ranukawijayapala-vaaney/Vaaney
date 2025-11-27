@@ -3870,10 +3870,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const allBookings = await storage.getBookings();
       
-      // Enrich bookings with customer and service details
+      // Enrich bookings with customer, seller and service details
       const enrichedBookings = await Promise.all(
         allBookings.map(async (booking) => {
           const customer = await storage.getUser(booking.buyerId);
+          const seller = await storage.getUser(booking.sellerId);
           const service = await storage.getService(booking.serviceId);
           const servicePackage = booking.packageId 
             ? await db.select().from(servicePackages).where(eq(servicePackages.id, booking.packageId)).then(r => r[0])
@@ -3886,6 +3887,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               email: customer?.email,
               firstName: customer?.firstName,
               lastName: customer?.lastName,
+            },
+            seller: {
+              id: seller?.id,
+              email: seller?.email,
+              firstName: seller?.firstName,
+              lastName: seller?.lastName,
+              businessName: seller?.businessName,
+              phone: seller?.phone,
             },
             service: {
               id: service?.id,
