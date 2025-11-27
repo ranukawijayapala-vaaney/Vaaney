@@ -12,6 +12,7 @@ import { users, passwordResetTokens } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { Storage } from "@google-cloud/storage";
 import { sendVerificationEmail } from "./services/emailVerificationService";
+import { notifyWelcome, notifyAdminNewUser, notifyAdminVerificationPending } from "./services/notificationService";
 
 const SALT_ROUNDS = 10;
 
@@ -238,6 +239,40 @@ export async function setupAuth(app: Express) {
       } catch (emailError) {
         console.error("Failed to send verification email:", emailError);
         // Don't fail the signup if email fails
+      }
+
+      // Send welcome notification to the new user
+      try {
+        await notifyWelcome({
+          userId: newUser.id,
+          userName: `${firstName} ${lastName}`.trim(),
+          userRole: role,
+        });
+      } catch (notifyError) {
+        console.error("Failed to send welcome notification:", notifyError);
+      }
+
+      // Notify admins about the new user registration
+      try {
+        await notifyAdminNewUser({
+          userName: `${firstName} ${lastName}`.trim(),
+          userEmail: email.toLowerCase(),
+          userRole: role,
+        });
+      } catch (notifyError) {
+        console.error("Failed to send admin notification:", notifyError);
+      }
+
+      // If seller, also notify admins about pending verification
+      if (role === "seller") {
+        try {
+          await notifyAdminVerificationPending({
+            sellerName: `${firstName} ${lastName}`.trim(),
+            sellerId: newUser.id,
+          });
+        } catch (notifyError) {
+          console.error("Failed to send seller verification notification:", notifyError);
+        }
       }
 
       res.json({ 

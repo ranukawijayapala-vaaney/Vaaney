@@ -1498,7 +1498,16 @@ export type NotificationType =
   | "seller_verification_rejected"
   | "boost_purchase_created"
   | "boost_payment_confirmed"
-  | "boost_payment_failed";
+  | "boost_payment_failed"
+  // Welcome notification for new users
+  | "welcome"
+  // Admin notifications
+  | "admin_new_user"
+  | "admin_verification_pending"
+  | "admin_order_pending_payment"
+  | "admin_return_pending"
+  | "admin_new_product"
+  | "admin_new_service";
 
 // Notifications table - for in-app notifications
 export const notifications = pgTable("notifications", {

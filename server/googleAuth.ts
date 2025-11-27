@@ -4,8 +4,9 @@ import type { Express } from "express";
 import { db } from "./db";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { notifyWelcome, notifyAdminNewUser } from "./services/notificationService";
 
-async function upsertGoogleUser(profile: any) {
+async function upsertGoogleUser(profile: any): Promise<{ user: any; isNewUser: boolean }> {
   const googleId = profile.id;
   const email = profile.emails?.[0]?.value;
   const firstName = profile.name?.givenName || "User";
@@ -36,7 +37,7 @@ async function upsertGoogleUser(profile: any) {
       })
       .where(eq(users.googleId, googleId))
       .returning();
-    return updatedUser;
+    return { user: updatedUser, isNewUser: false };
   }
 
   // Create new buyer account via Google Auth
@@ -56,7 +57,7 @@ async function upsertGoogleUser(profile: any) {
     })
     .returning();
 
-  return newUser;
+  return { user: newUser, isNewUser: true };
 }
 
 export function setupGoogleAuth(app: Express) {
@@ -96,7 +97,35 @@ export function setupGoogleAuth(app: Express) {
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
-          const user = await upsertGoogleUser(profile);
+          const { user, isNewUser } = await upsertGoogleUser(profile);
+          
+          // Send notifications for new users
+          if (isNewUser) {
+            const userName = `${user.firstName} ${user.lastName}`.trim();
+            
+            // Send welcome notification
+            try {
+              await notifyWelcome({
+                userId: user.id,
+                userName,
+                userRole: "buyer",
+              });
+            } catch (notifyError) {
+              console.error("Failed to send welcome notification for Google user:", notifyError);
+            }
+            
+            // Notify admins about new user
+            try {
+              await notifyAdminNewUser({
+                userName,
+                userEmail: user.email,
+                userRole: "buyer",
+              });
+            } catch (notifyError) {
+              console.error("Failed to send admin notification for Google user:", notifyError);
+            }
+          }
+          
           // Return only the user ID for session serialization
           done(null, { id: user.id });
         } catch (error) {

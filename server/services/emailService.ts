@@ -158,6 +158,9 @@ export function generateEmailTemplate(
     boostDuration?: string;
     reason?: string;
     link?: string;
+    deliverables?: Array<{ fileName: string; fileUrl: string; fileSize: number }>;
+    userRole?: string;
+    userEmail?: string;
   }
 ): { subject: string; html: string } {
   const baseUrl = process.env.REPLIT_DOMAINS?.split(",")[0] || "https://vaaney.com";
@@ -529,6 +532,117 @@ export function generateEmailTemplate(
           ${data.rejectionReason ? `<p><strong>Reason:</strong> ${data.rejectionReason}</p>` : ""}
           <p>Please review the payment details or contact our support team for assistance.</p>
           <a href="${baseUrl}/seller/boost" style="display: inline-block; background: ${brandColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">Review Payment</a>
+        </div>
+      `,
+    },
+    welcome: {
+      subject: "Welcome to Vaaney! 🎉",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: ${brandColor};">Welcome to Vaaney!</h2>
+          <p>Hi ${data.recipientName || "there"},</p>
+          <p>Thank you for joining Vaaney - the premier marketplace connecting Maldivian buyers with Sri Lankan sellers!</p>
+          <p>Here's what you can do next:</p>
+          <ul style="color: #374151;">
+            <li>Browse our marketplace for amazing products and services</li>
+            <li>Connect with verified sellers</li>
+            <li>Enjoy secure payments and reliable shipping</li>
+          </ul>
+          <a href="${baseUrl}" style="display: inline-block; background: ${brandColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">Start Exploring</a>
+          <p style="color: #666; font-size: 14px; margin-top: 24px;">Happy shopping!</p>
+        </div>
+      `,
+    },
+    admin_new_user: {
+      subject: "New User Registration - Vaaney Admin",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: ${brandColor};">New User Registered</h2>
+          <p>Hi Admin,</p>
+          <p>A new user has registered on Vaaney.</p>
+          <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin: 16px 0;">
+            <p><strong>Name:</strong> ${data.recipientName || "N/A"}</p>
+            <p><strong>Role:</strong> ${(data as any).userRole || "N/A"}</p>
+            <p><strong>Email:</strong> ${(data as any).userEmail || "N/A"}</p>
+          </div>
+          <a href="${baseUrl}/admin/users" style="display: inline-block; background: ${brandColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">View Users</a>
+        </div>
+      `,
+    },
+    admin_verification_pending: {
+      subject: "Seller Verification Pending - Vaaney Admin",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: ${brandColor};">New Seller Verification Request</h2>
+          <p>Hi Admin,</p>
+          <p>A seller has submitted their documents for verification.</p>
+          <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin: 16px 0;">
+            <p><strong>Seller:</strong> ${data.recipientName || "N/A"}</p>
+          </div>
+          <p>Please review and verify their account.</p>
+          <a href="${baseUrl}/admin/verifications" style="display: inline-block; background: ${brandColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">Review Verification</a>
+        </div>
+      `,
+    },
+    admin_order_pending_payment: {
+      subject: "Payment Verification Required - Vaaney Admin",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: ${brandColor};">Bank Transfer Payment Pending</h2>
+          <p>Hi Admin,</p>
+          <p>A new bank transfer payment requires verification.</p>
+          <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin: 16px 0;">
+            <p><strong>Order ID:</strong> #${data.orderId?.substring(0, 8) || "N/A"}</p>
+            <p><strong>Amount:</strong> $${data.amount || "N/A"}</p>
+          </div>
+          <p>Please verify the payment in the transactions panel.</p>
+          <a href="${baseUrl}/admin/transactions" style="display: inline-block; background: ${brandColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">Verify Payment</a>
+        </div>
+      `,
+    },
+    admin_return_pending: {
+      subject: "Return Request Needs Review - Vaaney Admin",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: ${brandColor};">Return Request Pending Review</h2>
+          <p>Hi Admin,</p>
+          <p>A return request requires admin review.</p>
+          <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin: 16px 0;">
+            <p><strong>Order ID:</strong> #${data.orderId?.substring(0, 8) || "N/A"}</p>
+            <p><strong>Product:</strong> ${data.productName || "N/A"}</p>
+          </div>
+          <p>Please review and take action on this return request.</p>
+          <a href="${baseUrl}/admin/returns" style="display: inline-block; background: ${brandColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">Review Return</a>
+        </div>
+      `,
+    },
+    admin_new_product: {
+      subject: "New Product Listed - Vaaney Admin",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: ${brandColor};">New Product Listed</h2>
+          <p>Hi Admin,</p>
+          <p>A seller has listed a new product on the marketplace.</p>
+          <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin: 16px 0;">
+            <p><strong>Product:</strong> ${data.productName || "N/A"}</p>
+            <p><strong>Seller:</strong> ${data.recipientName || "N/A"}</p>
+          </div>
+          <a href="${baseUrl}/admin/dashboard" style="display: inline-block; background: ${brandColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">View Dashboard</a>
+        </div>
+      `,
+    },
+    admin_new_service: {
+      subject: "New Service Listed - Vaaney Admin",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: ${brandColor};">New Service Listed</h2>
+          <p>Hi Admin,</p>
+          <p>A seller has listed a new service on the marketplace.</p>
+          <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin: 16px 0;">
+            <p><strong>Service:</strong> ${data.serviceName || "N/A"}</p>
+            <p><strong>Seller:</strong> ${data.recipientName || "N/A"}</p>
+          </div>
+          <a href="${baseUrl}/admin/dashboard" style="display: inline-block; background: ${brandColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">View Dashboard</a>
         </div>
       `,
     },

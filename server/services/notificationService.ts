@@ -600,3 +600,172 @@ export async function notifyBoostPaymentFailed(params: {
     sendEmailNotification: true, // Email notification - important issue
   });
 }
+
+/**
+ * Welcome notification for new users
+ */
+export async function notifyWelcome(params: {
+  userId: string;
+  userName: string;
+  userRole: string;
+}) {
+  const roleLink = params.userRole === 'seller' ? '/seller/dashboard' : '/';
+  await createNotification({
+    userId: params.userId,
+    type: "welcome",
+    title: "Welcome to Vaaney!",
+    message: `Welcome to Vaaney! ${params.userRole === 'seller' ? 'Start listing your products and services to reach Maldivian buyers.' : 'Explore our marketplace to find amazing products and services from verified sellers.'}`,
+    link: roleLink,
+    metadata: {
+      recipientName: params.userName,
+    },
+    sendEmailNotification: true,
+  });
+}
+
+/**
+ * Helper function to get all admin user IDs
+ */
+async function getAllAdminIds(): Promise<string[]> {
+  const admins = await db.select({ id: users.id }).from(users).where(eq(users.role, 'admin'));
+  return admins.map(a => a.id);
+}
+
+/**
+ * Send notification to all admins
+ */
+async function notifyAllAdmins(params: Omit<CreateNotificationParams, 'userId'>) {
+  const adminIds = await getAllAdminIds();
+  for (const adminId of adminIds) {
+    await createNotification({
+      ...params,
+      userId: adminId,
+    });
+  }
+}
+
+/**
+ * Admin notification: New user registered
+ */
+export async function notifyAdminNewUser(params: {
+  userName: string;
+  userEmail: string;
+  userRole: string;
+}) {
+  await notifyAllAdmins({
+    type: "admin_new_user",
+    title: "New User Registered",
+    message: `A new ${params.userRole} has registered: ${params.userName} (${params.userEmail})`,
+    link: `/admin/users`,
+    metadata: {
+      recipientName: params.userName,
+      userEmail: params.userEmail,
+      userRole: params.userRole,
+    },
+    sendEmailNotification: false, // In-app only to avoid email spam
+  });
+}
+
+/**
+ * Admin notification: Seller verification pending
+ */
+export async function notifyAdminVerificationPending(params: {
+  sellerName: string;
+  sellerId: string;
+}) {
+  await notifyAllAdmins({
+    type: "admin_verification_pending",
+    title: "Seller Verification Pending",
+    message: `${params.sellerName} has submitted documents for seller verification.`,
+    link: `/admin/verifications`,
+    metadata: {
+      recipientName: params.sellerName,
+      sellerId: params.sellerId,
+    },
+    sendEmailNotification: true, // Email for important admin action needed
+  });
+}
+
+/**
+ * Admin notification: Bank transfer payment pending verification
+ */
+export async function notifyAdminOrderPendingPayment(params: {
+  orderId: string;
+  amount: string;
+  buyerName: string;
+}) {
+  await notifyAllAdmins({
+    type: "admin_order_pending_payment",
+    title: "Payment Verification Required",
+    message: `Bank transfer payment of $${params.amount} requires verification for order #${params.orderId.substring(0, 8)}.`,
+    link: `/admin/transactions`,
+    metadata: {
+      orderId: params.orderId,
+      amount: params.amount,
+      recipientName: params.buyerName,
+    },
+    sendEmailNotification: true, // Email for important admin action needed
+  });
+}
+
+/**
+ * Admin notification: Return request pending review
+ */
+export async function notifyAdminReturnPending(params: {
+  orderId: string;
+  productName: string;
+  buyerName: string;
+}) {
+  await notifyAllAdmins({
+    type: "admin_return_pending",
+    title: "Return Request Needs Review",
+    message: `A return request for ${params.productName} (Order #${params.orderId.substring(0, 8)}) requires admin review.`,
+    link: `/admin/returns`,
+    metadata: {
+      orderId: params.orderId,
+      productName: params.productName,
+      recipientName: params.buyerName,
+    },
+    sendEmailNotification: true, // Email for important admin action needed
+  });
+}
+
+/**
+ * Admin notification: New product listed
+ */
+export async function notifyAdminNewProduct(params: {
+  productName: string;
+  sellerName: string;
+}) {
+  await notifyAllAdmins({
+    type: "admin_new_product",
+    title: "New Product Listed",
+    message: `${params.sellerName} has listed a new product: ${params.productName}`,
+    link: `/admin/dashboard`,
+    metadata: {
+      productName: params.productName,
+      recipientName: params.sellerName,
+    },
+    sendEmailNotification: false, // In-app only to avoid email spam
+  });
+}
+
+/**
+ * Admin notification: New service listed
+ */
+export async function notifyAdminNewService(params: {
+  serviceName: string;
+  sellerName: string;
+}) {
+  await notifyAllAdmins({
+    type: "admin_new_service",
+    title: "New Service Listed",
+    message: `${params.sellerName} has listed a new service: ${params.serviceName}`,
+    link: `/admin/dashboard`,
+    metadata: {
+      serviceName: params.serviceName,
+      recipientName: params.sellerName,
+    },
+    sendEmailNotification: false, // In-app only to avoid email spam
+  });
+}
