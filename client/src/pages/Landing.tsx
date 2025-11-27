@@ -374,7 +374,7 @@ export default function Landing() {
                   <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
                     <Button
                       size="lg"
-                      onClick={() => window.location.href = "/signup"}
+                      onClick={() => window.location.href = "/marketplace"}
                       data-testid="button-start-buying"
                       className="text-lg px-10 py-6"
                     >
@@ -627,7 +627,7 @@ export default function Landing() {
               <h4 className="font-semibold mb-4">For Buyers</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="/buyer-guidelines" className="hover:text-foreground transition-colors">Buyer Guidelines</a></li>
-                <li><a href="/signup" className="hover:text-foreground transition-colors">Start Shopping</a></li>
+                <li><a href="/marketplace" className="hover:text-foreground transition-colors">Start Shopping</a></li>
               </ul>
             </div>
             <div>
