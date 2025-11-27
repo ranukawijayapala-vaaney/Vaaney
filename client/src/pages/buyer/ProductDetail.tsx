@@ -383,9 +383,9 @@ export default function ProductDetail() {
                 src={displayImages[selectedImageIndex]}
                 alt={product.name}
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  const src = (e.target as HTMLImageElement).src;
-                  setFailedImages(prev => new Set(prev).add(src));
+                onError={() => {
+                  const originalUrl = displayImages[selectedImageIndex];
+                  setFailedImages(prev => new Set(prev).add(originalUrl));
                 }}
               />
             ) : (
@@ -418,9 +418,8 @@ export default function ProductDetail() {
                       src={image}
                       alt={`${product.name} ${index + 1}`}
                       className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const src = (e.target as HTMLImageElement).src;
-                        setFailedImages(prev => new Set(prev).add(src));
+                      onError={() => {
+                        setFailedImages(prev => new Set(prev).add(image));
                       }}
                     />
                   )}

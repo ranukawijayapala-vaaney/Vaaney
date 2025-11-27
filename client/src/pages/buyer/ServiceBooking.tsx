@@ -655,9 +655,9 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
                         alt={service.name}
                         className="w-full h-full object-cover"
                         data-testid="img-service-main"
-                        onError={(e) => {
-                          const src = (e.target as HTMLImageElement).src;
-                          setFailedImages(prev => new Set(prev).add(src));
+                        onError={() => {
+                          const originalUrl = service.images![selectedImageIndex];
+                          setFailedImages(prev => new Set(prev).add(originalUrl));
                         }}
                       />
                     ) : (
@@ -686,9 +686,8 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
                               src={imgUrl} 
                               alt="" 
                               className="w-full h-full object-cover rounded-sm"
-                              onError={(e) => {
-                                const src = (e.target as HTMLImageElement).src;
-                                setFailedImages(prev => new Set(prev).add(src));
+                              onError={() => {
+                                setFailedImages(prev => new Set(prev).add(imgUrl));
                               }}
                             />
                           )}
