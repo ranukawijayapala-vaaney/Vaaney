@@ -85,13 +85,19 @@ export default function Landing() {
     queryKey: ["/api/services"],
   });
 
+  // Get unique categories from products and services
+  const allCategories = [...new Set([
+    ...allProducts.map(p => p.category).filter((c): c is string => !!c),
+    ...allServices.map(s => s.category).filter((c): c is string => !!c)
+  ])].sort();
+
   // Filter products based on search and category
   const filteredProducts = allProducts.filter((product) => {
     const matchesSearch = !searchQuery || 
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       product.description?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = category === "all" || 
-      product.category?.toLowerCase().includes(category.toLowerCase());
+      product.category === category;
     return matchesSearch && matchesCategory;
   });
 
@@ -101,7 +107,7 @@ export default function Landing() {
       service.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       service.description?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = category === "all" || 
-      service.category?.toLowerCase().includes(category.toLowerCase());
+      service.category === category;
     return matchesSearch && matchesCategory;
   });
 
@@ -490,10 +496,9 @@ export default function Landing() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="printing">Printing</SelectItem>
-                  <SelectItem value="design">Design</SelectItem>
-                  <SelectItem value="marketing">Marketing</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  {allCategories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
