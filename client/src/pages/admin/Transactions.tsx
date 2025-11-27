@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { DollarSign, TrendingUp, Lock, CheckCircle, Filter, ExternalLink, Package, User, Calendar, Clock, XCircle, Truck, FileSpreadsheet, ChevronLeft, ChevronRight } from "lucide-react";
+import { DollarSign, TrendingUp, Lock, CheckCircle, Filter, ExternalLink, Package, User, Calendar, Clock, XCircle, Truck, FileSpreadsheet, ChevronLeft, ChevronRight, Store } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1178,31 +1178,62 @@ export default function Transactions() {
                 </div>
               </div>
 
-              <div>
-                <h3 className="font-semibold mb-2 flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Buyer Information
-                </h3>
-                <Card>
-                  <CardContent className="pt-4">
-                    <div className="space-y-2">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Name</p>
-                        <p className="font-medium">
-                          {currentOrder.buyer.firstName} {currentOrder.buyer.lastName}
-                        </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h3 className="font-semibold mb-2 flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Buyer Information
+                  </h3>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Name</p>
+                          <p className="font-medium">
+                            {currentOrder.buyer?.firstName} {currentOrder.buyer?.lastName}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Email</p>
+                          <p className="text-sm">{currentOrder.buyer?.email}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Shipping Address</p>
+                          <p className="text-sm">{currentOrder.shippingAddress}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Email</p>
-                        <p className="text-sm">{currentOrder.buyer.email}</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-2 flex items-center gap-2">
+                    <Store className="h-4 w-4" />
+                    Seller Information
+                  </h3>
+                  <Card>
+                    <CardContent className="pt-4">
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Business Name</p>
+                          <p className="font-medium">
+                            {currentOrder.seller?.businessName || `${currentOrder.seller?.firstName || ''} ${currentOrder.seller?.lastName || ''}`}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Email</p>
+                          <p className="text-sm">{currentOrder.seller?.email || 'N/A'}</p>
+                        </div>
+                        {currentOrder.seller?.phone && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Phone</p>
+                            <p className="text-sm">{currentOrder.seller.phone}</p>
+                          </div>
+                        )}
                       </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Shipping Address</p>
-                        <p className="text-sm">{currentOrder.shippingAddress}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
 
               <div>

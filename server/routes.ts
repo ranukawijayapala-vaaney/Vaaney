@@ -3317,11 +3317,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const allOrders = await storage.getOrders();
       
-      // Enrich orders with buyer and item details
+      // Enrich orders with buyer, seller, and item details
       const enrichedOrders = await Promise.all(
         allOrders.map(async (order) => {
           const buyer = await storage.getUser(order.buyerId);
+          const seller = await storage.getUser(order.sellerId);
           const items = await db.select().from(orderItems).where(eq(orderItems.orderId, order.id));
+          
+          // Enrich items with product and variant names
+          const enrichedItems = await Promise.all(
+            items.map(async (item) => {
+              const product = item.productId ? await storage.getProduct(item.productId) : null;
+              const variant = item.variantId ? await storage.getProductVariantById(item.variantId) : null;
+              
+              return {
+                ...item,
+                productName: product?.name || 'Unknown Product',
+                variantName: variant?.name || null,
+                productImages: product?.images || [],
+              };
+            })
+          );
           
           return {
             ...order,
@@ -3331,8 +3347,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               firstName: buyer?.firstName,
               lastName: buyer?.lastName,
             },
-            itemCount: items.length,
-            items,
+            seller: {
+              id: seller?.id,
+              email: seller?.email,
+              firstName: seller?.firstName,
+              lastName: seller?.lastName,
+              businessName: seller?.businessName,
+              phone: seller?.phone,
+            },
+            itemCount: enrichedItems.length,
+            items: enrichedItems,
           };
         })
       );
