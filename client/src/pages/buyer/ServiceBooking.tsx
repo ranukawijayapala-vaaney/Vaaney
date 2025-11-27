@@ -273,16 +273,11 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
   });
 
   const sendMessageMutation = useMutation({
-    mutationFn: async (messageData: { serviceId: string; subject: string; message: string; packageId?: string; packageName?: string }) => {
-      // Include package info in subject if provided
-      const subject = messageData.packageId && messageData.packageName
-        ? `Inquiry: ${service?.name} - ${messageData.packageName}`
-        : messageData.subject;
-      
+    mutationFn: async (messageData: { serviceId: string; subject: string; message: string }) => {
       const conversation = await apiRequest("POST", "/api/conversations", {
         type: "pre_purchase_service",
         serviceId: messageData.serviceId,
-        subject,
+        subject: messageData.subject,
       });
       
       if (messageData.message.trim()) {
@@ -312,9 +307,6 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
       setShowContactDialog(false);
       setContactMessage("");
       queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
-      // Navigate to the conversation
-      const messagesRoute = user?.role === "seller" ? "/seller/messages" : "/messages";
-      navigate(`${messagesRoute}?conversation=${data.id}`);
     },
     onError: (error: Error) => {
       toast({ title: "Failed to send message", description: error.message, variant: "destructive" });
@@ -607,8 +599,6 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
       serviceId: service.id,
       subject: `Question about ${service.name}`,
       message: contactMessage,
-      packageId: selectedPackageId || undefined,
-      packageName: selectedPackage?.name || undefined,
     });
   };
 
@@ -770,18 +760,11 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          if (!user) {
-                            navigate(`/login?redirect=${encodeURIComponent(`/book-service/${serviceId}`)}`);
-                            return;
-                          }
-                          setShowContactDialog(true);
-                        }}
-                        disabled={!selectedPackageId && !isCustomQuoteSelected}
-                        data-testid="button-contact-seller"
+                        onClick={() => setShowContactDialog(true)}
+                        data-testid="button-ask-seller"
                       >
                         <MessageCircle className="h-4 w-4 mr-2" />
-                        {selectedPackageId || isCustomQuoteSelected ? "Contact Seller" : "Select package to contact"}
+                        Ask Seller a Question
                       </Button>
                     </div>
                   )}
@@ -1246,62 +1229,27 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
 
       {/* Contact Seller Dialog */}
       <Dialog open={showContactDialog} onOpenChange={setShowContactDialog}>
-        <DialogContent data-testid="dialog-contact-seller-service">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Contact Seller</DialogTitle>
+            <DialogTitle>Ask Seller a Question</DialogTitle>
+            <DialogDescription>
+              Send a message to the seller about this service
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex gap-4">
-              {service.images && service.images[0] && (
-                <img
-                  src={service.images[0]}
-                  alt={service.name}
-                  className="w-20 h-20 object-cover rounded"
-                />
-              )}
-              <div className="flex-1">
-                <h3 className="font-semibold">{service.name}</h3>
-                {selectedPackage && (
-                  <Badge variant="secondary" className="mt-1">
-                    {selectedPackage.name}
-                  </Badge>
-                )}
-                {isCustomQuoteSelected && (
-                  <Badge variant="secondary" className="mt-1">
-                    Custom Quote
-                  </Badge>
-                )}
-                <p className="text-sm text-muted-foreground mt-1">
-                  {service.seller 
-                    ? `Seller: ${service.seller.firstName} ${service.seller.lastName}`
-                    : "Seller information not available"}
-                </p>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="service-contact-message">Your Message</Label>
-              <Textarea
-                id="service-contact-message"
-                value={contactMessage}
-                onChange={(e) => setContactMessage(e.target.value)}
-                placeholder="Ask about customization options, timeline, or anything else..."
-                rows={4}
-                data-testid="textarea-service-inquiry"
-              />
-              <p className="text-xs text-muted-foreground">
-                This conversation will be about {service.name}{selectedPackage ? ` - ${selectedPackage.name}` : isCustomQuoteSelected ? ' - Custom Quote' : ''}.
-              </p>
-            </div>
+          <div className="space-y-4 py-4">
+            <Textarea
+              value={contactMessage}
+              onChange={(e) => setContactMessage(e.target.value)}
+              placeholder="Type your question here..."
+              rows={4}
+              data-testid="input-contact-message"
+            />
           </div>
           <DialogFooter>
             <Button
               variant="outline"
               className="min-h-11"
-              onClick={() => {
-                setShowContactDialog(false);
-                setContactMessage("");
-              }}
+              onClick={() => setShowContactDialog(false)}
               data-testid="button-cancel-message"
             >
               Cancel
