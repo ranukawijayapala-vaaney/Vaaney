@@ -2,7 +2,8 @@ import {
   ArrowRight, ShieldCheck, DollarSign, Users, ShoppingBag,
   Globe, Sparkles, TrendingUp, CheckCircle2, 
   Printer, Code, Megaphone, PenTool, Video, FileText,
-  Music, BarChart3, Leaf, Clock, Target, Award, Menu, X, ChevronLeft, ChevronRight
+  Music, BarChart3, Leaf, Clock, Target, Award, Menu, X, ChevronLeft, ChevronRight,
+  Search, Package, Filter
 } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -12,6 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { HomepageBanner, BoostedItem, Product, Service } from "@shared/schema";
 import printServiceImage from "@assets/stock_images/printing_press_comme_31325a01.jpg";
 import digitalServiceImage from "@assets/stock_images/digital_marketing_te_924e1fd2.jpg";
@@ -19,6 +24,8 @@ import vaaneyLogo from "@assets/Vaaney logo (2)_1763908268914.png";
 
 export default function Landing() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [category, setCategory] = useState("all");
 
   // Fetch hero banners
   const { data: heroBanners = [], isLoading: isLoadingHero } = useQuery<HomepageBanner[]>({
@@ -68,17 +75,74 @@ export default function Landing() {
     },
   });
 
-  // Fetch all products
-  const { data: allProducts = [] } = useQuery<Product[]>({
+  // Fetch all products (always fetch for marketplace section)
+  const { data: allProducts = [], isLoading: productsLoading } = useQuery<Product[]>({
     queryKey: ["/api/products"],
-    enabled: boostedItems.some(item => item.itemType === "product"),
   });
 
-  // Fetch all services
-  const { data: allServices = [] } = useQuery<Service[]>({
+  // Fetch all services (always fetch for marketplace section)
+  const { data: allServices = [], isLoading: servicesLoading } = useQuery<Service[]>({
     queryKey: ["/api/services"],
-    enabled: boostedItems.some(item => item.itemType === "service"),
   });
+
+  // Filter products based on search and category
+  const filteredProducts = allProducts.filter((product) => {
+    const matchesSearch = !searchQuery || 
+      product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      product.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = category === "all" || 
+      product.category?.toLowerCase().includes(category.toLowerCase());
+    return matchesSearch && matchesCategory;
+  });
+
+  // Filter services based on search and category
+  const filteredServices = allServices.filter((service) => {
+    const matchesSearch = !searchQuery || 
+      service.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      service.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = category === "all" || 
+      service.category?.toLowerCase().includes(category.toLowerCase());
+    return matchesSearch && matchesCategory;
+  });
+
+  // Helper function to check if an item is boosted
+  const isItemBoosted = (itemId: string, itemType: "product" | "service") => {
+    return boostedItems.some(boost => boost.itemId === itemId && boost.itemType === itemType && boost.isActive);
+  };
+
+  // Get price display for product
+  const getProductDisplayPrice = (product: Product): string | null => {
+    const variants = (product as any).variants;
+    if (variants && variants.length > 0) {
+      const prices = variants
+        .map((v: any) => parseFloat(v.price))
+        .filter((p: number) => !isNaN(p) && p > 0);
+      if (prices.length > 0) {
+        return `From $${Math.min(...prices).toFixed(2)}`;
+      }
+    }
+    if (product.price !== null && product.price !== undefined) {
+      const price = parseFloat(String(product.price));
+      if (!isNaN(price) && price > 0) {
+        return `$${price.toFixed(2)}`;
+      }
+    }
+    return null;
+  };
+
+  // Get price display for service
+  const getServiceDisplayPrice = (service: Service): string | null => {
+    const packages = (service as any).packages;
+    if (packages && packages.length > 0) {
+      const prices = packages
+        .map((p: any) => parseFloat(p.price))
+        .filter((p: number) => !isNaN(p) && p > 0);
+      if (prices.length > 0) {
+        return `From $${Math.min(...prices).toFixed(2)}`;
+      }
+    }
+    return null;
+  };
 
   // Filter boosted products and services
   const boostedProducts = boostedItems
@@ -374,7 +438,7 @@ export default function Landing() {
                   <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
                     <Button
                       size="lg"
-                      onClick={() => window.location.href = "/marketplace"}
+                      onClick={() => window.location.href = "/signup"}
                       data-testid="button-start-buying"
                       className="text-lg px-10 py-6"
                     >
@@ -397,9 +461,210 @@ export default function Landing() {
           )}
         </section>
 
-        {/* Featured Products & Services */}
+        {/* Marketplace Section */}
+        <section className="py-16 bg-muted/30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl sm:text-4xl font-bold font-display mb-3">Browse Marketplace</h2>
+              <p className="text-lg text-muted-foreground">
+                Discover products and services from verified Sri Lankan sellers
+              </p>
+            </div>
+
+            {/* Search and Filters */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  placeholder="Search products and services..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 w-full"
+                  data-testid="input-landing-search"
+                />
+              </div>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-landing-category">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="printing">Printing</SelectItem>
+                  <SelectItem value="design">Design</SelectItem>
+                  <SelectItem value="marketing">Marketing</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Tabs for Products and Services */}
+            <Tabs defaultValue="products" className="w-full">
+              <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+                <TabsTrigger value="products" data-testid="tab-landing-products">
+                  <Package className="h-4 w-4 mr-2" />
+                  Products ({filteredProducts.length})
+                </TabsTrigger>
+                <TabsTrigger value="services" data-testid="tab-landing-services">
+                  <ShoppingBag className="h-4 w-4 mr-2" />
+                  Services ({filteredServices.length})
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Products Tab */}
+              <TabsContent value="products">
+                {productsLoading ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {Array.from({ length: 10 }).map((_, i) => (
+                      <Card key={i}>
+                        <Skeleton className="aspect-square w-full" />
+                        <CardContent className="p-4 space-y-2">
+                          <Skeleton className="h-5 w-3/4" />
+                          <Skeleton className="h-4 w-1/2" />
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : filteredProducts.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-16 text-center">
+                      <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">No products found</h3>
+                      <p className="text-muted-foreground">Try adjusting your search or filters</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {filteredProducts.map((product) => (
+                      <a
+                        key={product.id}
+                        href={`/product/${product.id}`}
+                        className="block"
+                        data-testid={`card-product-${product.id}`}
+                      >
+                        <Card className="h-full hover-elevate active-elevate-2 overflow-visible">
+                          <div className="relative aspect-square overflow-hidden rounded-t-md bg-muted">
+                            {product.images?.[0] ? (
+                              <img
+                                src={product.images[0]}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Package className="h-12 w-12 text-muted-foreground" />
+                              </div>
+                            )}
+                            {isItemBoosted(product.id, "product") && (
+                              <Badge className="absolute top-2 right-2 bg-primary/90 backdrop-blur">
+                                <Sparkles className="h-3 w-3 mr-1" />
+                                Featured
+                              </Badge>
+                            )}
+                          </div>
+                          <CardContent className="p-3">
+                            <h4 className="font-semibold line-clamp-2 mb-1">{product.name}</h4>
+                            <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
+                              {product.description}
+                            </p>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-primary font-semibold">
+                                {getProductDisplayPrice(product) || "Custom Quote"}
+                              </span>
+                              {product.category && (
+                                <Badge variant="secondary" className="text-xs truncate max-w-20">
+                                  {product.category}
+                                </Badge>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Services Tab */}
+              <TabsContent value="services">
+                {servicesLoading ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {Array.from({ length: 10 }).map((_, i) => (
+                      <Card key={i}>
+                        <Skeleton className="aspect-square w-full" />
+                        <CardContent className="p-4 space-y-2">
+                          <Skeleton className="h-5 w-3/4" />
+                          <Skeleton className="h-4 w-1/2" />
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : filteredServices.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-16 text-center">
+                      <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">No services found</h3>
+                      <p className="text-muted-foreground">Try adjusting your search or filters</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {filteredServices.map((service) => (
+                      <a
+                        key={service.id}
+                        href={`/book-service/${service.id}`}
+                        className="block"
+                        data-testid={`card-service-${service.id}`}
+                      >
+                        <Card className="h-full hover-elevate active-elevate-2 overflow-visible">
+                          <div className="relative aspect-square overflow-hidden rounded-t-md bg-muted">
+                            {service.images?.[0] ? (
+                              <img
+                                src={service.images[0]}
+                                alt={service.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <ShoppingBag className="h-12 w-12 text-muted-foreground" />
+                              </div>
+                            )}
+                            {isItemBoosted(service.id, "service") && (
+                              <Badge className="absolute top-2 right-2 bg-primary/90 backdrop-blur">
+                                <Sparkles className="h-3 w-3 mr-1" />
+                                Featured
+                              </Badge>
+                            )}
+                          </div>
+                          <CardContent className="p-3">
+                            <h4 className="font-semibold line-clamp-2 mb-1">{service.name}</h4>
+                            <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
+                              {service.description}
+                            </p>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-primary font-semibold">
+                                {getServiceDisplayPrice(service) || "Request Quote"}
+                              </span>
+                              {service.category && (
+                                <Badge variant="secondary" className="text-xs truncate max-w-20">
+                                  {service.category}
+                                </Badge>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
+        </section>
+
+        {/* Featured Products & Services - keep for boosted items highlight */}
         {(boostedProducts.length > 0 || boostedServices.length > 0) && (
-          <section className="py-16 bg-background">
+          <section className="py-16 bg-background hidden">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center mb-12">
                 <div className="flex items-center justify-center gap-2 mb-3">
@@ -627,7 +892,7 @@ export default function Landing() {
               <h4 className="font-semibold mb-4">For Buyers</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="/buyer-guidelines" className="hover:text-foreground transition-colors">Buyer Guidelines</a></li>
-                <li><a href="/marketplace" className="hover:text-foreground transition-colors">Start Shopping</a></li>
+                <li><a href="/signup" className="hover:text-foreground transition-colors">Start Shopping</a></li>
               </ul>
             </div>
             <div>
