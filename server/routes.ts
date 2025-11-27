@@ -862,7 +862,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Product not found" });
       }
       const variants = await storage.getProductVariants(product.id);
-      res.json({ ...product, variants });
+      const seller = await storage.getUser(product.sellerId);
+      res.json({ 
+        ...product, 
+        variants,
+        seller: seller ? {
+          id: seller.id,
+          firstName: seller.firstName,
+          lastName: seller.lastName,
+          verificationStatus: seller.verificationStatus
+        } : null
+      });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
