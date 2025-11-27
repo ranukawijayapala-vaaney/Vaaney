@@ -194,7 +194,7 @@ export const productVariants = pgTable("product_variants", {
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   inventory: integer("inventory").notNull().default(0),
   attributes: jsonb("attributes").$type<Record<string, string>>(), // { "size": "A4", "finish": "Glossy" }
-  imageUrls: text("image_urls").array().notNull().default(sql`ARRAY[]::text[]`), // Variant-specific images (GCS URLs)
+  imageUrls: text("image_urls").array().default(sql`ARRAY[]::text[]`), // Variant-specific images (GCS URLs)
   // Shipping dimensions
   weight: decimal("weight", { precision: 10, scale: 3 }), // Weight in KG (e.g., 1.500)
   length: decimal("length", { precision: 10, scale: 2 }), // Length in CM

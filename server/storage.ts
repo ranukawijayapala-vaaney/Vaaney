@@ -486,12 +486,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProductVariants(productId: string): Promise<ProductVariant[]> {
-    return await db.select().from(productVariants).where(eq(productVariants.productId, productId));
+    const variants = await db.select().from(productVariants).where(eq(productVariants.productId, productId));
+    // Ensure imageUrls is always an array (handle legacy null values)
+    return variants.map(v => ({ ...v, imageUrls: v.imageUrls || [] }));
   }
 
   async getProductVariantById(variantId: string): Promise<ProductVariant | undefined> {
     const [variant] = await db.select().from(productVariants).where(eq(productVariants.id, variantId));
-    return variant;
+    if (!variant) return undefined;
+    // Ensure imageUrls is always an array (handle legacy null values)
+    return { ...variant, imageUrls: variant.imageUrls || [] };
   }
 
   async updateProductVariant(id: string, sellerId: string, variantData: Partial<InsertProductVariant>): Promise<ProductVariant> {
