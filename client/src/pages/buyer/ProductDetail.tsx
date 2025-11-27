@@ -797,18 +797,21 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
             </div>
           )}
 
-          {/* Contact Seller button - available for all products, requires variant selection */}
+          {/* Contact Seller button - available for all products */}
+          {/* Requires variant selection only if product has variants */}
           {product.seller && (
             <Button
               variant="outline"
               size="lg"
               onClick={handleAskSeller}
-              disabled={!selectedVariantId}
+              disabled={product.variants && product.variants.length > 0 && !selectedVariantId}
               className="w-full gap-2 mt-4"
               data-testid="button-contact-seller"
             >
               <MessageCircle className="h-5 w-5" />
-              {selectedVariantId ? "Contact Seller" : "Select variant to contact seller"}
+              {(!product.variants || product.variants.length === 0 || selectedVariantId) 
+                ? "Contact Seller" 
+                : "Select variant to contact seller"}
             </Button>
           )}
         </div>
