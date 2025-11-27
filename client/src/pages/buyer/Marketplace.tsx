@@ -96,29 +96,42 @@ export default function Marketplace() {
   };
 
   // Helper function to get the display price for a product
-  // Priority: minimum variant price > base product price > null (for quote/TBD)
+  // Priority: minimum positive variant price > minimum zero variant price > base product price > null (for quote/TBD)
   const getProductDisplayPrice = (product: any): string | null => {
-    // First, try to get minimum price from variants (if any exist with valid prices)
+    let allPrices: number[] = [];
+    
+    // Collect all variant prices
     if (product.variants && product.variants.length > 0) {
       const variantPrices = product.variants
         .map((v: any) => parseFloat(v.price))
-        .filter((p: number) => !isNaN(p) && p > 0);
-      
-      if (variantPrices.length > 0) {
-        return `From $${Math.min(...variantPrices).toFixed(2)}`;
-      }
+        .filter((p: number) => !isNaN(p) && p >= 0);
+      allPrices = [...variantPrices];
     }
     
-    // Fallback to base product price if it exists and is valid
-    if (product.price) {
+    // Also consider base product price
+    if (product.price !== null && product.price !== undefined) {
       const basePrice = parseFloat(product.price);
-      if (!isNaN(basePrice) && basePrice > 0) {
-        return `From $${basePrice.toFixed(2)}`;
+      if (!isNaN(basePrice) && basePrice >= 0) {
+        allPrices.push(basePrice);
       }
     }
     
-    // No valid price found - return null to trigger quote/TBD display
-    return null;
+    if (allPrices.length === 0) {
+      // No valid prices at all
+      return null;
+    }
+    
+    // Prefer the minimum POSITIVE price first
+    const positivePrices = allPrices.filter(p => p > 0);
+    if (positivePrices.length > 0) {
+      return `From $${Math.min(...positivePrices).toFixed(2)}`;
+    }
+    
+    // All prices are 0 - show "Custom Quote" if requires quote, otherwise show "$0.00"
+    if (product.requiresQuote) {
+      return null;
+    }
+    return `From $${(0).toFixed(2)}`;
   };
 
   // Separate boosted and regular products
@@ -616,11 +629,7 @@ export default function Marketplace() {
                         <CardFooter className="p-4 pt-0 flex flex-col gap-2">
                           <div className="flex justify-between items-center gap-2 w-full">
                             <p className="text-lg font-semibold text-primary">
-                              {product.variants && product.variants.length > 0
-                                ? `From $${parseFloat(product.variants[0].price).toFixed(2)}`
-                                : product.requiresQuote
-                                ? "Custom Quote"
-                                : "Price TBD"}
+                              {getProductDisplayPrice(product) || (product.requiresQuote ? "Custom Quote" : "Price TBD")}
                             </p>
                           </div>
                           <div className="flex flex-col gap-2 w-full">
