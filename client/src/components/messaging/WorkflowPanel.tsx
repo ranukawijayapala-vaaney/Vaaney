@@ -76,11 +76,14 @@ export function WorkflowPanel({
   
   // Show design panel if:
   // 1. In product workflow (normal case), OR
-  // 2. Quote is accepted AND product requires design approval (buyer needs to upload design for accepted quote)
+  // 2. Quote is accepted AND product requires design approval (buyer needs to upload design for accepted quote), OR
+  // 3. There are pending designs that need seller review (even if quote workflow is also active)
   const quoteIsAccepted = activeQuote?.status === "accepted";
+  const hasPendingDesigns = pendingDesigns && pendingDesigns.length > 0;
   const showDesignPanel = requiresDesignApproval && (
     (isProductWorkflow && !isQuoteWorkflow) ||  // Normal product workflow
-    (isQuoteWorkflow && quoteIsAccepted)        // Quote accepted, need design upload
+    (isQuoteWorkflow && quoteIsAccepted) ||     // Quote accepted, need design upload
+    hasPendingDesigns                            // Pending designs exist that need review
   );
 
   // Compact summary for collapsed state
