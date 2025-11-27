@@ -268,10 +268,15 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
   });
 
   const createInquiryMutation = useMutation({
-    mutationFn: async (data: { message: string }) => {
+    mutationFn: async (data: { message: string; variantId?: string; variantName?: string }) => {
+      // Include variant info in subject if provided
+      const subject = data.variantId && data.variantName
+        ? `Inquiry: ${product.name} - ${data.variantName}`
+        : `Question about ${product.name}`;
+      
       const conversation: any = await apiRequest("POST", "/api/conversations", {
         type: "pre_purchase_product",
-        subject: `Question about ${product.name}`,
+        subject,
         productId: product.id,
       });
       
@@ -285,7 +290,7 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
       
       return conversation;
     },
-    onSuccess: () => {
+    onSuccess: (conversation) => {
       queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
       toast({ 
         title: "Message sent!", 
@@ -302,6 +307,8 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
       });
       setShowAskSellerDialog(false);
       setInquiryMessage("");
+      // Navigate to the conversation
+      navigate(`/messages?conversation=${conversation.id}`);
     },
     onError: (error: Error) => {
       toast({ title: "Failed to send message", description: error.message, variant: "destructive" });
@@ -319,7 +326,11 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
       toast({ title: "Please enter a message", variant: "destructive" });
       return;
     }
-    createInquiryMutation.mutate({ message: inquiryMessage });
+    createInquiryMutation.mutate({ 
+      message: inquiryMessage,
+      variantId: selectedVariantId || undefined,
+      variantName: selectedVariant?.name || undefined,
+    });
   };
 
   const handleRequestQuote = () => {
@@ -786,17 +797,18 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
             </div>
           )}
 
-          {/* Only show general inquiry button for standard products without special workflows */}
-          {product.seller && !product.requiresDesignApproval && !product.requiresQuote && (
+          {/* Contact Seller button - available for all products, requires variant selection */}
+          {product.seller && (
             <Button
               variant="outline"
               size="lg"
               onClick={handleAskSeller}
+              disabled={!selectedVariantId}
               className="w-full gap-2 mt-4"
-              data-testid="button-ask-seller"
+              data-testid="button-contact-seller"
             >
               <MessageCircle className="h-5 w-5" />
-              Ask Seller a Question
+              {selectedVariantId ? "Contact Seller" : "Select variant to contact seller"}
             </Button>
           )}
         </div>
@@ -839,22 +851,27 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
       </div>
 
       <Dialog open={showAskSellerDialog} onOpenChange={setShowAskSellerDialog}>
-        <DialogContent data-testid="dialog-ask-seller-product">
+        <DialogContent data-testid="dialog-contact-seller-product">
           <DialogHeader>
-            <DialogTitle>Ask Seller a Question</DialogTitle>
+            <DialogTitle>Contact Seller</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex gap-4">
-              {product.images && product.images[0] && (
+              {displayImages && displayImages[0] && (
                 <img
-                  src={product.images[0]}
+                  src={displayImages[0]}
                   alt={product.name}
                   className="w-20 h-20 object-cover rounded"
                 />
               )}
               <div className="flex-1">
                 <h3 className="font-semibold">{product.name}</h3>
-                <p className="text-sm text-muted-foreground">
+                {selectedVariant && (
+                  <Badge variant="secondary" className="mt-1">
+                    {selectedVariant.name}
+                  </Badge>
+                )}
+                <p className="text-sm text-muted-foreground mt-1">
                   {product.seller 
                     ? `Seller: ${product.seller.firstName} ${product.seller.lastName}`
                     : "Seller information not available"}
@@ -863,7 +880,7 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="product-inquiry-message">Your Question</Label>
+              <Label htmlFor="product-inquiry-message">Your Message</Label>
               <Textarea
                 id="product-inquiry-message"
                 placeholder="Ask about pricing, availability, customization options, or anything else..."
@@ -873,7 +890,7 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
                 data-testid="textarea-product-inquiry"
               />
               <p className="text-xs text-muted-foreground">
-                Your message will be sent to the seller. You can track the conversation in your Messages page.
+                This conversation will be about {product.name}{selectedVariant ? ` - ${selectedVariant.name}` : ''}.
               </p>
             </div>
 
