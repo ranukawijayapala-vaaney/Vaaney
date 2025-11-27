@@ -6,13 +6,21 @@ Vaaney is a full-stack e-commerce marketplace platform for the Maldivian market,
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
-## Recent Changes (November 25, 2025)
+## Recent Changes (November 27, 2025)
+### Guest Browsing & Landing Page Marketplace
+- **Embedded Marketplace**: Added full marketplace section to landing page with Products/Services tabs, search, and category filtering
+- **Guest Access**: Visitors can browse all products and services before signing up
+- **Dynamic Categories**: Category filter now shows real categories from database instead of hardcoded options
+- **Product/Service Links**: Clicking items navigates to detail pages (/product/:id, /book-service/:id)
+- **Query Fix**: Fixed queryClient to properly join all query key segments for hierarchical routes
+
+## Previous Changes (November 25, 2025)
 ### Product Form Bug Fix
 - **Validation Error Fix**: Fixed "Expected number, received string" validation error when creating/updating products and variants
 - **Type Conversion**: Form inputs (price, stock, inventory, dimensions) now properly convert from strings to numbers before API submission
 - **API Payload Types**: Added proper TypeScript types for API payloads to ensure type safety
 
-## Previous Changes (November 24, 2025)
+## Changes (November 24, 2025)
 ### Mobile Messaging Improvements
 - **Auto-Scroll Feature**: Implemented automatic scrolling to latest messages in MessageThread component using useRef and scrollIntoView - messages now auto-scroll to bottom when conversation opens
 - **Seller Mobile Layout**: Updated SellerMessages page with mobile-responsive layout - conversation list hides when chat is open, shows back button, and displays full-screen thread (matches buyer pattern)
