@@ -51,6 +51,28 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
   const [pendingPackageId, setPendingPackageId] = useState<string | null>(null);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
+  // Reset state when service ID changes (fixes back button navigation)
+  useEffect(() => {
+    setActiveTab("package");
+    setSelectedPackageId("");
+    setIsCustomQuoteSelected(false);
+    setNotes("");
+    setPaymentMethod("ipg");
+    setSelectedImageIndex(0);
+    setNotesOpen(false);
+    setDescriptionOpen(false);
+    setShowContactDialog(false);
+    setContactMessage("");
+    setSelectedBankAccountId("");
+    setTransferSlipUrl("");
+    setTransferSlipObjectPath("");
+    setFailedImages(new Set());
+    setShowDesignApprovalGate(false);
+    setPendingPackageSelection(null);
+    setShowPrePurchaseDialog(false);
+    setPendingPackageId(null);
+  }, [serviceId]);
+
   // Get current user to determine messages route
   const { user, isLoading: isAuthLoading } = useAuth();
 

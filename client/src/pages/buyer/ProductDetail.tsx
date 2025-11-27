@@ -17,8 +17,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RatingDisplay } from "@/components/RatingDisplay";
 
-export default function ProductDetail() {
-  const { id } = useParams<{ id: string }>();
+interface ProductDetailProps {
+  productId?: string;
+}
+
+export default function ProductDetail({ productId: propId }: ProductDetailProps) {
+  const params = useParams<{ id: string }>();
+  // Use prop ID if provided, otherwise fall back to useParams
+  const id = propId || params?.id;
   const [location, navigate] = useLocation();
   const { toast } = useToast();
   const [selectedVariantId, setSelectedVariantId] = useState<string>("");
@@ -28,9 +34,30 @@ export default function ProductDetail() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   
+  // Reset state when product ID changes (fixes back button navigation)
+  useEffect(() => {
+    if (!id) return; // Don't reset if id is not available yet
+    setSelectedVariantId("");
+    setQuantity(1);
+    setSelectedImageIndex(0);
+    setFailedImages(new Set());
+    setShowAskSellerDialog(false);
+    setInquiryMessage("");
+  }, [id]);
+  
   // Parse query params for workflow actions
   const urlParams = new URLSearchParams(window.location.search);
   const action = urlParams.get('action');
+  
+  // Guard: Return loading state if id is not available
+  if (!id) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
+  }
 
   const { data: product, isLoading: productLoading } = useQuery<any>({
     queryKey: ["/api/products", id],

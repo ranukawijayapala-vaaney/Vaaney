@@ -103,9 +103,9 @@ function Router() {
           )}
         </Route>
         <Route path="/product/:id">
-          {() => (
+          {(params) => (
             <GuestLayout>
-              <ProductDetail />
+              <ProductDetail productId={params.id} />
             </GuestLayout>
           )}
         </Route>
@@ -164,7 +164,7 @@ function Router() {
           <Route path="/" component={Marketplace} />
           <Route path="/marketplace" component={Marketplace} />
           <Route path="/product/:id">
-            {(params) => <ProductDetail />}
+            {(params) => <ProductDetail productId={params.id} />}
           </Route>
           <Route path="/cart" component={Cart} />
           <Route path="/checkout" component={Checkout} />
@@ -206,7 +206,7 @@ function Router() {
           <Route path="/notifications" component={Notifications} />
           <Route path="/profile" component={Profile} />
           <Route path="/product/:id">
-            {(params) => <ProductDetail />}
+            {(params) => <ProductDetail productId={params.id} />}
           </Route>
           <Route path="/book-service/:id">
             {(params) => <ServiceBooking serviceId={params.id} />}
