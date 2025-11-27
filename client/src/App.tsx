@@ -234,6 +234,8 @@ function Router() {
           <Route path="/admin/banners" component={Banners} />
           <Route path="/admin/boost-packages" component={BoostPackages} />
           <Route path="/admin/boost-items" component={BoostItems} />
+          <Route path="/admin/orders" component={AdminOrders} />
+          <Route path="/admin/bookings" component={AdminBookings} />
           <Route path="/notifications" component={Notifications} />
           <Route path="/profile" component={Profile} />
           <Route path="/mock-ipg" component={MockIPG} />

@@ -7,6 +7,13 @@ Vaaney is a full-stack e-commerce marketplace platform for the Maldivian market,
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (November 27, 2025)
+### Admin Sales Management Enhancement
+- **Orders & Bookings Navigation**: Added "Sales" dropdown in admin navigation with links to Orders and Bookings pages
+- **Seller Info in Orders/Bookings**: Enhanced admin APIs to include seller information (id, email, firstName, lastName, businessName, phone)
+- **Admin Orders Page**: Complete order management with customer info, seller info, order items, and status badges
+- **Admin Bookings Page**: Added Seller column in table view, View Details button, and comprehensive details modal
+- **Routes Fix**: Added missing /admin/orders and /admin/bookings routes to App.tsx
+
 ### Product Variant Image Persistence Fix
 - **Bug Fix**: Fixed critical production bug where variant images uploaded by sellers were not being saved to the database
 - **Root Cause**: drizzle-zod's createInsertSchema was dropping optional array fields during parsing
