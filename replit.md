@@ -7,6 +7,12 @@ Vaaney is a full-stack e-commerce marketplace platform for the Maldivian market,
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (November 27, 2025)
+### Product Variant Image Persistence Fix
+- **Bug Fix**: Fixed critical production bug where variant images uploaded by sellers were not being saved to the database
+- **Root Cause**: drizzle-zod's createInsertSchema was dropping optional array fields during parsing
+- **Schema Fix**: Changed imageUrls column to `.notNull().default(sql\`ARRAY[]::text[]\`)` with `.default([])` override
+- **Update Safety**: Route handler checks if imageUrls was explicitly provided to prevent wiping existing images during partial updates
+
 ### Guest Browsing & Landing Page Marketplace
 - **Embedded Marketplace**: Added full marketplace section to landing page with Products/Services tabs, search, and category filtering
 - **Guest Access**: Visitors can browse all products and services before signing up
