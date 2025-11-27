@@ -7,6 +7,13 @@ Vaaney is a full-stack e-commerce marketplace platform for the Maldivian market,
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (November 27, 2025)
+### Email Branding Enhancement
+- **Logo Integration**: All email templates now include Vaaney logo served from /vaaney-logo.png
+- **Brand Color**: Updated to Vaaney teal (#217588) across all templates
+- **Sender Identity**: FROM_EMAIL set to "Vaaney <noreply@vaaney.com>"
+- **Template Wrapper**: Created wrapTemplate() helper for consistent header/footer across 25+ notification emails
+- **Verification Email**: Updated with logo, brand color, and professional styling
+
 ### Admin Sales Management Enhancement
 - **Orders & Bookings Navigation**: Added "Sales" dropdown in admin navigation with links to Orders and Bookings pages
 - **Seller Info in Orders/Bookings**: Enhanced admin APIs to include seller information (id, email, firstName, lastName, businessName, phone)
