@@ -28,6 +28,7 @@ import AdminSetup from "@/pages/AdminSetup";
 import { BuyerLayout } from "@/components/BuyerLayout";
 import { SellerLayout } from "@/components/SellerLayout";
 import { AdminLayout } from "@/components/AdminLayout";
+import { GuestLayout } from "@/components/GuestLayout";
 
 import Marketplace from "@/pages/buyer/Marketplace";
 import ProductDetail from "@/pages/buyer/ProductDetail";
@@ -94,6 +95,27 @@ function Router() {
         <Route path="/about" component={AboutUs} />
         <Route path="/mock-ipg" component={MockIPG} />
         <Route path="/admin-setup" component={AdminSetup} />
+        <Route path="/marketplace">
+          {() => (
+            <GuestLayout>
+              <Marketplace />
+            </GuestLayout>
+          )}
+        </Route>
+        <Route path="/product/:id">
+          {() => (
+            <GuestLayout>
+              <ProductDetail />
+            </GuestLayout>
+          )}
+        </Route>
+        <Route path="/book-service/:id">
+          {(params) => (
+            <GuestLayout>
+              <ServiceBooking serviceId={params.id} />
+            </GuestLayout>
+          )}
+        </Route>
         <Route component={NotFound} />
       </Switch>
     );

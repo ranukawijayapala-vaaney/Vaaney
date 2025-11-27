@@ -291,6 +291,12 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
   });
 
   const handlePackageSelect = (packageId: string) => {
+    // Check if user is authenticated - redirect to login if not
+    if (!user) {
+      navigate(`/login?redirect=${encodeURIComponent(`/book-service/${serviceId}`)}`);
+      return;
+    }
+
     // If design approval is required AND no approved design exists, show design approval gate
     if (service?.requiresDesignApproval && !approvedDesign) {
       setPendingPackageSelection({ packageId, isCustomQuote: false });
@@ -336,6 +342,12 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
   };
 
   const handleCustomQuoteSelect = () => {
+    // Check if user is authenticated - redirect to login if not
+    if (!user) {
+      navigate(`/login?redirect=${encodeURIComponent(`/book-service/${serviceId}`)}`);
+      return;
+    }
+
     if (service?.requiresDesignApproval && !approvedDesign) {
       setPendingPackageSelection({ isCustomQuote: true });
       setShowDesignApprovalGate(true);

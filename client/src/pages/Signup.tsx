@@ -149,8 +149,10 @@ export default function Signup() {
         description: result.message || "Please check your email to verify your account before logging in."
       });
       
-      // Redirect to login
-      window.location.href = "/login";
+      // Redirect to login, preserving any redirect parameter
+      const params = new URLSearchParams(window.location.search);
+      const redirectUrl = params.get("redirect");
+      window.location.href = redirectUrl ? `/login?redirect=${encodeURIComponent(redirectUrl)}` : "/login";
     } catch (error: any) {
       toast({
         title: "Signup failed",

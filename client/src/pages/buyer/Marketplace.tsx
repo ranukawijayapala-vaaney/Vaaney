@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import type { Product, EnrichedService, BoostedItem } from "@shared/schema";
 import { Link, useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,6 +49,9 @@ export default function Marketplace() {
       return response.json();
     },
   });
+
+  // Get current user for auth checks (properly handles 401 for guests)
+  const { user } = useAuth();
 
   // Client-side filtering and sorting
   const filteredProducts = allProducts.filter((product) => {
@@ -160,6 +164,12 @@ export default function Marketplace() {
   const handleAddToCart = async (e: React.MouseEvent, product: any) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Check if user is authenticated - redirect to login if not
+    if (!user) {
+      navigate(`/login?redirect=${encodeURIComponent(`/product/${product.id}`)}`);
+      return;
+    }
     
     try {
       const response = await fetch(`/api/products/${product.id}`);
@@ -299,10 +309,24 @@ export default function Marketplace() {
   const handleAskSeller = (e: React.MouseEvent, type: "product" | "service", item: any) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Check if user is authenticated - redirect to login if not
+    if (!user) {
+      const redirectPath = type === "product" ? `/product/${item.id}` : `/book-service/${item.id}`;
+      navigate(`/login?redirect=${encodeURIComponent(redirectPath)}`);
+      return;
+    }
+    
     setAskSellerDialog({ type, item });
   };
 
   const handleSendInquiry = () => {
+    // Check if user is authenticated - redirect to login if not
+    if (!user) {
+      navigate(`/login?redirect=${encodeURIComponent('/marketplace')}`);
+      return;
+    }
+
     if (!askSellerDialog || !inquiryMessage.trim()) {
       toast({ title: "Please enter a message", variant: "destructive" });
       return;

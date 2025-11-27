@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RatingDisplay } from "@/components/RatingDisplay";
 
@@ -41,9 +42,8 @@ export default function ProductDetail() {
     enabled: !!product?.seller?.id,
   });
 
-  const { data: user } = useQuery<any>({
-    queryKey: ["/api/user"],
-  });
+  // Get current user for auth checks (properly handles 401 for guests)
+  const { user } = useAuth();
 
   // Fetch active quote for this product (if requiresQuote is true)
   const { data: activeQuote } = useQuery<any>({
@@ -118,6 +118,12 @@ export default function ProductDetail() {
   });
 
   const handleAddToCart = () => {
+    // Check if user is authenticated - redirect to login if not
+    if (!user) {
+      navigate(`/login?redirect=${encodeURIComponent(`/product/${id}`)}`);
+      return;
+    }
+
     if (!selectedVariantId) {
       toast({ title: "Please select a variant", variant: "destructive" });
       return;
@@ -275,16 +281,49 @@ export default function ProductDetail() {
   });
 
   const handleSendInquiry = () => {
+    // Check if user is authenticated - redirect to login if not
+    if (!user) {
+      navigate(`/login?redirect=${encodeURIComponent(`/product/${id}`)}`);
+      return;
+    }
+
     if (!inquiryMessage.trim()) {
       toast({ title: "Please enter a message", variant: "destructive" });
       return;
     }
     createInquiryMutation.mutate({ message: inquiryMessage });
   };
+
+  const handleRequestQuote = () => {
+    // Check if user is authenticated - redirect to login if not
+    if (!user) {
+      navigate(`/login?redirect=${encodeURIComponent(`/product/${id}?action=request-quote`)}`);
+      return;
+    }
+    requestQuoteMutation.mutate();
+  };
+
+  const handleUploadDesign = () => {
+    // Check if user is authenticated - redirect to login if not
+    if (!user) {
+      navigate(`/login?redirect=${encodeURIComponent(`/product/${id}?action=upload-design`)}`);
+      return;
+    }
+    initiateDesignUploadMutation.mutate();
+  };
+
+  const handleAskSeller = () => {
+    // Check if user is authenticated - redirect to login if not
+    if (!user) {
+      navigate(`/login?redirect=${encodeURIComponent(`/product/${id}`)}`);
+      return;
+    }
+    setShowAskSellerDialog(true);
+  };
   
-  // Auto-trigger workflows based on query params
+  // Auto-trigger workflows based on query params (only for authenticated users)
   useEffect(() => {
-    if (!product || !action) return;
+    if (!product || !action || !user) return;
     
     if (action === 'upload-design' && product.requiresDesignApproval) {
       // Clear only the action param to avoid re-triggering
@@ -303,7 +342,7 @@ export default function ProductDetail() {
       // Trigger quote request workflow
       requestQuoteMutation.mutate();
     }
-  }, [product, action, id]);
+  }, [product, action, id, user]);
 
   const selectedVariant = product?.variants?.find((v: any) => v.id === selectedVariantId);
   const maxStock = selectedVariant?.inventory || 0;
@@ -517,7 +556,7 @@ export default function ProductDetail() {
                             <Button
                               variant="outline"
                               size="lg"
-                              onClick={() => initiateDesignUploadMutation.mutate()}
+                              onClick={handleUploadDesign}
                               disabled={initiateDesignUploadMutation.isPending}
                               className="w-full gap-2 min-h-11"
                               data-testid="button-upload-design"
@@ -545,7 +584,7 @@ export default function ProductDetail() {
                             <Button
                               size="lg"
                               variant="outline"
-                              onClick={() => requestQuoteMutation.mutate()}
+                              onClick={handleRequestQuote}
                               disabled={requestQuoteMutation.isPending}
                               className="w-full gap-2 min-h-11"
                               data-testid="button-request-quote"
@@ -580,7 +619,7 @@ export default function ProductDetail() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => initiateDesignUploadMutation.mutate()}
+                            onClick={handleUploadDesign}
                             disabled={initiateDesignUploadMutation.isPending}
                             className="w-full gap-2 min-h-11"
                             data-testid="button-submit-new-design"
@@ -602,7 +641,7 @@ export default function ProductDetail() {
                             <Button
                               size="lg"
                               variant="default"
-                              onClick={() => requestQuoteMutation.mutate()}
+                              onClick={handleRequestQuote}
                               disabled={requestQuoteMutation.isPending}
                               className="w-full gap-2 min-h-11"
                               data-testid="button-request-quote"
@@ -641,7 +680,7 @@ export default function ProductDetail() {
                           <Button
                             variant="outline"
                             size="lg"
-                            onClick={() => initiateDesignUploadMutation.mutate()}
+                            onClick={handleUploadDesign}
                             disabled={initiateDesignUploadMutation.isPending}
                             className="w-full gap-2 min-h-11"
                             data-testid="button-upload-design"
@@ -686,7 +725,7 @@ export default function ProductDetail() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => initiateDesignUploadMutation.mutate()}
+                            onClick={handleUploadDesign}
                             disabled={initiateDesignUploadMutation.isPending}
                             className="w-full gap-2 min-h-11"
                             data-testid="button-submit-new-design"
@@ -711,7 +750,7 @@ export default function ProductDetail() {
             <Button
               variant="outline"
               size="lg"
-              onClick={() => setShowAskSellerDialog(true)}
+              onClick={handleAskSeller}
               className="w-full gap-2 mt-4"
               data-testid="button-ask-seller"
             >

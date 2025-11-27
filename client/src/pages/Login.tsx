@@ -76,8 +76,12 @@ export default function Login() {
 
       toast({ title: "Welcome back!" });
       
-      // Redirect to root - router will handle role-based pages
-      window.location.href = "/";
+      // Check for redirect parameter - if present, redirect there after login
+      const params = new URLSearchParams(window.location.search);
+      const redirectUrl = params.get("redirect");
+      
+      // Redirect to specified URL or root - router will handle role-based pages
+      window.location.href = redirectUrl || "/";
     } catch (error: any) {
       toast({
         title: "Login failed",
