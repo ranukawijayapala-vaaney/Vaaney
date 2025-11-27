@@ -7,6 +7,7 @@ import { ConversationList } from "@/components/messaging/ConversationList";
 import { MessageThread } from "@/components/messaging/MessageThread";
 import { MessageInput } from "@/components/messaging/MessageInput";
 import { WorkflowPanel } from "@/components/messaging/WorkflowPanel";
+import { ConversationHeader } from "@/components/messaging/ConversationHeader";
 import { MessageCircle, Plus, CheckCircle, ArrowLeft, HeadphonesIcon, Package } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -327,6 +328,17 @@ export default function BuyerMessages() {
                       Mark as Resolved
                     </Button>
                   </div>
+                )}
+
+                {/* Conversation context header - shows product/service info */}
+                {conversationContext?.linkedItem && (
+                  <ConversationHeader
+                    itemName={conversationContext.linkedItem.name}
+                    itemType={conversationContext.itemType}
+                    productId={conversationContext.conversation.productId}
+                    serviceId={conversationContext.conversation.serviceId}
+                    workflowContexts={conversationContext.conversation.workflowContexts}
+                  />
                 )}
                 
                 <div className="flex-1 overflow-y-auto">
