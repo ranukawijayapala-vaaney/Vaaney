@@ -95,6 +95,32 @@ export default function Marketplace() {
     return boostedItems.some(boost => boost.itemId === itemId && boost.itemType === itemType && boost.isActive);
   };
 
+  // Helper function to get the display price for a product
+  // Priority: minimum variant price > base product price > null (for quote/TBD)
+  const getProductDisplayPrice = (product: any): string | null => {
+    // First, try to get minimum price from variants (if any exist with valid prices)
+    if (product.variants && product.variants.length > 0) {
+      const variantPrices = product.variants
+        .map((v: any) => parseFloat(v.price))
+        .filter((p: number) => !isNaN(p) && p > 0);
+      
+      if (variantPrices.length > 0) {
+        return `From $${Math.min(...variantPrices).toFixed(2)}`;
+      }
+    }
+    
+    // Fallback to base product price if it exists and is valid
+    if (product.price) {
+      const basePrice = parseFloat(product.price);
+      if (!isNaN(basePrice) && basePrice > 0) {
+        return `From $${basePrice.toFixed(2)}`;
+      }
+    }
+    
+    // No valid price found - return null to trigger quote/TBD display
+    return null;
+  };
+
   // Separate boosted and regular products
   const boostedProducts = products.filter(p => isItemBoosted(p.id, "product"));
   const regularProducts = products.filter(p => !isItemBoosted(p.id, "product"));
@@ -455,11 +481,7 @@ export default function Marketplace() {
                   <CardFooter className="p-4 pt-0 flex flex-col gap-2">
                     <div className="flex justify-between items-center gap-2 w-full">
                       <p className="text-lg font-semibold text-primary">
-                        {product.variants && product.variants.length > 0
-                          ? `From $${parseFloat(product.variants[0].price).toFixed(2)}`
-                          : product.requiresQuote
-                          ? "Custom Quote"
-                          : "Price TBD"}
+                        {getProductDisplayPrice(product) || (product.requiresQuote ? "Custom Quote" : "Price TBD")}
                       </p>
                     </div>
                     <div className="flex flex-col gap-2 w-full">
