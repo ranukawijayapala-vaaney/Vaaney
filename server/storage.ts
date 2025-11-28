@@ -305,7 +305,7 @@ export interface IStorage {
   requestDesignChanges(id: string, sellerId: string, notes: string): Promise<DesignApproval>;
   copyDesignApprovalToTarget(sourceId: string, buyerId: string, targetVariantId?: string, targetPackageId?: string): Promise<DesignApproval>;
   getApprovedDesignForItem(buyerId: string, productId?: string, serviceId?: string, variantId?: string, packageId?: string): Promise<DesignApproval | undefined>;
-  getApprovedDesignForConversation(conversationId: string): Promise<DesignApproval | undefined>;
+  getApprovedDesignForConversation(conversationId: string, packageId?: string): Promise<DesignApproval | undefined>;
   resubmitDesign(id: string, buyerId: string, newFiles: DesignApproval['designFiles']): Promise<DesignApproval>;
   getApprovedDesignsLibrary(buyerId: string): Promise<DesignApproval[]>;
   getProductApprovedVariants(productId: string, buyerId: string): Promise<{variantId: string | null, designApprovalId: string, status: string, approvedAt: Date | null}[]>;
@@ -2776,16 +2776,21 @@ export class DatabaseStorage implements IStorage {
     return approval;
   }
 
-  async getApprovedDesignForConversation(conversationId: string): Promise<DesignApproval | undefined> {
+  async getApprovedDesignForConversation(conversationId: string, packageId?: string): Promise<DesignApproval | undefined> {
+    const conditions = [
+      eq(designApprovals.conversationId, conversationId),
+      eq(designApprovals.status, "approved")
+    ];
+    
+    // Filter by packageId if provided (for service packages)
+    if (packageId) {
+      conditions.push(eq(designApprovals.packageId, packageId));
+    }
+    
     const [approval] = await db
       .select()
       .from(designApprovals)
-      .where(
-        and(
-          eq(designApprovals.conversationId, conversationId),
-          eq(designApprovals.status, "approved")
-        )
-      )
+      .where(and(...conditions))
       .orderBy(desc(designApprovals.approvedAt))
       .limit(1);
     

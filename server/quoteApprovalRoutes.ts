@@ -967,7 +967,10 @@ export function setupQuoteApprovalRoutes(app: Express) {
           return res.status(403).json({ message: "Not authorized to access this design" });
         }
         
-        const approval = await storage.getApprovedDesignForConversation(conversationId as string);
+        const approval = await storage.getApprovedDesignForConversation(
+          conversationId as string,
+          packageId as string | undefined
+        );
         return res.json(approval || null);
       }
       

@@ -116,24 +116,44 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
     enabled: !!service?.requiresQuote,
   });
 
-  // Fetch approved design for this service (if requiresDesignApproval is true)
-  const { data: approvedDesign } = useQuery<any>({
-    queryKey: ["/api/design-approvals/approved", serviceId],
+  // Fetch ALL approved designs for this service conversation
+  // This allows checking package-specific approvals without refetching
+  const { data: allApprovedDesigns = [] } = useQuery<any[]>({
+    queryKey: ["/api/design-approvals/service", serviceId],
     queryFn: async () => {
-      if (!serviceId) return null;
+      if (!serviceId) return [];
       const conversations: any[] = await apiRequest("GET", "/api/conversations");
       const serviceConversation = conversations.find(c => 
         c.type === "pre_purchase_service" && c.serviceId === serviceId
       );
-      if (!serviceConversation?.id) return null;
+      if (!serviceConversation?.id) return [];
       try {
-        return await apiRequest("GET", `/api/design-approvals/approved?conversationId=${serviceConversation.id}&serviceId=${serviceId}`);
+        // Fetch all design approvals for this conversation
+        const approvals = await apiRequest("GET", `/api/design-approvals?conversationId=${serviceConversation.id}`);
+        // Filter to only approved ones
+        return (approvals || []).filter((a: any) => a.status === "approved");
       } catch {
-        return null;
+        return [];
       }
     },
     enabled: !!service?.requiresDesignApproval,
   });
+
+  // Helper to check if a specific package has an approved design
+  const getApprovalForPackage = (packageId: string | null) => {
+    if (!packageId) {
+      // Custom quote - look for approval without packageId
+      return allApprovedDesigns.find((a: any) => !a.packageId);
+    }
+    return allApprovedDesigns.find((a: any) => a.packageId === packageId);
+  };
+
+  // Get the approval for the currently selected package (for backward compatibility)
+  const approvedDesign = selectedPackageId 
+    ? getApprovalForPackage(selectedPackageId)
+    : isCustomQuoteSelected 
+      ? getApprovalForPackage(null)
+      : allApprovedDesigns[0]; // Fallback to any approval for general display
 
   // Fetch bank accounts
   const { data: bankAccounts = [] } = useQuery<any[]>({
@@ -320,8 +340,10 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
       return;
     }
 
-    // If design approval is required AND no approved design exists, show design approval gate
-    if (service?.requiresDesignApproval && !approvedDesign) {
+    // If design approval is required, check if THIS PACKAGE has an approved design
+    // Uses the getApprovalForPackage helper to check all approvals
+    const hasApprovalForThisPackage = !!getApprovalForPackage(packageId);
+    if (service?.requiresDesignApproval && !hasApprovalForThisPackage) {
       setPendingPackageSelection({ packageId, isCustomQuote: false });
       setShowDesignApprovalGate(true);
       return;
@@ -371,7 +393,9 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
       return;
     }
 
-    if (service?.requiresDesignApproval && !approvedDesign) {
+    // For custom quotes (no package), check if there's an approved design without packageId
+    const hasCustomApproval = !!getApprovalForPackage(null);
+    if (service?.requiresDesignApproval && !hasCustomApproval) {
       setPendingPackageSelection({ isCustomQuote: true });
       setShowDesignApprovalGate(true);
       return;
@@ -627,8 +651,14 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
     );
   }
 
-  // Check if design approval blocks everything
-  const isBlockedByDesignApproval = service.requiresDesignApproval && !approvedDesign;
+  // Check if design approval blocks booking for the selected package
+  // Uses the helper function to check all approved designs
+  const selectedPackageHasApproval = selectedPackageId 
+    ? !!getApprovalForPackage(selectedPackageId)
+    : isCustomQuoteSelected 
+      ? !!getApprovalForPackage(null)
+      : false;
+  const isBlockedByDesignApproval = service.requiresDesignApproval && (selectedPackageId || isCustomQuoteSelected) && !selectedPackageHasApproval;
   const isBlockedByQuote = service.requiresQuote && (!activeQuote || activeQuote.status !== "accepted");
   const hasApprovedDesign = service.requiresDesignApproval && !!approvedDesign;
   const hasAcceptedQuote = service.requiresQuote && activeQuote?.status === "accepted";
