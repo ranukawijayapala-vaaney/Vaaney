@@ -92,6 +92,14 @@ export function WorkflowPanel({
   const variants = workflowSummary?.variants || propsVariants || [];
   const packages = workflowSummary?.packages || propsPackages || [];
   const tasks = workflowSummary?.tasks || [];
+  
+  // Use API response values if available, fallback to props
+  const effectiveRequiresDesignApproval = workflowSummary?.product?.requiresDesignApproval 
+    ?? workflowSummary?.service?.requiresDesignApproval 
+    ?? requiresDesignApproval;
+  const effectiveRequiresQuote = workflowSummary?.product?.requiresQuote 
+    ?? workflowSummary?.service?.requiresQuote 
+    ?? requiresQuote;
 
   const uploadDesignMutation = useMutation({
     mutationFn: async (data: { 
@@ -184,7 +192,7 @@ export function WorkflowPanel({
     }
   }, [showUploadDialog, productId, serviceId, variants, packages, selectedVariantId, selectedPackageId]);
 
-  if (!requiresDesignApproval && !requiresQuote) {
+  if (!effectiveRequiresDesignApproval && !effectiveRequiresQuote) {
     return null;
   }
 
@@ -335,12 +343,12 @@ export function WorkflowPanel({
 
     return (
       <div className="flex flex-wrap gap-2">
-        {requiresDesignApproval && (
+        {effectiveRequiresDesignApproval && (
           <Badge variant={approvedDesigns > 0 ? "default" : designCount > 0 ? "secondary" : "outline"}>
             {approvedDesigns > 0 ? `${approvedDesigns} Approved` : designCount > 0 ? `${designCount} Pending` : "No Designs"}
           </Badge>
         )}
-        {requiresQuote && (
+        {effectiveRequiresQuote && (
           <Badge variant={acceptedQuotes > 0 ? "default" : quoteCount > 0 ? "secondary" : "outline"}>
             {acceptedQuotes > 0 ? `${acceptedQuotes} Accepted` : quoteCount > 0 ? `${quoteCount} Quotes` : "No Quotes"}
           </Badge>
@@ -359,8 +367,8 @@ export function WorkflowPanel({
         <div className="text-center py-6 text-muted-foreground">
           <p className="text-sm">No workflow tasks yet</p>
           <p className="text-xs mt-1">
-            {requiresDesignApproval && userRole === "buyer" && "Upload a design to get started"}
-            {requiresQuote && userRole === "buyer" && "Request a custom quote"}
+            {effectiveRequiresDesignApproval && userRole === "buyer" && "Upload a design to get started"}
+            {effectiveRequiresQuote && userRole === "buyer" && "Request a custom quote"}
           </p>
         </div>
       ) : (
@@ -383,7 +391,7 @@ export function WorkflowPanel({
 
   const renderActions = () => (
     <div className="flex flex-wrap gap-2 pt-3 border-t">
-      {requiresDesignApproval && userRole === "buyer" && (
+      {effectiveRequiresDesignApproval && userRole === "buyer" && (
         <Button
           size="sm"
           variant="outline"
@@ -394,7 +402,7 @@ export function WorkflowPanel({
           Upload Design
         </Button>
       )}
-      {requiresQuote && userRole === "seller" && (
+      {effectiveRequiresQuote && userRole === "seller" && (
         <Button
           size="sm"
           variant="outline"

@@ -168,7 +168,7 @@ export function WorkflowTaskCard({
 
   const acceptQuoteMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", `/api/buyer/quotes/${task.id}/accept`);
+      return await apiRequest("POST", `/api/quotes/${task.id}/accept`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/conversations", conversationId, "workflow-summary"] });
@@ -183,7 +183,7 @@ export function WorkflowTaskCard({
 
   const rejectQuoteMutation = useMutation({
     mutationFn: async (reason: string) => {
-      return await apiRequest("POST", `/api/buyer/quotes/${task.id}/reject`, { reason });
+      return await apiRequest("POST", `/api/quotes/${task.id}/reject`, { reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/conversations", conversationId, "workflow-summary"] });

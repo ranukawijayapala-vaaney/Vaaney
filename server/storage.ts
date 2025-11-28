@@ -91,7 +91,7 @@ import {
   type InsertChatSession,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql, lt, gte, inArray } from "drizzle-orm";
+import { eq, and, desc, sql, lt, gte, inArray, or, isNull } from "drizzle-orm";
 
 /**
  * Currency/Decimal Conversion Utilities
@@ -2407,8 +2407,11 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(quotes.conversationId, conversationId),
-          inArray(quotes.status, ["sent", "pending", "accepted"]),
-          gte(quotes.expiresAt, new Date())
+          inArray(quotes.status, ["requested", "sent", "pending", "accepted"]),
+          or(
+            isNull(quotes.expiresAt),
+            gte(quotes.expiresAt, new Date())
+          )
         )
       )
       .orderBy(desc(quotes.createdAt))
