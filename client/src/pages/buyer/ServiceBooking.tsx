@@ -217,7 +217,33 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
     }
   }, [paymentMethod, bankAccounts, selectedBankAccountId]);
   
-  // Handle return from design approval flow
+  // Handle direct navigation from "Book Now" button with packageId and designApprovalId
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const packageIdParam = params.get('packageId');
+    const designApprovalIdParam = params.get('designApprovalId');
+    
+    // If coming from Book Now button with a packageId, pre-select it and go to review
+    if (packageIdParam && designApprovalIdParam && service) {
+      // Verify this package exists in the service
+      const packageExists = service.packages?.some(pkg => pkg.id === packageIdParam);
+      if (packageExists) {
+        setSelectedPackageId(packageIdParam);
+        setIsCustomQuoteSelected(false);
+        setActiveTab("review");
+        // Clean up URL parameters
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    } else if (designApprovalIdParam && !packageIdParam && service) {
+      // Custom design approval without package - go to custom quote flow
+      setIsCustomQuoteSelected(true);
+      setSelectedPackageId("");
+      setActiveTab("review");
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [service]);
+
+  // Handle return from design approval flow (via sessionStorage)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const returnFromDesign = params.get('returnFromDesign');
