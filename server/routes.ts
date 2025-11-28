@@ -1523,7 +1523,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/buyer/orders", isAuthenticated, requireRole(["buyer"]), async (req: AuthRequest, res: Response) => {
     const userId = (req.user as any)?.id;
-    const { transferSlipObjectPath, ...requestBody } = req.body;
+    const { transferSlipObjectPath, directQuoteId, ...requestBody } = req.body;
     try {
       const checkoutData = z.object({
         shippingAddressId: z.string().uuid("Invalid shipping address ID"),
@@ -1623,6 +1623,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Handle direct quote checkout (for custom quotes without variants)
+      if (directQuoteId) {
+        const [quote] = await db.select().from(quotes).where(eq(quotes.id, directQuoteId)).limit(1);
+        
+        if (!quote) {
+          return res.status(404).json({ message: "Quote not found" });
+        }
+        
+        // SECURITY: Verify quote ownership
+        if (quote.buyerId !== userId) {
+          return res.status(403).json({ message: "This quote does not belong to you" });
+        }
+        
+        // Verify quote status - must be "accepted" (not already purchased)
+        if (quote.status === "purchased") {
+          return res.status(400).json({ message: "This quote has already been purchased" });
+        }
+        if (quote.status !== "accepted") {
+          return res.status(400).json({ message: `Quote is not accepted (status: ${quote.status})` });
+        }
+        
+        // Check expiration
+        if (quote.expiresAt && new Date() > new Date(quote.expiresAt)) {
+          return res.status(400).json({ message: "Quote has expired" });
+        }
+        
+        // Get product info
+        if (!quote.productId) {
+          return res.status(400).json({ message: "Direct quote checkout is only supported for products currently" });
+        }
+        
+        const product = await storage.getProduct(quote.productId);
+        if (!product) {
+          return res.status(400).json({ message: "Product not found" });
+        }
+        
+        const seller = await storage.getUser(product.sellerId);
+        if (!seller) {
+          return res.status(400).json({ message: "Seller not found" });
+        }
+        
+        const quantity = quote.quantity || 1;
+        const unitPrice = quote.quotedPrice;
+        const orderTotal = parseFloat(unitPrice) * quantity;
+        const shippingCostTotal = parseFloat(checkoutData.shippingCost);
+        const estimatedWeight = quantity * 1.0; // 1kg per item default for custom quote
+        
+        // Create checkout session and order for direct quote
+        const result = await db.transaction(async (tx) => {
+          // Create checkout session
+          const [checkoutSession] = await tx.insert(checkoutSessions).values({
+            buyerId: userId,
+            paymentMethod: checkoutData.paymentMethod,
+            shippingAddress: shippingAddressText,
+            shippingCost: checkoutData.shippingCost,
+            notes: checkoutData.notes,
+            totalAmount: (orderTotal + shippingCostTotal).toFixed(2),
+            status: "pending_payment",
+            transferSlipObjectPath: transferSlipObjectPath || null,
+          }).returning();
+          
+          // Create order for direct quote (variantId is null for custom specs)
+          const newOrderResult = await tx.insert(orders).values({
+            buyerId: userId,
+            checkoutSessionId: checkoutSession.id,
+            sellerId: product.sellerId,
+            productId: product.id,
+            variantId: quote.productVariantId || null, // May be null for custom specs
+            quoteId: quote.id,
+            designApprovalId: null, // Direct quotes may not have design approval
+            quantity: quantity,
+            unitPrice: unitPrice,
+            status: "pending_payment",
+            totalAmount: orderTotal.toFixed(2),
+            shippingCost: shippingCostTotal.toFixed(2),
+            productWeight: estimatedWeight.toFixed(3),
+            productDimensions: null,
+            shippingAddress: shippingAddressText,
+            shippingAddressId: checkoutData.shippingAddressId,
+            notes: checkoutData.notes,
+            paymentMethod: checkoutData.paymentMethod,
+            paymentReference: checkoutData.paymentReference,
+          }).returning();
+          const newOrder = (newOrderResult as any)[0];
+          
+          // Calculate commission
+          const commissionRate = parseFloat(seller.commissionRate);
+          const commissionAmount = orderTotal * (commissionRate / 100);
+          const sellerPayout = orderTotal - commissionAmount;
+          
+          // Create transaction
+          await tx.insert(transactions).values({
+            type: "order",
+            orderId: newOrder.id,
+            bookingId: null,
+            buyerId: userId,
+            sellerId: product.sellerId,
+            amount: orderTotal.toFixed(2),
+            commissionRate: commissionRate.toFixed(2),
+            commissionAmount: commissionAmount.toFixed(2),
+            sellerPayout: sellerPayout.toFixed(2),
+            shippingCost: shippingCostTotal.toFixed(2),
+            status: "pending",
+            paymentMethod: checkoutData.paymentMethod,
+            paymentReference: null,
+            transferSlipUrl: checkoutData.transferSlipUrl || null,
+            bankAccountId: validatedBankAccountId,
+          });
+          
+          // Update quote status to purchased
+          await tx.update(quotes)
+            .set({ status: "purchased" })
+            .where(eq(quotes.id, quote.id));
+          
+          return { checkoutSession, orders: [newOrder] };
+        });
+        
+        // Handle IPG payment redirect if applicable
+        if (checkoutData.paymentMethod === "ipg") {
+          const mockGatewayUrl = `/payment-gateway?checkout=${result.checkoutSession.id}&amount=${(orderTotal + shippingCostTotal).toFixed(2)}`;
+          return res.json({
+            success: true,
+            checkoutSessionId: result.checkoutSession.id,
+            orders: result.orders,
+            redirectUrl: mockGatewayUrl,
+          });
+        }
+        
+        return res.json({
+          success: true,
+          checkoutSessionId: result.checkoutSession.id,
+          orders: result.orders,
+        });
+      }
+
       // Get and validate cart items
       const cartItems = await storage.getCartItems(userId);
       if (cartItems.length === 0) {

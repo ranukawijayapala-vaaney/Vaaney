@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { storage } from "./storage";
 import { db } from "./db";
-import { shippingAddresses } from "@shared/schema";
+import { shippingAddresses, productVariants, servicePackages } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { isAuthenticated } from "./localAuth";
 import { insertQuoteSchema, insertDesignApprovalSchema } from "@shared/schema";
@@ -213,7 +213,7 @@ export function setupQuoteApprovalRoutes(app: Express) {
     }
   });
 
-  // Get a specific quote by ID
+  // Get a specific quote by ID (with enriched product/service data for checkout)
   app.get("/api/quotes/:id", isAuthenticated, async (req: AuthRequest, res: Response) => {
     try {
       const userId = (req.user as any)?.id;
@@ -232,7 +232,60 @@ export function setupQuoteApprovalRoutes(app: Express) {
         return res.status(403).json({ message: "You are not authorized to view this quote" });
       }
 
-      res.json(quote);
+      // Enrich quote with product/service data for checkout
+      let enrichedQuote: any = { ...quote };
+      
+      if (quote.productId) {
+        const product = await storage.getProduct(quote.productId);
+        if (product) {
+          const seller = await storage.getUser(product.sellerId);
+          enrichedQuote.product = {
+            ...product,
+            seller: seller ? {
+              id: seller.id,
+              email: seller.email,
+              firstName: seller.firstName,
+              lastName: seller.lastName,
+            } : null
+          };
+          
+          // Also include variant data if available
+          if (quote.productVariantId) {
+            const variants = await db.select().from(productVariants)
+              .where(eq(productVariants.id, quote.productVariantId)).limit(1);
+            if (variants[0]) {
+              enrichedQuote.productVariant = variants[0];
+            }
+          }
+        }
+      }
+      
+      if (quote.serviceId) {
+        const service = await storage.getService(quote.serviceId);
+        if (service) {
+          const seller = await storage.getUser(service.sellerId);
+          enrichedQuote.service = {
+            ...service,
+            seller: seller ? {
+              id: seller.id,
+              email: seller.email,
+              firstName: seller.firstName,
+              lastName: seller.lastName,
+            } : null
+          };
+          
+          // Also include package data if available
+          if (quote.servicePackageId) {
+            const packages = await db.select().from(servicePackages)
+              .where(eq(servicePackages.id, quote.servicePackageId)).limit(1);
+            if (packages[0]) {
+              enrichedQuote.servicePackage = packages[0];
+            }
+          }
+        }
+      }
+
+      res.json(enrichedQuote);
     } catch (error: any) {
       console.error("Error fetching quote:", error);
       res.status(500).json({ message: error.message });

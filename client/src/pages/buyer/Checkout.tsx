@@ -76,8 +76,20 @@ export default function Checkout() {
   const [transferSlipObjectPath, setTransferSlipObjectPath] = useState<string>("");
   const [isUploadingSlip, setIsUploadingSlip] = useState(false);
 
+  // Check for direct quote checkout via URL parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const directQuoteId = urlParams.get("quoteId");
+  const isDirectQuoteCheckout = !!directQuoteId;
+
+  // Fetch direct quote if quoteId is provided
+  const { data: directQuote, isLoading: isLoadingDirectQuote } = useQuery<any>({
+    queryKey: ["/api/quotes", directQuoteId],
+    enabled: isDirectQuoteCheckout,
+  });
+
   const { data: cartItems = [] } = useQuery<any[]>({
     queryKey: ["/api/cart"],
+    enabled: !isDirectQuoteCheckout, // Skip cart fetch if doing direct quote checkout
   });
 
   const { data: allProducts = [] } = useQuery<any[]>({
@@ -185,26 +197,63 @@ export default function Checkout() {
     },
   });
 
-  const cartDetails = cartItems.map(item => {
-    const product = allProducts.find(p => 
-      p.variants?.some((v: any) => v.id === item.productVariantId)
-    );
-    const variant = product?.variants?.find((v: any) => v.id === item.productVariantId);
-    
-    return {
-      ...item,
-      variant: variant ? {
-        ...variant,
-        product: {
-          id: product.id,
-          name: product.name,
-          images: product.images,
-          sellerId: product.sellerId,
-          seller: product.seller,
-        }
-      } : null
-    };
-  }).filter(item => item.variant !== null);
+  // Build cart details either from cart items or from direct quote
+  const cartDetails = isDirectQuoteCheckout && directQuote 
+    ? [{
+        id: `quote-${directQuote.id}`,
+        productVariantId: directQuote.productVariantId || null,
+        quantity: directQuote.quantity || 1,
+        quoteId: directQuote.id,
+        effectiveUnitPrice: directQuote.quotedPrice,
+        variant: directQuote.product ? {
+          id: directQuote.productVariantId || 'custom',
+          name: directQuote.productVariant?.name || 'Custom Specifications',
+          price: directQuote.quotedPrice,
+          weight: directQuote.productVariant?.weight || "1.0",
+          length: directQuote.productVariant?.length,
+          width: directQuote.productVariant?.width,
+          height: directQuote.productVariant?.height,
+          product: {
+            id: directQuote.product.id,
+            name: directQuote.product.name,
+            images: directQuote.product.images || [],
+            sellerId: directQuote.product.sellerId,
+            seller: directQuote.product.seller,
+          }
+        } : directQuote.service ? {
+          id: directQuote.servicePackageId || 'custom',
+          name: directQuote.servicePackage?.name || 'Custom Specifications',
+          price: directQuote.quotedPrice,
+          weight: "0.5",
+          product: {
+            id: directQuote.service.id,
+            name: directQuote.service.name,
+            images: directQuote.service.images || [],
+            sellerId: directQuote.service.sellerId,
+            seller: directQuote.service.seller,
+          }
+        } : null
+      }].filter(item => item.variant !== null)
+    : cartItems.map(item => {
+        const product = allProducts.find(p => 
+          p.variants?.some((v: any) => v.id === item.productVariantId)
+        );
+        const variant = product?.variants?.find((v: any) => v.id === item.productVariantId);
+        
+        return {
+          ...item,
+          variant: variant ? {
+            ...variant,
+            product: {
+              id: product.id,
+              name: product.name,
+              images: product.images,
+              sellerId: product.sellerId,
+              seller: product.seller,
+            }
+          } : null
+        };
+      }).filter(item => item.variant !== null);
 
   // Group cart items by seller
   const itemsBySeller = cartDetails.reduce((acc, item) => {
@@ -330,7 +379,8 @@ export default function Checkout() {
 
     setIsProcessing(true);
 
-    createOrderMutation.mutate({
+    // For direct quote checkout, pass the quote ID
+    const orderData: any = {
       totalAmount: total.toFixed(2),
       shippingCost: shippingCost.toFixed(2),
       shippingAddressId: selectedAddressId,
@@ -339,10 +389,66 @@ export default function Checkout() {
       bankAccountId: data.paymentMethod === "bank_transfer" ? data.bankAccountId : null,
       transferSlipUrl: data.paymentMethod === "bank_transfer" ? data.transferSlipUrl : null,
       transferSlipObjectPath: data.paymentMethod === "bank_transfer" ? transferSlipObjectPath : null,
-    });
+    };
+
+    // Add quoteId for direct quote checkout
+    if (isDirectQuoteCheckout && directQuoteId) {
+      orderData.directQuoteId = directQuoteId;
+    }
+
+    createOrderMutation.mutate(orderData);
   };
 
-  if (cartDetails.length === 0) {
+  // Show loading state for direct quote checkout
+  if (isDirectQuoteCheckout && isLoadingDirectQuote) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <p className="text-muted-foreground">Loading quote details...</p>
+      </div>
+    );
+  }
+
+  // Show error for direct quote if not found or invalid status
+  if (isDirectQuoteCheckout && !isLoadingDirectQuote && !directQuote) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <AlertCircle className="h-24 w-24 text-destructive mb-6" />
+        <h2 className="text-2xl font-semibold mb-2">Quote Not Found</h2>
+        <p className="text-muted-foreground mb-6">The quote you're trying to checkout doesn't exist or has expired.</p>
+        <Button onClick={() => navigate("/messages")}>Go to Messages</Button>
+      </div>
+    );
+  }
+
+  // Verify quote status is acceptable for checkout
+  if (isDirectQuoteCheckout && directQuote && directQuote.status !== "accepted") {
+    const statusMessage = directQuote.status === "purchased" 
+      ? "This quote has already been purchased."
+      : `This quote cannot be checked out (status: ${directQuote.status}).`;
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <AlertCircle className="h-24 w-24 text-destructive mb-6" />
+        <h2 className="text-2xl font-semibold mb-2">Quote Unavailable</h2>
+        <p className="text-muted-foreground mb-6">{statusMessage}</p>
+        <Button onClick={() => navigate("/messages")}>Go to Messages</Button>
+      </div>
+    );
+  }
+
+  // Verify quote has product/service data for checkout
+  if (isDirectQuoteCheckout && directQuote && !directQuote.product && !directQuote.service) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <AlertCircle className="h-24 w-24 text-destructive mb-6" />
+        <h2 className="text-2xl font-semibold mb-2">Quote Data Incomplete</h2>
+        <p className="text-muted-foreground mb-6">Unable to load product details for this quote. Please try again or contact support.</p>
+        <Button onClick={() => navigate("/messages")}>Go to Messages</Button>
+      </div>
+    );
+  }
+
+  if (cartDetails.length === 0 && !isDirectQuoteCheckout) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
         <ShoppingCart className="h-24 w-24 text-muted-foreground mb-6" />
@@ -355,7 +461,16 @@ export default function Checkout() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold" data-testid="text-page-title">Checkout</h1>
+      <div>
+        <h1 className="text-3xl font-bold" data-testid="text-page-title">
+          {isDirectQuoteCheckout ? "Complete Your Custom Quote Order" : "Checkout"}
+        </h1>
+        {isDirectQuoteCheckout && directQuote && (
+          <p className="text-muted-foreground mt-1" data-testid="text-quote-description">
+            Purchasing custom specifications for {directQuote.product?.name || directQuote.service?.name}
+          </p>
+        )}
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">

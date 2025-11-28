@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -22,6 +23,10 @@ import {
   Calendar,
   Package,
   Paintbrush,
+  Info,
+  CheckCircle,
+  Clock,
+  Lock,
 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -83,6 +88,11 @@ export function WorkflowPanel({
   const [quoteExpires, setQuoteExpires] = useState("");
   const [quoteNotes, setQuoteNotes] = useState("");
   const [uploadingFile, setUploadingFile] = useState(false);
+  // Buyer's target variant selection at panel level
+  const [buyerSelectedVariantId, setBuyerSelectedVariantId] = useState<string>("");
+  const [buyerSelectedPackageId, setBuyerSelectedPackageId] = useState<string>("");
+  // Track if workflow intro has been dismissed
+  const [showWorkflowIntro, setShowWorkflowIntro] = useState(true);
 
   const { data: workflowSummary, isLoading, refetch } = useQuery<WorkflowSummary>({
     queryKey: ["/api/conversations", conversationId, "workflow-summary"],
@@ -100,6 +110,66 @@ export function WorkflowPanel({
   const effectiveRequiresQuote = workflowSummary?.product?.requiresQuote 
     ?? workflowSummary?.service?.requiresQuote 
     ?? requiresQuote;
+
+  // Product/service name for display
+  const productName = workflowSummary?.product?.name || workflowSummary?.service?.name || itemName || "Item";
+
+  // Variants with "Custom" option for buyers
+  const variantsWithCustom = useMemo(() => {
+    const customOption = { id: "custom", name: "Custom Specifications", price: "0" };
+    return [customOption, ...variants];
+  }, [variants]);
+
+  const packagesWithCustom = useMemo(() => {
+    const customOption = { id: "custom", name: "Custom Specifications", price: "0" };
+    return [customOption, ...packages];
+  }, [packages]);
+
+  // Get approved designs per variant
+  const approvedDesignsMap = useMemo(() => {
+    const map = new Map<string, WorkflowTask>();
+    tasks.forEach(task => {
+      if (task.type === "design" && task.status === "approved") {
+        const key = task.variantId || task.packageId || "custom";
+        if (!map.has(key)) {
+          map.set(key, task);
+        }
+      }
+    });
+    return map;
+  }, [tasks]);
+
+  // Check if the buyer's selected variant has an approved design
+  const selectedVariantKey = productId ? buyerSelectedVariantId : buyerSelectedPackageId;
+  const selectedVariantHasApprovedDesign = approvedDesignsMap.has(selectedVariantKey || "custom");
+
+  // Get the approved design for the selected variant (for linking to quotes)
+  const approvedDesignForSelectedVariant = approvedDesignsMap.get(selectedVariantKey || "custom");
+
+  // Get display name for the selected variant
+  const getVariantDisplayName = (variantId: string | undefined) => {
+    if (!variantId || variantId === "custom") return "Custom Specifications";
+    const variant = variants.find(v => v.id === variantId);
+    const pkg = packages.find(p => p.id === variantId);
+    return variant?.name || pkg?.name || "Unknown";
+  };
+
+  // Group tasks by variant/package for display
+  const tasksByVariant = useMemo(() => {
+    const grouped = new Map<string, { name: string; tasks: WorkflowTask[] }>();
+    
+    tasks.forEach(task => {
+      const key = task.variantId || task.packageId || "custom";
+      const name = task.variantName || task.packageName || "Custom Specifications";
+      
+      if (!grouped.has(key)) {
+        grouped.set(key, { name, tasks: [] });
+      }
+      grouped.get(key)!.tasks.push(task);
+    });
+    
+    return grouped;
+  }, [tasks]);
 
   const uploadDesignMutation = useMutation({
     mutationFn: async (data: { 
@@ -180,17 +250,44 @@ export function WorkflowPanel({
     localStorage.setItem(storageKey, JSON.stringify(isCollapsed));
   }, [isCollapsed, conversationId]);
 
-  // Auto-select first variant/package when upload dialog opens
+  // Load workflow intro dismissed state from localStorage
   useEffect(() => {
-    if (showUploadDialog) {
-      if (productId && variants.length > 0 && !selectedVariantId) {
-        setSelectedVariantId(variants[0].id);
+    const introKey = `workflow-intro-dismissed-${conversationId}`;
+    const dismissed = localStorage.getItem(introKey);
+    setShowWorkflowIntro(!dismissed);
+  }, [conversationId]);
+
+  const dismissWorkflowIntro = () => {
+    const introKey = `workflow-intro-dismissed-${conversationId}`;
+    localStorage.setItem(introKey, "true");
+    setShowWorkflowIntro(false);
+  };
+
+  // Auto-select first variant for buyer when data loads
+  useEffect(() => {
+    if (userRole === "buyer") {
+      if (productId && variants.length > 0 && !buyerSelectedVariantId) {
+        // Default to first real variant, or "custom" if none
+        setBuyerSelectedVariantId(variants[0]?.id || "custom");
       }
-      if (serviceId && packages.length > 0 && !selectedPackageId) {
-        setSelectedPackageId(packages[0].id);
+      if (serviceId && packages.length > 0 && !buyerSelectedPackageId) {
+        setBuyerSelectedPackageId(packages[0]?.id || "custom");
       }
     }
-  }, [showUploadDialog, productId, serviceId, variants, packages, selectedVariantId, selectedPackageId]);
+  }, [productId, serviceId, variants, packages, userRole, buyerSelectedVariantId, buyerSelectedPackageId]);
+
+  // Auto-select first variant/package when upload dialog opens - use buyer's selection
+  useEffect(() => {
+    if (showUploadDialog) {
+      if (productId) {
+        // Use buyer's selected variant or default to first
+        setSelectedVariantId(buyerSelectedVariantId || variants[0]?.id || "custom");
+      }
+      if (serviceId) {
+        setSelectedPackageId(buyerSelectedPackageId || packages[0]?.id || "custom");
+      }
+    }
+  }, [showUploadDialog, productId, serviceId, variants, packages, buyerSelectedVariantId, buyerSelectedPackageId]);
 
   if (!effectiveRequiresDesignApproval && !effectiveRequiresQuote) {
     return null;
@@ -276,8 +373,8 @@ export function WorkflowPanel({
           size: selectedFile.size,
           mimeType: selectedFile.type,
         },
-        variantId: selectedVariantId || undefined,
-        packageId: selectedPackageId || undefined,
+        variantId: selectedVariantId && selectedVariantId !== "custom" ? selectedVariantId : undefined,
+        packageId: selectedPackageId && selectedPackageId !== "custom" ? selectedPackageId : undefined,
       });
     } catch (error) {
       toast({
@@ -368,10 +465,37 @@ export function WorkflowPanel({
           <p className="text-sm">No workflow tasks yet</p>
           <p className="text-xs mt-1">
             {effectiveRequiresDesignApproval && userRole === "buyer" && "Upload a design to get started"}
-            {effectiveRequiresQuote && userRole === "buyer" && "Request a custom quote"}
+            {!effectiveRequiresDesignApproval && effectiveRequiresQuote && userRole === "buyer" && "Request a custom quote"}
           </p>
         </div>
+      ) : tasksByVariant.size > 1 ? (
+        // Group tasks by variant when there are multiple variants
+        Array.from(tasksByVariant.entries()).map(([variantKey, { name, tasks: variantTasks }]) => (
+          <div key={variantKey} className="space-y-2">
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground border-b pb-1">
+              <Package className="h-3 w-3" />
+              {name}
+              {approvedDesignsMap.has(variantKey) && (
+                <CheckCircle className="h-3 w-3 text-green-500" />
+              )}
+            </div>
+            {variantTasks.map((task) => (
+              <WorkflowTaskCard
+                key={task.id}
+                task={task}
+                userRole={userRole}
+                conversationId={conversationId}
+                onUploadDesign={handleUploadDesign}
+                onRequestQuote={onRequestQuote}
+                onSendQuote={handleSendQuote}
+                onPurchase={handlePurchase}
+                onRefresh={refetch}
+              />
+            ))}
+          </div>
+        ))
       ) : (
+        // Single variant or all tasks for same variant - show flat list
         tasks.map((task) => (
           <WorkflowTaskCard
             key={task.id}
@@ -389,6 +513,112 @@ export function WorkflowPanel({
     </div>
   );
 
+  // Render the workflow intro banner for buyers
+  const renderWorkflowIntro = () => {
+    if (!showWorkflowIntro || userRole !== "buyer") return null;
+    
+    return (
+      <Alert className="mb-3 bg-gradient-to-r from-teal-50 to-blue-50 dark:from-teal-950/30 dark:to-blue-950/30 border-teal-200 dark:border-teal-800">
+        <Info className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+        <AlertDescription className="text-teal-800 dark:text-teal-200 text-sm">
+          <strong>Workflow Manager</strong> - This panel helps you manage design approvals and custom quotes.
+          {effectiveRequiresDesignApproval && effectiveRequiresQuote && (
+            <span> Upload your design first, then request a quote once approved.</span>
+          )}
+          {effectiveRequiresDesignApproval && !effectiveRequiresQuote && (
+            <span> Upload your design for seller approval before purchase.</span>
+          )}
+          {!effectiveRequiresDesignApproval && effectiveRequiresQuote && (
+            <span> Request a custom quote from the seller.</span>
+          )}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-auto px-2 py-0 ml-2 text-teal-700 dark:text-teal-300 underline"
+            onClick={dismissWorkflowIntro}
+          >
+            Dismiss
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
+  };
+
+  // Render the buyer's variant selector
+  const renderBuyerVariantSelector = () => {
+    if (userRole !== "buyer") return null;
+    
+    return (
+      <div className="mb-3 p-3 bg-muted/50 rounded-lg">
+        <Label className="text-xs text-muted-foreground mb-2 block">Select Variant to Work On</Label>
+        {productId && (
+          <Select value={buyerSelectedVariantId} onValueChange={setBuyerSelectedVariantId}>
+            <SelectTrigger data-testid="select-buyer-variant" className="h-9">
+              <SelectValue placeholder="Choose variant..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="custom">
+                <div className="flex items-center gap-2">
+                  <Paintbrush className="h-4 w-4" />
+                  Custom Specifications
+                </div>
+              </SelectItem>
+              {variants.length > 0 && <Separator className="my-1" />}
+              {variants.map((v) => (
+                <SelectItem key={v.id} value={v.id}>
+                  <div className="flex items-center gap-2">
+                    {approvedDesignsMap.has(v.id) && <CheckCircle className="h-3 w-3 text-green-500" />}
+                    {v.name} - ${parseFloat(v.price).toFixed(2)}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        {serviceId && (
+          <Select value={buyerSelectedPackageId} onValueChange={setBuyerSelectedPackageId}>
+            <SelectTrigger data-testid="select-buyer-package" className="h-9">
+              <SelectValue placeholder="Choose package..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="custom">
+                <div className="flex items-center gap-2">
+                  <Paintbrush className="h-4 w-4" />
+                  Custom Specifications
+                </div>
+              </SelectItem>
+              {packages.length > 0 && <Separator className="my-1" />}
+              {packages.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  <div className="flex items-center gap-2">
+                    {approvedDesignsMap.has(p.id) && <CheckCircle className="h-3 w-3 text-green-500" />}
+                    {p.name} - ${parseFloat(p.price).toFixed(2)}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        {/* Show status for selected variant */}
+        {selectedVariantKey && (
+          <div className="mt-2 flex items-center gap-2 text-xs">
+            {selectedVariantHasApprovedDesign ? (
+              <Badge variant="default" className="gap-1 bg-green-500">
+                <CheckCircle className="h-3 w-3" />
+                Design Approved
+              </Badge>
+            ) : effectiveRequiresDesignApproval ? (
+              <Badge variant="secondary" className="gap-1">
+                <Clock className="h-3 w-3" />
+                Design Required
+              </Badge>
+            ) : null}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderActions = () => (
     <div className="flex flex-wrap gap-2 pt-3 border-t">
       {effectiveRequiresDesignApproval && userRole === "buyer" && (
@@ -401,6 +631,34 @@ export function WorkflowPanel({
           <Upload className="h-3 w-3 mr-1" />
           Upload Design
         </Button>
+      )}
+      {/* Request Quote button for buyers - only shown when design is approved (if design is required) */}
+      {effectiveRequiresQuote && userRole === "buyer" && (
+        <>
+          {!effectiveRequiresDesignApproval || selectedVariantHasApprovedDesign ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onRequestQuote}
+              data-testid="button-request-quote"
+            >
+              <FileText className="h-3 w-3 mr-1" />
+              Request Quote
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled
+              className="opacity-50"
+              title="Design approval required first"
+              data-testid="button-request-quote-disabled"
+            >
+              <Lock className="h-3 w-3 mr-1" />
+              Request Quote
+            </Button>
+          )}
+        </>
       )}
       {effectiveRequiresQuote && userRole === "seller" && (
         <Button
@@ -436,6 +694,8 @@ export function WorkflowPanel({
           renderCompactSummary()
         ) : (
           <div className="flex flex-col h-full">
+            {renderWorkflowIntro()}
+            {renderBuyerVariantSelector()}
             <ScrollArea className="flex-1">
               {renderTaskList()}
             </ScrollArea>
@@ -461,6 +721,8 @@ export function WorkflowPanel({
             <SheetTitle>Workflow</SheetTitle>
           </SheetHeader>
           <div className="flex flex-col h-full mt-4">
+            {renderWorkflowIntro()}
+            {renderBuyerVariantSelector()}
             <ScrollArea className="flex-1">
               {renderTaskList()}
             </ScrollArea>
@@ -479,13 +741,30 @@ export function WorkflowPanel({
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Upload Design</DialogTitle>
+            <DialogTitle>
+              Upload Design for {productName}
+              {(selectedVariantId || selectedPackageId) && (
+                <span className="text-muted-foreground font-normal">
+                  {" "}— {getVariantDisplayName(selectedVariantId || selectedPackageId)}
+                </span>
+              )}
+            </DialogTitle>
             <DialogDescription>
               Upload your design file for seller approval
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {productId && variants.length > 0 && (
+            {/* Info message about quote activation */}
+            {effectiveRequiresQuote && (
+              <Alert className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+                <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <AlertDescription className="text-blue-800 dark:text-blue-200 text-sm">
+                  Once your design is approved, you can request custom quotes for this variant.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {productId && (
               <div>
                 <Label htmlFor="variant-select">Select Variant</Label>
                 <Select value={selectedVariantId} onValueChange={setSelectedVariantId}>
@@ -493,6 +772,13 @@ export function WorkflowPanel({
                     <SelectValue placeholder="Choose variant..." />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="custom">
+                      <div className="flex items-center gap-2">
+                        <Paintbrush className="h-4 w-4" />
+                        Custom Specifications
+                      </div>
+                    </SelectItem>
+                    {variants.length > 0 && <Separator className="my-1" />}
                     {variants.map((v) => (
                       <SelectItem key={v.id} value={v.id}>
                         {v.name} - ${parseFloat(v.price).toFixed(2)}
@@ -503,7 +789,7 @@ export function WorkflowPanel({
               </div>
             )}
 
-            {serviceId && packages.length > 0 && (
+            {serviceId && (
               <div>
                 <Label htmlFor="package-select">Select Package</Label>
                 <Select value={selectedPackageId} onValueChange={setSelectedPackageId}>
@@ -511,6 +797,13 @@ export function WorkflowPanel({
                     <SelectValue placeholder="Choose package..." />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="custom">
+                      <div className="flex items-center gap-2">
+                        <Paintbrush className="h-4 w-4" />
+                        Custom Specifications
+                      </div>
+                    </SelectItem>
+                    {packages.length > 0 && <Separator className="my-1" />}
                     {packages.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.name} - ${parseFloat(p.price).toFixed(2)}

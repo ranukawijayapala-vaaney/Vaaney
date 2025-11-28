@@ -7,6 +7,13 @@ Vaaney is a full-stack e-commerce marketplace platform for the Maldivian market,
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (November 28, 2025)
+### Custom Quote Direct Checkout
+- **Direct Checkout Flow**: Custom quotes (without existing variants) now redirect to checkout page instead of cart
+- **WorkflowTaskCard**: Accept button on custom quotes triggers redirect to `/checkout?quoteId={id}`
+- **Checkout Page Enhancement**: Added URL parameter handling (`quoteId`) for direct quote checkout
+- **Backend Support**: POST `/api/buyer/orders` now handles `directQuoteId` parameter for creating orders from custom quotes without cart items
+- **Order Creation**: Direct quote orders bypass cart validation and create single-item orders with the quote's specifications
+
 ### WorkflowPanel Refactoring
 - **Backend API**: New `/api/conversations/:id/workflow-summary` endpoint returns all design approvals and quotes grouped by variant/package with enriched data
 - **Storage Method**: Added `getWorkflowSummary()` in storage.ts to fetch and aggregate workflow tasks with proper superseded record filtering
@@ -22,7 +29,7 @@ Preferred communication style: Simple, everyday language.
 - Quote-only workflow (buyer requests → seller sends → status updates)
 - Design-only workflow (buyer initiates upload → dialog with auto-selected variant)
 - Design+Quote workflow (combined requirements)
-- Custom variant workflow (quote without pre-selected variant)
+- Custom variant workflow (quote without pre-selected variant → direct checkout)
 
 ## Previous Changes (November 27, 2025)
 ### Email Branding Enhancement

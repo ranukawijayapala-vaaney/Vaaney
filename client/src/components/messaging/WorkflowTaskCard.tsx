@@ -166,6 +166,9 @@ export function WorkflowTaskCard({
     },
   });
 
+  // Determine if this is a custom quote (no variant/package)
+  const isCustomQuote = task.type === "quote" && !task.variantId && !task.packageId;
+
   const acceptQuoteMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest("POST", `/api/quotes/${task.id}/accept`);
@@ -173,8 +176,20 @@ export function WorkflowTaskCard({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/conversations", conversationId, "workflow-summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-      toast({ title: "Quote accepted! Added to cart." });
-      onRefresh?.();
+      
+      if (isCustomQuote) {
+        // Custom quote - redirect to checkout with this quote
+        toast({ title: "Quote accepted! Redirecting to checkout..." });
+        onRefresh?.();
+        // Redirect to checkout with the quote ID
+        setTimeout(() => {
+          window.location.href = `/checkout?quoteId=${task.id}`;
+        }, 500);
+      } else {
+        // Variant quote - added to cart
+        toast({ title: "Quote accepted! Added to cart." });
+        onRefresh?.();
+      }
     },
     onError: (error: Error) => {
       toast({ title: "Failed to accept quote", description: error.message, variant: "destructive" });
