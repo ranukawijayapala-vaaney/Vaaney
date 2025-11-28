@@ -146,6 +146,11 @@ export function WorkflowPanel({
   // Get the approved design for the selected variant (for linking to quotes)
   const approvedDesignForSelectedVariant = approvedDesignsMap.get(selectedVariantKey || "custom");
 
+  // Check if the seller's selected quote variant has an approved design (for design-first enforcement)
+  const quoteVariantKey = productId ? quoteVariantId : quotePackageId;
+  const quoteVariantHasApprovedDesign = approvedDesignsMap.has(quoteVariantKey || "custom");
+  const approvedDesignForQuoteVariant = approvedDesignsMap.get(quoteVariantKey || "custom");
+
   // Get display name for the selected variant
   const getVariantDisplayName = (variantId: string | undefined) => {
     if (!variantId || variantId === "custom") return "Custom Specifications";
@@ -208,6 +213,7 @@ export function WorkflowPanel({
       packageId?: string;
       expiresAt?: string;
       notes?: string;
+      designApprovalId?: string;
     }) => {
       return await apiRequest("POST", "/api/quotes", {
         conversationId,
@@ -219,6 +225,7 @@ export function WorkflowPanel({
         servicePackageId: data.packageId && data.packageId !== "custom" ? data.packageId : undefined,
         expiresAt: data.expiresAt || undefined,
         notes: data.notes || undefined,
+        designApprovalId: data.designApprovalId || undefined,
       });
     },
     onSuccess: () => {
@@ -407,6 +414,7 @@ export function WorkflowPanel({
       packageId: serviceId ? quotePackageId : undefined,
       expiresAt: quoteExpires || undefined,
       notes: quoteNotes || undefined,
+      designApprovalId: approvedDesignForQuoteVariant?.id || undefined,
     });
   };
 
@@ -919,6 +927,26 @@ export function WorkflowPanel({
               </div>
             )}
 
+            {/* Design-first enforcement warning for sellers */}
+            {effectiveRequiresDesignApproval && !quoteVariantHasApprovedDesign && (
+              <Alert variant="destructive" data-testid="alert-design-required-for-quote">
+                <Lock className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Design approval required.</strong> The buyer must upload and you must approve a design for {getVariantDisplayName(quoteVariantKey)} before you can send a quote.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Show approved design info when available */}
+            {effectiveRequiresDesignApproval && quoteVariantHasApprovedDesign && (
+              <Alert className="border-green-500 bg-green-50 dark:bg-green-950" data-testid="alert-design-approved">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800 dark:text-green-200">
+                  Design approved for {getVariantDisplayName(quoteVariantKey)}. You can now send a quote.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div>
               <Label htmlFor="quote-quantity">Quantity</Label>
               <div className="relative">
@@ -987,13 +1015,23 @@ export function WorkflowPanel({
             </Button>
             <Button
               onClick={handleCreateQuote}
-              disabled={createQuoteMutation.isPending || !quoteAmount || parseFloat(quoteAmount) <= 0}
+              disabled={
+                createQuoteMutation.isPending || 
+                !quoteAmount || 
+                parseFloat(quoteAmount) <= 0 ||
+                (effectiveRequiresDesignApproval && !quoteVariantHasApprovedDesign)
+              }
               data-testid="button-submit-quote"
             >
               {createQuoteMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Sending...
+                </>
+              ) : effectiveRequiresDesignApproval && !quoteVariantHasApprovedDesign ? (
+                <>
+                  <Lock className="h-4 w-4 mr-2" />
+                  Design Required
                 </>
               ) : (
                 <>

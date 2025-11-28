@@ -97,7 +97,56 @@ export function setupQuoteApprovalRoutes(app: Express) {
         return res.status(400).json({ message: "Quantity must be at least 1" });
       }
 
-      // Validate design approval if provided
+      // DESIGN-FIRST ENFORCEMENT: Check if product/service requires design approval
+      let requiresDesignApproval = false;
+      if (quoteData.productId) {
+        const product = await storage.getProduct(quoteData.productId as string);
+        if (product) {
+          requiresDesignApproval = product.requiresDesignApproval || false;
+        }
+      } else if (quoteData.serviceId) {
+        const service = await storage.getService(quoteData.serviceId as string);
+        if (service) {
+          requiresDesignApproval = service.requiresDesignApproval || false;
+        }
+      }
+
+      // If design approval is required, verify an approved design exists for this variant/package
+      if (requiresDesignApproval) {
+        // Get all design approvals for this conversation
+        const designApprovals = await storage.getDesignApprovalsForConversation(quoteData.conversationId as string);
+        
+        // Find an approved design that matches the variant/package (or custom if none specified)
+        const variantId = quoteData.productVariantId || null;
+        const packageId = quoteData.servicePackageId || null;
+        
+        const matchingApprovedDesign = designApprovals.find(design => {
+          // Must be approved status
+          if (design.status !== "approved") return false;
+          
+          // Match variant/package (null matches null for custom specifications)
+          if (quoteData.productId) {
+            return design.productVariantId === variantId;
+          } else if (quoteData.serviceId) {
+            return design.servicePackageId === packageId;
+          }
+          return false;
+        });
+
+        if (!matchingApprovedDesign) {
+          const variantName = variantId || packageId ? "this variant/package" : "custom specifications";
+          return res.status(400).json({ 
+            message: `Design approval is required before sending a quote. Please wait for the buyer to submit a design for ${variantName} and approve it first.` 
+          });
+        }
+
+        // Auto-link the approved design to this quote if not already provided
+        if (!quoteData.designApprovalId) {
+          quoteData.designApprovalId = matchingApprovedDesign.id;
+        }
+      }
+
+      // Validate design approval if explicitly provided
       if (quoteData.designApprovalId) {
         const design = await storage.getDesignApproval(quoteData.designApprovalId as string);
         if (!design) {
