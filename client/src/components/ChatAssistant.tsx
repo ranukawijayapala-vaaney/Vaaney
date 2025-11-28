@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageCircle, X, Send, Loader2 } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, GripVertical } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
@@ -14,17 +14,74 @@ interface Message {
   timestamp: string;
 }
 
+interface Position {
+  x: number;
+  y: number;
+}
+
+const BUTTON_SIZE = 70;
+const STORAGE_KEY = 'chatAssistantPosition';
+
+function getDefaultPosition(): Position {
+  const isMobile = window.innerWidth < 1280;
+  return {
+    x: window.innerWidth - BUTTON_SIZE - 16,
+    y: isMobile ? window.innerHeight - BUTTON_SIZE - 84 : window.innerHeight - BUTTON_SIZE - 24
+  };
+}
+
+function getSavedPosition(): Position | null {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const pos = JSON.parse(saved);
+      if (typeof pos.x === 'number' && typeof pos.y === 'number') {
+        return pos;
+      }
+    }
+  } catch (e) {
+    console.error('Error reading saved position:', e);
+  }
+  return null;
+}
+
+function constrainPosition(x: number, y: number): Position {
+  const maxX = window.innerWidth - BUTTON_SIZE - 8;
+  const maxY = window.innerHeight - BUTTON_SIZE - 8;
+  const minX = 8;
+  const minY = 8;
+  
+  return {
+    x: Math.max(minX, Math.min(maxX, x)),
+    y: Math.max(minY, Math.min(maxY, y))
+  };
+}
+
 export function ChatAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(() => {
-    // Load sessionId from localStorage on mount
     return localStorage.getItem('chatSessionId');
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [location] = useLocation();
+
+  // Draggable state - always clamp to viewport on initial load
+  const [position, setPosition] = useState<Position>(() => {
+    const saved = getSavedPosition();
+    if (saved) {
+      // Clamp saved position to current viewport bounds
+      return constrainPosition(saved.x, saved.y);
+    }
+    return getDefaultPosition();
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dragStartTimeRef = useRef<number>(0);
+  const hasDraggedRef = useRef(false);
 
   // Get current user for context
   const { data: user } = useQuery<{
@@ -68,6 +125,70 @@ export function ChatAssistant() {
       loadHistory();
     }
   }, [isOpen, sessionId]);
+
+  // Handle window resize - constrain position
+  useEffect(() => {
+    const handleResize = () => {
+      setPosition(prev => constrainPosition(prev.x, prev.y));
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Save position to localStorage when it changes
+  useEffect(() => {
+    if (!isDragging) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(position));
+    }
+  }, [position, isDragging]);
+
+  // Drag handlers
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (buttonRef.current) {
+      buttonRef.current.setPointerCapture(e.pointerId);
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+      setIsDragging(true);
+      dragStartTimeRef.current = Date.now();
+      hasDraggedRef.current = false;
+      e.preventDefault();
+    }
+  }, []);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (isDragging) {
+      const newX = e.clientX - dragOffset.x;
+      const newY = e.clientY - dragOffset.y;
+      const constrained = constrainPosition(newX, newY);
+      setPosition(constrained);
+      hasDraggedRef.current = true;
+      e.preventDefault();
+    }
+  }, [isDragging, dragOffset]);
+
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (buttonRef.current) {
+      buttonRef.current.releasePointerCapture(e.pointerId);
+    }
+    setIsDragging(false);
+    
+    // Only toggle chat if it was a quick tap (not a drag)
+    const dragDuration = Date.now() - dragStartTimeRef.current;
+    if (dragDuration < 200 && !hasDraggedRef.current) {
+      setIsOpen(prev => !prev);
+    }
+  }, []);
+
+  // Keyboard accessibility - toggle chat on Enter/Space
+  const handleButtonKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setIsOpen(prev => !prev);
+    }
+  }, []);
 
   // Extract context from current page - expanded to cover all routes
   const getPageContext = () => {
@@ -182,28 +303,90 @@ export function ChatAssistant() {
     }
   };
 
+  // Calculate chat panel position based on button position
+  const getChatPanelStyle = () => {
+    const isMobile = window.innerWidth < 1280;
+    const panelWidth = isMobile ? window.innerWidth - 32 : 384;
+    const panelHeight = isMobile ? window.innerHeight - 270 : window.innerHeight - 180;
+    
+    // Position panel above the button
+    let panelX = position.x;
+    let panelY = position.y - panelHeight - 16;
+    
+    // Adjust if panel would go off-screen
+    if (panelX + panelWidth > window.innerWidth - 16) {
+      panelX = window.innerWidth - panelWidth - 16;
+    }
+    if (panelX < 16) panelX = 16;
+    if (panelY < 16) {
+      // If not enough space above, position below
+      panelY = position.y + BUTTON_SIZE + 16;
+    }
+    
+    return {
+      position: 'fixed' as const,
+      left: `${panelX}px`,
+      top: `${panelY}px`,
+      width: isMobile ? `calc(100% - 32px)` : `${panelWidth}px`,
+      maxHeight: `${Math.min(panelHeight, window.innerHeight - 120)}px`,
+      zIndex: 9999
+    };
+  };
+
   if (!user) return null; // Only show for authenticated users
 
   return (
     <>
-      {/* Floating Chat Button - Large and Prominent with Vaaney Lime Green */}
-      {/* Mobile: Above bottom nav (84px). Desktop: Bottom right corner (24px) */}
+      {/* Draggable Floating Chat Button */}
       <Button
-        className="bottom-[84px] right-4 xl:bottom-6 xl:right-6 h-[70px] w-[70px] rounded-full shadow-2xl bg-[#bcd42f] hover:bg-[#a8bf2a] text-[#222326] border-2 border-[#a8bf2a] animate-pulse-slow z-30"
-        style={{ position: 'fixed' }}
+        ref={buttonRef}
+        className={`h-[70px] w-[70px] rounded-full shadow-2xl bg-[#bcd42f] hover:bg-[#a8bf2a] text-[#222326] border-2 border-[#a8bf2a] ${isDragging ? 'cursor-grabbing scale-110' : 'cursor-grab animate-pulse-slow'} touch-none select-none`}
+        style={{ 
+          position: 'fixed',
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+          zIndex: 9999,
+          transition: isDragging ? 'none' : 'transform 0.2s ease'
+        }}
         size="icon"
-        onClick={() => setIsOpen(!isOpen)}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onKeyDown={handleButtonKeyDown}
+        tabIndex={0}
+        aria-label={isOpen ? "Close AI assistant" : "Open AI assistant"}
         data-testid="button-chat-assistant"
       >
-        {isOpen ? <X className="h-7 w-7" /> : <MessageCircle className="h-7 w-7" />}
+        <div className="relative flex items-center justify-center w-full h-full">
+          {isOpen ? <X className="h-7 w-7" /> : <MessageCircle className="h-7 w-7" />}
+          {!isDragging && !isOpen && (
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#217588] rounded-full animate-ping" />
+          )}
+        </div>
       </Button>
 
-      {/* Chat Panel - Mobile responsive */}
-      {/* Mobile: Full width with margins, above button. Desktop: Fixed width (384px), above button */}
+      {/* Drag hint indicator */}
+      {!isOpen && (
+        <div 
+          className="pointer-events-none text-[10px] text-foreground/60 text-center"
+          style={{
+            position: 'fixed',
+            left: `${position.x}px`,
+            top: `${position.y + BUTTON_SIZE + 4}px`,
+            width: `${BUTTON_SIZE}px`,
+            zIndex: 9998
+          }}
+        >
+          Drag to move
+        </div>
+      )}
+
+      {/* Chat Panel - positioned relative to button */}
       {isOpen && (
         <Card 
-          className="bottom-[170px] left-4 right-4 xl:bottom-[110px] xl:left-auto xl:right-6 xl:w-96 max-h-[calc(100vh-270px)] xl:max-h-[calc(100vh-180px)] shadow-2xl flex flex-col z-30"
-          style={{ position: 'fixed' }}
+          className="shadow-2xl flex flex-col"
+          style={getChatPanelStyle()}
         >
           {/* Header - Improved visibility with darker text */}
           <div className="p-4 border-b bg-gradient-to-r from-[#217588]/5 to-transparent">
