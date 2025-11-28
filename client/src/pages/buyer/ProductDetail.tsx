@@ -348,6 +348,16 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
     }
     setShowAskSellerDialog(true);
   };
+
+  const handleContactSeller = (message: string) => {
+    // Check if user is authenticated - redirect to login if not
+    if (!user) {
+      navigate(`/login?redirect=${encodeURIComponent(`/product/${id}`)}`);
+      return;
+    }
+    setInquiryMessage(message);
+    setShowAskSellerDialog(true);
+  };
   
   // Auto-trigger workflows based on query params (only for authenticated users)
   useEffect(() => {
@@ -518,14 +528,57 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
                         </SelectItem>
                       );
                     })}
+                    {/* Custom Specifications option - only show when product accepts quotes */}
+                    {product.requiresQuote && (
+                      <SelectItem
+                        key="custom"
+                        value="custom"
+                        data-testid="variant-option-custom"
+                      >
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-primary" />
+                          <span className="font-medium">Custom Specifications (Request Quote)</span>
+                        </div>
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
 
               {selectedVariantId && (
                 <>
+                  {/* Custom Specifications - Contact Seller for Custom Quote */}
+                  {selectedVariantId === "custom" && (
+                    <div className="space-y-4 pt-2">
+                      <div className="p-4 bg-muted/50 rounded-lg border">
+                        <h4 className="font-medium mb-2 flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-primary" />
+                          Custom Specifications
+                        </h4>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Need something different from the standard options? Contact the seller to discuss your requirements and get a custom quote.
+                        </p>
+                        <Button
+                          size="lg"
+                          onClick={() => {
+                            if (!user) {
+                              navigate(`/login?redirect=${encodeURIComponent(`/product/${id}`)}`);
+                              return;
+                            }
+                            handleContactSeller(`I'm interested in a custom order for ${product.name}. Here are my specifications:\n\n`);
+                          }}
+                          className="w-full gap-2 min-h-11"
+                          data-testid="button-request-custom-quote"
+                        >
+                          <MessageCircle className="h-5 w-5" />
+                          Contact Seller for Custom Quote
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Only show quantity/price for products that allow direct cart purchase */}
-                  {!product.requiresQuote && (
+                  {selectedVariantId !== "custom" && !product.requiresQuote && (
                     <>
                       <div>
                         <Label htmlFor="quantity" className="text-base">Quantity</Label>
@@ -581,7 +634,8 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
                     </>
                   )}
                     
-                  {/* Purchase Requirements Check */}
+                  {/* Purchase Requirements Check - Skip when custom variant selected */}
+                  {selectedVariantId !== "custom" && (
                   <div className="space-y-3 pt-2">
                       {/* BOTH OPTIONS: When both flags enabled, buyers choose their workflow path */}
                       {/* This offers flexibility: standard variant purchase OR custom quote */}
@@ -781,6 +835,7 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
                         </div>
                       )}
                     </div>
+                  )}
                 </>
               )}
             </div>
