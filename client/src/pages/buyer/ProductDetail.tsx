@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
-import { Star, Package, ShoppingCart, Plus, Minus, MessageCircle, Shield, FileText, Upload, CheckCircle } from "lucide-react";
+import { Star, Package, ShoppingCart, Plus, Minus, MessageCircle, Shield, FileText, Upload, CheckCircle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -673,28 +673,28 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
                             </div>
                           </div>
                           
-                          {/* Option 2: Custom Quote Request */}
+                          {/* Option 2: Custom Quote Request - Locked until design approved */}
                           <div className="space-y-2">
                             <p className="text-xs font-medium text-muted-foreground">Option 2: Request Custom Quote</p>
                             <Button
                               size="lg"
                               variant="outline"
-                              onClick={handleRequestQuote}
-                              disabled={requestQuoteMutation.isPending}
-                              className="w-full gap-2 min-h-11"
-                              data-testid="button-request-quote"
+                              disabled
+                              className="w-full gap-2 min-h-11 opacity-50 cursor-not-allowed"
+                              data-testid="button-request-quote-locked"
                             >
-                              <FileText className="h-5 w-5" />
-                              {requestQuoteMutation.isPending ? "Sending Request..." : "Get Custom Quote"}
+                              <Lock className="h-5 w-5" />
+                              Get Custom Quote
                             </Button>
-                            <p className="text-xs text-muted-foreground text-center">
-                              For custom specifications, sizes, or quantities not listed above
+                            <p className="text-xs text-amber-600 dark:text-amber-400 text-center flex items-center justify-center gap-1">
+                              <Lock className="h-3 w-3" />
+                              Upload and get your design approved first to unlock custom quotes
                             </p>
                           </div>
                         </div>
                       )}
                       
-                      {/* BOTH OPTIONS - After Design Approved: Show Add to Cart */}
+                      {/* BOTH OPTIONS - After Design Approved: Show Add to Cart and Request Quote */}
                       {product.requiresDesignApproval && product.requiresQuote && selectedVariantHasApprovedDesign && (
                         <div className="space-y-3">
                           <Badge variant="default" className="w-full justify-center py-2">
@@ -710,6 +710,30 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
                             <ShoppingCart className="h-5 w-5" />
                             {addToCartMutation.isPending ? "Adding..." : "Add to Cart"}
                           </Button>
+                          
+                          <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                              <span className="w-full border-t" />
+                            </div>
+                            <div className="relative flex justify-center text-xs uppercase">
+                              <span className="bg-background px-2 text-muted-foreground">or</span>
+                            </div>
+                          </div>
+                          
+                          <Button
+                            size="lg"
+                            variant="outline"
+                            onClick={handleRequestQuote}
+                            disabled={requestQuoteMutation.isPending}
+                            className="w-full gap-2 min-h-11"
+                            data-testid="button-request-quote"
+                          >
+                            <FileText className="h-5 w-5" />
+                            {requestQuoteMutation.isPending ? "Sending Request..." : "Get Custom Quote"}
+                          </Button>
+                          <p className="text-xs text-muted-foreground text-center">
+                            For custom specifications, sizes, or quantities not listed above
+                          </p>
                           
                           <Button
                             variant="outline"
