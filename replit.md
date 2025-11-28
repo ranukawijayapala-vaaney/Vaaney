@@ -6,7 +6,25 @@ Vaaney is a full-stack e-commerce marketplace platform for the Maldivian market,
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
-## Recent Changes (November 27, 2025)
+## Recent Changes (November 28, 2025)
+### WorkflowPanel Refactoring
+- **Backend API**: New `/api/conversations/:id/workflow-summary` endpoint returns all design approvals and quotes grouped by variant/package with enriched data
+- **Storage Method**: Added `getWorkflowSummary()` in storage.ts to fetch and aggregate workflow tasks with proper superseded record filtering
+- **WorkflowTaskCard Component**: New component displaying individual workflow tasks with status badges and role-specific action buttons (Approve/Reject for sellers, Accept/Decline for buyers)
+- **WorkflowPanel Refactor**: Now fetches from the new API instead of inferring from conversation contexts; displays task list with real entities
+- **Bug Fixes**: 
+  - ProductDetail: Added "Request Custom Quote" button for products without variants that require quotes
+  - WorkflowPanel: Corrected quote creation endpoint from `/api/seller/quotes` to `/api/quotes`
+  - WorkflowPanel: Auto-selects first variant/package when upload dialog opens to prevent validation errors
+
+### Tested Workflow Scenarios
+- Standard product purchase (direct add to cart)
+- Quote-only workflow (buyer requests → seller sends → status updates)
+- Design-only workflow (buyer initiates upload → dialog with auto-selected variant)
+- Design+Quote workflow (combined requirements)
+- Custom variant workflow (quote without pre-selected variant)
+
+## Previous Changes (November 27, 2025)
 ### Email Branding Enhancement
 - **Logo Integration**: All email templates now include Vaaney logo served from /vaaney-logo.png
 - **Brand Color**: Updated to Vaaney teal (#217588) across all templates
