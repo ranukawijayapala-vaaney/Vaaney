@@ -425,10 +425,10 @@ export function WorkflowTaskCard({
                     <Button
                       size="sm"
                       onClick={() => onPurchase?.(task)}
-                      data-testid={`button-checkout-quote-${task.id}`}
+                      data-testid={isCustomQuote ? `button-checkout-quote-${task.id}` : `button-add-to-cart-quote-${task.id}`}
                     >
                       <ShoppingCart className="h-3 w-3 mr-1" />
-                      Proceed to Checkout
+                      {isCustomQuote ? "Proceed to Checkout" : "Add to Cart"}
                     </Button>
                   )}
                 </div>
