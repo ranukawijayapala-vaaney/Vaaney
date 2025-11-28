@@ -218,11 +218,11 @@ export function WorkflowTaskCard({
 
   return (
     <>
-      <Card className="overflow-hidden" data-testid={`workflow-task-${task.type}-${task.id}`}>
+      <Card data-testid={`workflow-task-${task.type}-${task.id}`}>
         <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
           <div className="p-3">
-            <div className="flex items-start gap-3">
-              <div className={`p-2 rounded-lg ${isDesign ? "bg-blue-100 dark:bg-blue-900/30" : "bg-purple-100 dark:bg-purple-900/30"}`}>
+            <div className="flex items-start gap-2">
+              <div className={`p-2 rounded-lg shrink-0 ${isDesign ? "bg-blue-100 dark:bg-blue-900/30" : "bg-purple-100 dark:bg-purple-900/30"}`}>
                 {isDesign ? (
                   <Upload className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 ) : (
@@ -230,17 +230,17 @@ export function WorkflowTaskCard({
                 )}
               </div>
               
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-medium text-sm">
+              <div className="flex-1 min-w-0 overflow-hidden">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-medium text-sm shrink-0">
                     {isDesign ? "Design" : "Quote"}
                   </span>
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-xs truncate max-w-[120px]">
                     {targetName}
                   </Badge>
                   <Badge 
                     variant={getStatusBadgeVariant(task.type, task.status)} 
-                    className="gap-1"
+                    className="gap-1 shrink-0"
                     data-testid={`badge-status-${task.id}`}
                   >
                     {getStatusIcon(task.status)}
@@ -260,7 +260,7 @@ export function WorkflowTaskCard({
               </div>
 
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" data-testid={`button-expand-${task.id}`}>
+                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 ml-auto" data-testid={`button-expand-${task.id}`}>
                   {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </Button>
               </CollapsibleTrigger>
