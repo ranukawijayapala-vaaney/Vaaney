@@ -174,27 +174,35 @@ export function ChatAssistant() {
     if (buttonRef.current) {
       buttonRef.current.releasePointerCapture(e.pointerId);
     }
-    setIsDragging(false);
     
     // Only toggle chat if it was a quick tap (not a drag)
     const dragDuration = Date.now() - dragStartTimeRef.current;
-    if (dragDuration < 200 && !hasDraggedRef.current) {
-      pointerHandledRef.current = true; // Mark that we handled the toggle
+    const wasQuickTap = dragDuration < 200 && !hasDraggedRef.current;
+    
+    setIsDragging(false);
+    
+    if (wasQuickTap) {
+      pointerHandledRef.current = true;
       setIsOpen(prev => !prev);
+      // Reset the flag after a short delay to allow for next interaction
+      setTimeout(() => {
+        pointerHandledRef.current = false;
+      }, 100);
     }
   }, []);
 
   // Fallback click handler for accessibility and testing tools
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    // Prevent double-toggle: only handle if pointer events didn't
+  const handleClick = useCallback(() => {
+    // Prevent double-toggle: only handle if pointer events didn't just handle it
     if (pointerHandledRef.current) {
-      pointerHandledRef.current = false;
       return;
     }
-    // Toggle if not dragging (for standard clicks without pointer events)
+    // Toggle if not currently dragging
     if (!isDragging) {
       setIsOpen(prev => !prev);
     }
+    // Reset drag ref for next interaction
+    hasDraggedRef.current = false;
   }, [isDragging]);
 
   // Keyboard accessibility - toggle chat on Enter/Space
