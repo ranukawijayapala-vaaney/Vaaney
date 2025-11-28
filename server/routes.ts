@@ -5035,11 +5035,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const schema = z.object({
         productId: z.string().optional(),
         serviceId: z.string().optional(),
+        productVariantId: z.string().optional(),
+        servicePackageId: z.string().optional(),
         context: z.enum(["product", "quote", "service"]),
         initialMessage: z.string().optional(),
       });
       
-      const { productId, serviceId, context, initialMessage } = schema.parse(req.body);
+      const { productId, serviceId, productVariantId, servicePackageId, context, initialMessage } = schema.parse(req.body);
 
       if (!productId && !serviceId) {
         return res.status(400).json({ message: "Either productId or serviceId is required" });
@@ -5110,6 +5112,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             conversationId: conversation.id,
             productId: productId || undefined,
             serviceId: serviceId || undefined,
+            productVariantId: productVariantId || undefined,
+            servicePackageId: servicePackageId || undefined,
             buyerId: userId,
             sellerId,
             status: "requested",

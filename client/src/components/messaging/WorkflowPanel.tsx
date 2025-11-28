@@ -927,8 +927,8 @@ export function WorkflowPanel({
               </div>
             )}
 
-            {/* Design-first enforcement warning for sellers */}
-            {effectiveRequiresDesignApproval && !quoteVariantHasApprovedDesign && (
+            {/* Design-first enforcement warning for sellers - only when BOTH design AND quote are required */}
+            {effectiveRequiresDesignApproval && effectiveRequiresQuote && !quoteVariantHasApprovedDesign && (
               <Alert variant="destructive" data-testid="alert-design-required-for-quote">
                 <Lock className="h-4 w-4" />
                 <AlertDescription>
@@ -937,8 +937,8 @@ export function WorkflowPanel({
               </Alert>
             )}
 
-            {/* Show approved design info when available */}
-            {effectiveRequiresDesignApproval && quoteVariantHasApprovedDesign && (
+            {/* Show approved design info when available - only when BOTH design AND quote are required */}
+            {effectiveRequiresDesignApproval && effectiveRequiresQuote && quoteVariantHasApprovedDesign && (
               <Alert className="border-green-500 bg-green-50 dark:bg-green-950" data-testid="alert-design-approved">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800 dark:text-green-200">
@@ -1019,7 +1019,7 @@ export function WorkflowPanel({
                 createQuoteMutation.isPending || 
                 !quoteAmount || 
                 parseFloat(quoteAmount) <= 0 ||
-                (effectiveRequiresDesignApproval && !quoteVariantHasApprovedDesign)
+                (effectiveRequiresDesignApproval && effectiveRequiresQuote && !quoteVariantHasApprovedDesign)
               }
               data-testid="button-submit-quote"
             >
@@ -1028,7 +1028,7 @@ export function WorkflowPanel({
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Sending...
                 </>
-              ) : effectiveRequiresDesignApproval && !quoteVariantHasApprovedDesign ? (
+              ) : effectiveRequiresDesignApproval && effectiveRequiresQuote && !quoteVariantHasApprovedDesign ? (
                 <>
                   <Lock className="h-4 w-4 mr-2" />
                   Design Required

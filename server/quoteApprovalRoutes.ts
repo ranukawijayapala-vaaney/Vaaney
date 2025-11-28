@@ -97,22 +97,26 @@ export function setupQuoteApprovalRoutes(app: Express) {
         return res.status(400).json({ message: "Quantity must be at least 1" });
       }
 
-      // DESIGN-FIRST ENFORCEMENT: Check if product/service requires design approval
+      // DESIGN-FIRST ENFORCEMENT: Only applies when BOTH requiresQuote AND requiresDesignApproval are true
       let requiresDesignApproval = false;
+      let requiresQuote = false;
       if (quoteData.productId) {
         const product = await storage.getProduct(quoteData.productId as string);
         if (product) {
           requiresDesignApproval = product.requiresDesignApproval || false;
+          requiresQuote = product.requiresQuote || false;
         }
       } else if (quoteData.serviceId) {
         const service = await storage.getService(quoteData.serviceId as string);
         if (service) {
           requiresDesignApproval = service.requiresDesignApproval || false;
+          requiresQuote = service.requiresQuote || false;
         }
       }
 
-      // If design approval is required, verify an approved design exists for this variant/package
-      if (requiresDesignApproval) {
+      // If BOTH design approval AND quote are required, verify an approved design exists for this variant/package
+      // This enforces the design-first workflow only when both workflows are in play
+      if (requiresDesignApproval && requiresQuote) {
         // Get all design approvals for this conversation
         const designApprovals = await storage.getDesignApprovalsForConversation(quoteData.conversationId as string);
         

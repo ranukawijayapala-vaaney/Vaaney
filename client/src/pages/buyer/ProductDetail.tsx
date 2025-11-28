@@ -48,6 +48,7 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
   // Parse query params for workflow actions
   const urlParams = new URLSearchParams(window.location.search);
   const action = urlParams.get('action');
+  const urlVariantId = urlParams.get('variantId');
   
   // Guard: Return loading state if id is not available
   if (!id) {
@@ -217,12 +218,16 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
   };
 
   const requestQuoteMutation = useMutation({
-    mutationFn: async () => {
-      // Use workflow initialization endpoint
+    mutationFn: async (data: { variantId?: string }) => {
+      // Use workflow initialization endpoint with selected variant
+      const selectedVariant = variants.find(v => v.id === data.variantId);
+      const variantInfo = selectedVariant ? ` for ${selectedVariant.name}` : "";
+      
       const conversation = await apiRequest("POST", "/api/conversations/workflows", {
         productId: product.id,
+        productVariantId: data.variantId || undefined,
         context: "quote", // Custom quote request workflow
-        initialMessage: `Hi, I'm interested in purchasing ${product.name}. Could you please provide me with a custom quote?`,
+        initialMessage: `Hi, I'm interested in purchasing ${product.name}${variantInfo}. Could you please provide me with a custom quote?`,
       });
       
       return conversation;
@@ -243,12 +248,16 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
   });
 
   const initiateDesignUploadMutation = useMutation({
-    mutationFn: async () => {
-      // Use workflow initialization endpoint
+    mutationFn: async (data: { variantId?: string }) => {
+      // Use workflow initialization endpoint with selected variant
+      const selectedVariant = variants.find(v => v.id === data.variantId);
+      const variantInfo = selectedVariant ? ` for ${selectedVariant.name}` : "";
+      
       const conversation = await apiRequest("POST", "/api/conversations/workflows", {
         productId: product.id,
+        productVariantId: data.variantId || undefined,
         context: "product", // Design for listed variant workflow
-        initialMessage: `Hi, I need to upload my design files for ${product.name}. Please review and approve when ready.`,
+        initialMessage: `Hi, I need to upload my design files for ${product.name}${variantInfo}. Please review and approve when ready.`,
       });
       
       return conversation;
@@ -259,7 +268,7 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
         title: "Navigating to messages", 
         description: "Upload your design file as an attachment.",
       });
-      // Navigate to messages with conversation ID to auto-select it
+      // Navigate to messages with conversation ID to auto-select it and pass variant context
       navigate(`/messages?conversation=${conversation.id}`);
     },
     onError: (error: Error) => {
@@ -325,19 +334,19 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
   const handleRequestQuote = () => {
     // Check if user is authenticated - redirect to login if not
     if (!user) {
-      navigate(`/login?redirect=${encodeURIComponent(`/product/${id}?action=request-quote`)}`);
+      navigate(`/login?redirect=${encodeURIComponent(`/product/${id}?action=request-quote&variantId=${selectedVariantId || ''}`)}`);
       return;
     }
-    requestQuoteMutation.mutate();
+    requestQuoteMutation.mutate({ variantId: selectedVariantId || undefined });
   };
 
   const handleUploadDesign = () => {
     // Check if user is authenticated - redirect to login if not
     if (!user) {
-      navigate(`/login?redirect=${encodeURIComponent(`/product/${id}?action=upload-design`)}`);
+      navigate(`/login?redirect=${encodeURIComponent(`/product/${id}?action=upload-design&variantId=${selectedVariantId || ''}`)}`);
       return;
     }
-    initiateDesignUploadMutation.mutate();
+    initiateDesignUploadMutation.mutate({ variantId: selectedVariantId || undefined });
   };
 
   const handleAskSeller = () => {
@@ -363,24 +372,29 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
   useEffect(() => {
     if (!product || !action || !user) return;
     
+    // Use URL variant ID or fall back to selected variant
+    const effectiveVariantId = urlVariantId || selectedVariantId || undefined;
+    
     if (action === 'upload-design' && product.requiresDesignApproval) {
-      // Clear only the action param to avoid re-triggering
+      // Clear action and variantId params to avoid re-triggering
       const params = new URLSearchParams(window.location.search);
       params.delete('action');
+      params.delete('variantId');
       const newSearch = params.toString();
       window.history.replaceState({}, '', `/product/${id}${newSearch ? `?${newSearch}` : ''}`);
-      // Trigger design upload workflow
-      initiateDesignUploadMutation.mutate();
+      // Trigger design upload workflow with variant
+      initiateDesignUploadMutation.mutate({ variantId: effectiveVariantId });
     } else if (action === 'request-quote' && product.requiresQuote) {
-      // Clear only the action param to avoid re-triggering
+      // Clear action and variantId params to avoid re-triggering
       const params = new URLSearchParams(window.location.search);
       params.delete('action');
+      params.delete('variantId');
       const newSearch = params.toString();
       window.history.replaceState({}, '', `/product/${id}${newSearch ? `?${newSearch}` : ''}`);
-      // Trigger quote request workflow
-      requestQuoteMutation.mutate();
+      // Trigger quote request workflow with variant
+      requestQuoteMutation.mutate({ variantId: effectiveVariantId });
     }
-  }, [product, action, id, user]);
+  }, [product, action, id, user, urlVariantId, selectedVariantId]);
 
   const selectedVariant = product?.variants?.find((v: any) => v.id === selectedVariantId);
   const maxStock = selectedVariant?.inventory || 0;
