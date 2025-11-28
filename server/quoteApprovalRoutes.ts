@@ -475,7 +475,35 @@ export function setupQuoteApprovalRoutes(app: Express) {
         content: `Quote accepted for ${itemName}! I'll proceed with the purchase.`,
       });
       
-      res.json(quote);
+      // AUTO-ADD TO CART: For product variant quotes, automatically add to cart
+      // This allows buyers to proceed to checkout directly from the workflow
+      // Custom quotes (no variant) skip this - they use direct checkout flow
+      let cartItem = null;
+      if (quote.productVariantId && quote.productId) {
+        try {
+          // Check if item already exists in cart for this variant/quote combo
+          const existingCart = await storage.getCartItems(userId);
+          const alreadyInCart = existingCart.some(
+            (item: any) => item.productVariantId === quote.productVariantId && item.quoteId === quote.id
+          );
+          
+          if (!alreadyInCart) {
+            cartItem = await storage.addToCart({
+              buyerId: userId,
+              productVariantId: quote.productVariantId,
+              quantity: quote.quantity || 1,
+              quoteId: quote.id,
+              designApprovalId: quote.designApprovalId || undefined,
+            });
+            console.log(`Auto-added quote ${quote.id} to cart for buyer ${userId}`);
+          }
+        } catch (cartError) {
+          // Log but don't fail the quote acceptance if cart add fails
+          console.error("Failed to auto-add quote to cart:", cartError);
+        }
+      }
+      
+      res.json({ ...quote, cartItem, autoAddedToCart: !!cartItem });
     } catch (error: any) {
       console.error("Error accepting quote:", error);
       res.status(400).json({ message: error.message });
