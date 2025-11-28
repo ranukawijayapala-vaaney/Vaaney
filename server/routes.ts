@@ -5340,20 +5340,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       conversation = await storage.addWorkflowContext(conversation.id, workflowContext);
 
       // If quote context, create a quote request record with status="requested"
+      // Deduplicate: check for existing pending quote first
       if (context === "quote") {
         try {
-          await storage.createQuote({
-            conversationId: conversation.id,
-            productId: productId || undefined,
-            serviceId: serviceId || undefined,
-            productVariantId: productVariantId || undefined,
-            servicePackageId: servicePackageId || undefined,
-            buyerId: userId,
-            sellerId,
-            status: "requested",
-            quantity: 1,
-            specifications: initialMessage, // Store buyer's initial message as specifications
-          } as any);
+          // Check if an active quote already exists for this conversation
+          const existingQuote = await storage.getActiveQuoteForConversation(conversation.id);
+          
+          // Only create new quote if no active quote exists, or if active quote is for a different variant
+          const shouldCreate = !existingQuote || (
+            // Different variant/package than requested
+            (productVariantId && existingQuote.productVariantId !== productVariantId) ||
+            (servicePackageId && existingQuote.servicePackageId !== servicePackageId) ||
+            // Requesting custom but existing is for specific variant
+            (!productVariantId && !servicePackageId && (existingQuote.productVariantId || existingQuote.servicePackageId))
+          );
+          
+          if (shouldCreate) {
+            await storage.createQuote({
+              conversationId: conversation.id,
+              productId: productId || undefined,
+              serviceId: serviceId || undefined,
+              productVariantId: productVariantId || undefined,
+              servicePackageId: servicePackageId || undefined,
+              buyerId: userId,
+              sellerId,
+              status: "requested",
+              quantity: 1,
+              specifications: initialMessage, // Store buyer's initial message as specifications
+            } as any);
+          }
         } catch (error: any) {
           // If quote already exists for this conversation, that's fine
           console.log("Quote may already exist for this conversation:", error.message);

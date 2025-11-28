@@ -130,9 +130,9 @@ export function setupQuoteApprovalRoutes(app: Express) {
           
           // Match variant/package (null matches null for custom specifications)
           if (quoteData.productId) {
-            return design.productVariantId === variantId;
+            return design.variantId === variantId;
           } else if (quoteData.serviceId) {
-            return design.servicePackageId === packageId;
+            return design.packageId === packageId;
           }
           return false;
         });
