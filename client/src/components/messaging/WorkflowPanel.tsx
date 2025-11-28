@@ -131,7 +131,7 @@ export function WorkflowPanel({
       expiresAt?: string;
       notes?: string;
     }) => {
-      return await apiRequest("POST", "/api/seller/quotes", {
+      return await apiRequest("POST", "/api/quotes", {
         conversationId,
         productId,
         serviceId,

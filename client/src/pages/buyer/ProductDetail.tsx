@@ -786,6 +786,81 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
             </div>
           )}
 
+          {/* QUOTE-ONLY products without variants - show Request Quote button directly */}
+          {(!product.variants || product.variants.length === 0) && product.requiresQuote && (
+            <div className="space-y-3 mt-4">
+              {!activeQuote ? (
+                <Button
+                  size="lg"
+                  variant="default"
+                  onClick={handleRequestQuote}
+                  disabled={requestQuoteMutation.isPending}
+                  className="w-full gap-2 min-h-11"
+                  data-testid="button-request-quote"
+                >
+                  <FileText className="h-5 w-5" />
+                  {requestQuoteMutation.isPending ? "Sending Request..." : "Request Custom Quote"}
+                </Button>
+              ) : activeQuote?.status === "accepted" ? (
+                <div className="space-y-2">
+                  <Badge variant="default" className="w-full justify-center py-2">
+                    Quote Accepted - ${activeQuote.quotedPrice}
+                  </Badge>
+                  <Button
+                    size="lg"
+                    onClick={() => navigate("/messages")}
+                    className="w-full min-h-11"
+                    data-testid="button-view-quote-messages"
+                  >
+                    View Messages to Proceed
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Badge variant="secondary" className="w-full justify-center py-2">
+                    {activeQuote?.status === "sent" ? "Quote Received - Review in Messages" : "Quote Requested - Pending Seller Response"}
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => navigate("/messages")}
+                    className="w-full min-h-11"
+                    data-testid="button-view-quote-messages"
+                  >
+                    <MessageCircle className="h-5 w-5 mr-2" />
+                    View Messages
+                  </Button>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground text-center">
+                This product requires a custom quote from the seller
+              </p>
+            </div>
+          )}
+
+          {/* DESIGN-ONLY products without variants - show Upload Design button directly */}
+          {(!product.variants || product.variants.length === 0) && product.requiresDesignApproval && !product.requiresQuote && (
+            <div className="space-y-3 mt-4">
+              <Badge variant="secondary" className="w-full justify-center py-2">
+                Design Approval Required
+              </Badge>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={handleUploadDesign}
+                disabled={initiateDesignUploadMutation.isPending}
+                className="w-full gap-2 min-h-11"
+                data-testid="button-upload-design"
+              >
+                <Upload className="h-5 w-5" />
+                {initiateDesignUploadMutation.isPending ? "Opening Messages..." : "Upload Your Design"}
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Upload your design files and get seller approval before purchasing
+              </p>
+            </div>
+          )}
+
           {/* Only show general inquiry button for standard products without special workflows */}
           {product.seller && !product.requiresDesignApproval && !product.requiresQuote && (
             <Button
