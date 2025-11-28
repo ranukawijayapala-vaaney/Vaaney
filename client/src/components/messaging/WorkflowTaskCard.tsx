@@ -116,7 +116,7 @@ export function WorkflowTaskCard({
 
   const approveMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("PUT", `/api/seller/design-approvals/${task.id}/approve`, {
+      return await apiRequest("POST", `/api/design-approvals/${task.id}/approve`, {
         notes: "",
       });
     },
@@ -132,8 +132,8 @@ export function WorkflowTaskCard({
 
   const rejectMutation = useMutation({
     mutationFn: async (reason: string) => {
-      return await apiRequest("PUT", `/api/seller/design-approvals/${task.id}/reject`, {
-        reason,
+      return await apiRequest("POST", `/api/design-approvals/${task.id}/reject`, {
+        notes: reason,
       });
     },
     onSuccess: () => {
@@ -150,7 +150,7 @@ export function WorkflowTaskCard({
 
   const requestChangesMutation = useMutation({
     mutationFn: async (changeNotes: string) => {
-      return await apiRequest("PUT", `/api/seller/design-approvals/${task.id}/request-changes`, {
+      return await apiRequest("POST", `/api/design-approvals/${task.id}/request-changes`, {
         notes: changeNotes,
       });
     },
