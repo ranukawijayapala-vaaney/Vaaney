@@ -457,13 +457,14 @@ export function WorkflowPanel({
     setShowQuoteDialog(true);
   };
 
-  // Add to cart mutation for approved designs
+  // Add to cart mutation for approved designs and variant quotes
   const addToCartMutation = useMutation({
-    mutationFn: async (data: { productVariantId: string; quantity: number; designApprovalId: string }) => {
+    mutationFn: async (data: { productVariantId: string; quantity: number; designApprovalId?: string; quoteId?: string }) => {
       return await apiRequest("POST", "/api/cart", {
         productVariantId: data.productVariantId,
         quantity: data.quantity,
         designApprovalId: data.designApprovalId,
+        quoteId: data.quoteId,
       });
     },
     onSuccess: () => {
@@ -484,8 +485,24 @@ export function WorkflowPanel({
         designApprovalId: task.designApprovalId,
       });
     } else if (task.type === "quote" && task.quoteId) {
-      // For custom quotes, redirect to checkout
-      window.location.href = `/checkout?quoteId=${task.quoteId}`;
+      // Check if it's a variant quote or custom quote
+      const isCustomQuote = !task.variantId && !task.packageId;
+      
+      if (isCustomQuote) {
+        // Custom quotes (no variant/package) - redirect to checkout
+        window.location.href = `/checkout?quoteId=${task.quoteId}`;
+      } else if (task.variantId) {
+        // Product variant quotes - add to cart with quote details
+        addToCartMutation.mutate({
+          productVariantId: task.variantId,
+          quantity: task.quantity || 1,
+          quoteId: task.quoteId || undefined,
+          designApprovalId: task.designApprovalId || undefined,
+        });
+      } else if (task.packageId) {
+        // Service package quotes - redirect to checkout with quote
+        window.location.href = `/checkout?quoteId=${task.quoteId}`;
+      }
     }
   };
 
