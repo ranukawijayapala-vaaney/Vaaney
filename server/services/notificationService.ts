@@ -715,7 +715,7 @@ export async function notifyAdminOrderPendingPayment(params: {
 }
 
 /**
- * Admin notification: Return request pending review
+ * Admin notification: Return request pending review (for orders)
  */
 export async function notifyAdminReturnPending(params: {
   orderId: string;
@@ -730,6 +730,53 @@ export async function notifyAdminReturnPending(params: {
     metadata: {
       orderId: params.orderId,
       productName: params.productName,
+      recipientName: params.buyerName,
+    },
+    sendEmailNotification: true, // Email for important admin action needed
+  });
+}
+
+/**
+ * Seller notification: Booking refund request received
+ */
+export async function notifyBookingRefundRequested(params: {
+  sellerId: string;
+  bookingId: string;
+  serviceName: string;
+}) {
+  await createNotification({
+    userId: params.sellerId,
+    type: "return_requested",
+    title: "Refund Request Received",
+    message: `A refund request has been submitted for ${params.serviceName}.`,
+    link: `/seller/returns`,
+    metadata: { 
+      returnType: "booking",
+      bookingId: params.bookingId, 
+      serviceName: params.serviceName,
+      productName: params.serviceName, // For backwards compatibility with existing UI
+    },
+  });
+}
+
+/**
+ * Admin notification: Booking refund request pending review
+ */
+export async function notifyAdminBookingRefundPending(params: {
+  bookingId: string;
+  serviceName: string;
+  buyerName: string;
+}) {
+  await notifyAllAdmins({
+    type: "admin_return_pending",
+    title: "Refund Request Needs Review",
+    message: `A refund request for ${params.serviceName} (Booking #${params.bookingId.substring(0, 8)}) requires admin review.`,
+    link: `/admin/returns`,
+    metadata: {
+      returnType: "booking",
+      bookingId: params.bookingId,
+      serviceName: params.serviceName,
+      productName: params.serviceName, // For backwards compatibility with existing UI
       recipientName: params.buyerName,
     },
     sendEmailNotification: true, // Email for important admin action needed

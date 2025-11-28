@@ -80,6 +80,9 @@ import {
   notifyAdminNewBooking,
   notifyAdminPayoutRequest,
   notifyAdminOrderPendingPayment,
+  notifyAdminReturnPending,
+  notifyBookingRefundRequested,
+  notifyAdminBookingRefundPending,
 } from "./services/notificationService";
 
 const objectStorageService = new ObjectStorageService();
@@ -1375,6 +1378,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Increment return attempt counter
         await storage.incrementOrderReturnAttempts(order.id);
 
+        // Notify seller and admin about the new return request
+        const buyer = await storage.getUser(userId);
+        const buyerName = buyer?.firstName ? `${buyer.firstName} ${buyer.lastName || ""}`.trim() : buyer?.email || "Unknown";
+        // Get product name from variant if available
+        const variant = order.variantId ? await storage.getProductVariant(order.variantId) : null;
+        const product = variant?.productId ? await storage.getProduct(variant.productId) : null;
+        const productName = product?.name || variant?.name || "Product";
+        
+        // Notify the seller (in-app)
+        try {
+          await notifyReturnRequested({
+            sellerId: order.sellerId,
+            orderId: order.id,
+            productName,
+          });
+        } catch (notifError) {
+          console.error("Error sending seller return notification:", notifError);
+        }
+        
+        // Notify admin (in-app + email)
+        try {
+          await notifyAdminReturnPending({
+            orderId: order.id,
+            productName,
+            buyerName,
+          });
+        } catch (notifError) {
+          console.error("Error sending admin return notification:", notifError);
+        }
+
         res.status(201).json(returnRequest);
       } else if (requestData.bookingId) {
         const booking = await storage.getBooking(requestData.bookingId);
@@ -1412,6 +1445,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sellerId: booking.sellerId,
           type: "booking"
         });
+
+        // Notify seller and admin about the new refund request
+        const buyer = await storage.getUser(userId);
+        const buyerName = buyer?.firstName ? `${buyer.firstName} ${buyer.lastName || ""}`.trim() : buyer?.email || "Unknown";
+        // Get service/package name for the notification
+        const servicePackage = booking.servicePackageId ? await storage.getServicePackage(booking.servicePackageId) : null;
+        const serviceName = servicePackage?.name || "Service";
+        
+        // Notify the seller (in-app) - booking-specific notification
+        try {
+          await notifyBookingRefundRequested({
+            sellerId: booking.sellerId,
+            bookingId: booking.id,
+            serviceName,
+          });
+        } catch (notifError) {
+          console.error("Error sending seller refund notification:", notifError);
+        }
+        
+        // Notify admin (in-app + email) - booking-specific notification
+        try {
+          await notifyAdminBookingRefundPending({
+            bookingId: booking.id,
+            serviceName,
+            buyerName,
+          });
+        } catch (notifError) {
+          console.error("Error sending admin refund notification:", notifError);
+        }
 
         res.status(201).json(returnRequest);
       } else {
