@@ -260,7 +260,7 @@ export function WorkflowTaskCard({
               </div>
 
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8" data-testid={`button-expand-${task.id}`}>
+                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" data-testid={`button-expand-${task.id}`}>
                   {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </Button>
               </CollapsibleTrigger>
