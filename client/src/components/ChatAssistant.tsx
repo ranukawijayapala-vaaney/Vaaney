@@ -82,6 +82,7 @@ export function ChatAssistant() {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dragStartTimeRef = useRef<number>(0);
   const hasDraggedRef = useRef(false);
+  const pointerHandledRef = useRef(false);
 
   // Get current user for context
   const { data: user } = useQuery<{
@@ -178,9 +179,23 @@ export function ChatAssistant() {
     // Only toggle chat if it was a quick tap (not a drag)
     const dragDuration = Date.now() - dragStartTimeRef.current;
     if (dragDuration < 200 && !hasDraggedRef.current) {
+      pointerHandledRef.current = true; // Mark that we handled the toggle
       setIsOpen(prev => !prev);
     }
   }, []);
+
+  // Fallback click handler for accessibility and testing tools
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    // Prevent double-toggle: only handle if pointer events didn't
+    if (pointerHandledRef.current) {
+      pointerHandledRef.current = false;
+      return;
+    }
+    // Toggle if not dragging (for standard clicks without pointer events)
+    if (!isDragging) {
+      setIsOpen(prev => !prev);
+    }
+  }, [isDragging]);
 
   // Keyboard accessibility - toggle chat on Enter/Space
   const handleButtonKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -194,6 +209,8 @@ export function ChatAssistant() {
   const getPageContext = () => {
     const context: any = {
       currentPage: location,
+      isGuest: !user,
+      userRole: user?.role || 'guest',
     };
 
     // Extract IDs from URL patterns
@@ -266,22 +283,37 @@ export function ChatAssistant() {
 
     try {
       const context = getPageContext();
-      const response = await apiRequest("POST", "/api/chat", {
-        message: userMessage.content,
-        sessionId,
-        context,
+      // Use public endpoint for guests, authenticated for logged-in users
+      const endpoint = isGuest ? "/api/chat/public" : "/api/chat";
+      
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          message: userMessage.content,
+          sessionId,
+          context,
+        }),
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to get response");
+      }
+      
+      const data = await response.json();
 
       const assistantMessage: Message = {
         role: "assistant",
-        content: response.message,
+        content: data.message,
         timestamp: new Date().toISOString(),
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
       
-      if (response.sessionId && !sessionId) {
-        setSessionId(response.sessionId);
+      if (data.sessionId && !sessionId) {
+        setSessionId(data.sessionId);
       }
     } catch (error: any) {
       console.error("Error sending message:", error);
@@ -333,7 +365,9 @@ export function ChatAssistant() {
     };
   };
 
-  if (!user) return null; // Only show for authenticated users
+  // Determine if this is a guest or authenticated user
+  const isGuest = !user;
+  const userRole = user?.role || 'guest';
 
   return (
     <>
@@ -353,6 +387,7 @@ export function ChatAssistant() {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
+        onClick={handleClick}
         onKeyDown={handleButtonKeyDown}
         tabIndex={0}
         aria-label={isOpen ? "Close AI assistant" : "Open AI assistant"}
@@ -387,6 +422,7 @@ export function ChatAssistant() {
         <Card 
           className="shadow-2xl flex flex-col"
           style={getChatPanelStyle()}
+          data-testid="panel-chat-assistant"
         >
           {/* Header - Improved visibility with darker text */}
           <div className="p-4 border-b bg-gradient-to-r from-[#217588]/5 to-transparent">
@@ -395,9 +431,10 @@ export function ChatAssistant() {
               <div>
                 <h3 className="font-bold text-[#222326] text-base">Vaaney AI Assistant</h3>
                 <p className="text-xs text-foreground/70">
-                  {user.role === "buyer" && "Find products, get help shopping"}
-                  {user.role === "seller" && "Business insights & guidance"}
-                  {user.role === "admin" && "Platform management support"}
+                  {isGuest && "Discover what Vaaney can do for you"}
+                  {userRole === "buyer" && "Find products, get help shopping"}
+                  {userRole === "seller" && "Business insights & guidance"}
+                  {userRole === "admin" && "Platform management support"}
                 </p>
               </div>
             </div>
@@ -409,7 +446,14 @@ export function ChatAssistant() {
               <div className="text-center text-sm text-foreground mt-8">
                 <MessageCircle className="h-12 w-12 mx-auto mb-4 text-[#217588]/60" />
                 <p className="font-medium text-[#222326]">Hi! I'm your Vaaney AI assistant.</p>
-                <p className="mt-2 text-foreground/80">How can I help you today?</p>
+                {isGuest ? (
+                  <>
+                    <p className="mt-2 text-foreground/80">Welcome to Vaaney - the Maldives marketplace!</p>
+                    <p className="mt-1 text-foreground/70 text-xs">Ask me anything about buying, selling, or our services.</p>
+                  </>
+                ) : (
+                  <p className="mt-2 text-foreground/80">How can I help you today?</p>
+                )}
               </div>
             )}
             

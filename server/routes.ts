@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import crypto from "crypto";
 import { storage } from "./storage";
 import { db } from "./db";
 import { eq, and, or, inArray, isNull, isNotNull, not, desc } from "drizzle-orm";
@@ -485,6 +486,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI Chat Assistant Routes
+  
+  // Public chat endpoint for guests (landing page visitors)
+  app.post("/api/chat/public", async (req: Request, res: Response) => {
+    try {
+      const { message, sessionId, context } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      // Use a guest session ID stored in memory (no persistence for guests)
+      const guestSessionId = sessionId || `guest-${crypto.randomUUID()}`;
+      
+      // Build guest-specific context
+      const chatContext: any = {
+        userRole: 'guest',
+        isGuest: true,
+        currentPage: context?.currentPage || 'Landing Page',
+        ...context,
+      };
+
+      // Fetch product/service info if on detail pages (guests can view these)
+      try {
+        if (context?.productId) {
+          const product = await storage.getProduct(context.productId);
+          if (product) {
+            chatContext.currentProduct = {
+              id: product.id,
+              name: product.name,
+              category: product.category,
+              price: product.price,
+              description: product.description,
+              stock: product.stock,
+            };
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching product context for guest:", error);
+      }
+
+      try {
+        if (context?.serviceId) {
+          const service = await storage.getService(context.serviceId);
+          if (service) {
+            chatContext.currentService = {
+              id: service.id,
+              name: service.name,
+              category: service.category,
+              description: service.description,
+              requiresDesignApproval: service.requiresDesignApproval,
+              requiresQuote: service.requiresQuote,
+            };
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching service context for guest:", error);
+      }
+
+      // For guests, maintain a simple in-memory message history per request
+      const messages = [
+        {
+          role: "user" as const,
+          content: message,
+          timestamp: new Date().toISOString()
+        }
+      ];
+
+      // Import OpenAI service dynamically
+      const { getChatCompletion } = await import("./services/openaiService");
+      
+      // Get AI response
+      const aiResponse = await getChatCompletion(
+        messages.map(m => ({ role: m.role, content: m.content })),
+        chatContext
+      );
+
+      res.json({
+        message: aiResponse,
+        sessionId: guestSessionId
+      });
+    } catch (error: any) {
+      console.error("Error in public chat endpoint:", error);
+      res.status(500).json({ message: "Failed to process chat message. Please try again." });
+    }
+  });
+
   app.post("/api/chat", isAuthenticated, async (req: AuthRequest, res: Response) => {
     const userId = (req.user as any)?.id;
     if (!userId) {

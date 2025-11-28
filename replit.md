@@ -7,6 +7,15 @@ Vaaney is a full-stack e-commerce marketplace platform for the Maldivian market,
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (November 28, 2025)
+### Guest AI Assistant
+- **Public Chat Endpoint**: Added POST /api/chat/public for unauthenticated visitors
+- **Landing Page Access**: AI assistant now visible to all visitors, not just logged-in users
+- **Guest Mode UI**: Shows "Discover what Vaaney can do for you" subtitle for guests
+- **Role-Specific Prompts**: Different AI personas for guest, buyer, seller, and admin roles
+- **Conversational Responses**: Updated AI to provide detailed explanations first, paths as supplementary
+- **System Knowledge**: AI understands design library, digital delivery, auto-messages, shipping dimensions, quote workflows
+- **Accessibility**: Added onClick fallback and keyboard support (Space/Enter) for testing tools
+
 ### Workflow Auto-Messages & Notifications
 - **Design Upload Auto-Message**: System posts message to conversation when buyer uploads design
 - **Design Approval Notifications**: In-app notifications for design approval, rejection, and change requests
