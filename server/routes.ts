@@ -1742,7 +1742,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Handle IPG payment redirect if applicable
         if (checkoutData.paymentMethod === "ipg") {
-          const mockGatewayUrl = `/payment-gateway?checkout=${result.checkoutSession.id}&amount=${(orderTotal + shippingCostTotal).toFixed(2)}`;
+          const mockGatewayUrl = `/mock-ipg?checkout=${result.checkoutSession.id}&amount=${(orderTotal + shippingCostTotal).toFixed(2)}`;
           return res.json({
             success: true,
             checkoutSessionId: result.checkoutSession.id,
