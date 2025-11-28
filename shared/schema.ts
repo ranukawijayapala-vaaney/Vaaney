@@ -1524,7 +1524,10 @@ export type NotificationType =
   | "admin_order_pending_payment"
   | "admin_return_pending"
   | "admin_new_product"
-  | "admin_new_service";
+  | "admin_new_service"
+  | "admin_new_order"
+  | "admin_new_booking"
+  | "admin_payout_request";
 
 // Notifications table - for in-app notifications
 export const notifications = pgTable("notifications", {

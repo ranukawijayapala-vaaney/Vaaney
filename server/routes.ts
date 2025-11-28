@@ -76,6 +76,10 @@ import {
   notifyBoostPurchaseCreated,
   notifyBoostPaymentConfirmed,
   notifyBoostPaymentFailed,
+  notifyAdminNewOrder,
+  notifyAdminNewBooking,
+  notifyAdminPayoutRequest,
+  notifyAdminOrderPendingPayment,
 } from "./services/notificationService";
 
 const objectStorageService = new ObjectStorageService();
@@ -1827,6 +1831,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return { checkoutSession, orders: [newOrder] };
         });
         
+        // Get buyer info for admin notification
+        const buyer = await storage.getUser(userId);
+        const buyerName = buyer?.firstName ? `${buyer.firstName} ${buyer.lastName || ""}`.trim() : buyer?.email || "Unknown";
+        const sellerName = seller.firstName ? `${seller.firstName} ${seller.lastName || ""}`.trim() : seller.email || "Unknown Seller";
+        
+        // Send admin notification for direct quote order (in-app only)
+        try {
+          await notifyAdminNewOrder({
+            orderId: result.orders[0].id,
+            buyerName,
+            sellerName,
+            productName: product.name,
+            totalAmount: orderTotal.toFixed(2),
+          });
+        } catch (notifError) {
+          console.error("Error sending admin order notification:", notifError);
+        }
+        
         // Handle IPG payment redirect if applicable
         if (checkoutData.paymentMethod === "ipg") {
           const ipgUrl = new URL(`${req.protocol}://${req.get('host')}/mock-ipg`);
@@ -2061,6 +2083,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Clear the cart only after everything succeeds
       await storage.clearCart(userId);
       
+      // Get buyer info for notifications
+      const buyer = await storage.getUser(userId);
+      const buyerName = buyer?.firstName ? `${buyer.firstName} ${buyer.lastName || ""}`.trim() : buyer?.email || "Unknown";
+      
+      // Send admin notification for each new order (in-app only)
+      for (const order of result.orders) {
+        try {
+          await notifyAdminNewOrder({
+            orderId: order.id,
+            buyerName,
+            sellerName: order.seller ? `${order.seller.firstName || ""} ${order.seller.lastName || ""}`.trim() : "Unknown Seller",
+            productName: order.product?.name || order.variant?.name || "Product",
+            totalAmount: order.totalAmount,
+          });
+        } catch (notifError) {
+          console.error("Error sending admin order notification:", notifError);
+        }
+      }
+      
+      // For bank transfer orders, also notify admin that payment verification is needed (with email)
+      if (checkoutData.paymentMethod === "bank_transfer") {
+        try {
+          await notifyAdminOrderPendingPayment({
+            orderId: result.checkoutSession.id,
+            amount: result.checkoutSession.totalAmount,
+            buyerName,
+          });
+        } catch (notifError) {
+          console.error("Error sending admin bank transfer notification:", notifError);
+        }
+      }
+      
       // If IPG payment, return redirect URL to payment gateway
       if (checkoutData.paymentMethod === "ipg") {
         const ipgUrl = new URL(`${req.protocol}://${req.get('host')}/mock-ipg`);
@@ -2231,6 +2285,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         return newBooking;
       });
+      
+      // Get service info and send admin notification for new booking (in-app only)
+      const service = await storage.getService(parsedData.serviceId);
+      const buyer = await storage.getUser(userId);
+      const buyerName = buyer?.firstName ? `${buyer.firstName} ${buyer.lastName || ""}`.trim() : buyer?.email || "Unknown";
+      const sellerName = seller.firstName ? `${seller.firstName} ${seller.lastName || ""}`.trim() : seller.email || "Unknown Seller";
+      
+      try {
+        await notifyAdminNewBooking({
+          bookingId: booking.id,
+          buyerName,
+          sellerName,
+          serviceName: service?.name || servicePackage.name || "Service",
+          amount: parsedData.amount,
+        });
+      } catch (notifError) {
+        console.error("Error sending admin booking notification:", notifError);
+      }
+      
+      // For bank transfer bookings, also notify admin that payment verification is needed (with email)
+      if (parsedData.paymentMethod === "bank_transfer") {
+        try {
+          await notifyAdminOrderPendingPayment({
+            orderId: booking.id,
+            amount: parsedData.amount,
+            buyerName,
+          });
+        } catch (notifError) {
+          console.error("Error sending admin bank transfer notification:", notifError);
+        }
+      }
       
       // If IPG payment, return redirect URL to payment gateway
       if (parsedData.paymentMethod === "ipg") {

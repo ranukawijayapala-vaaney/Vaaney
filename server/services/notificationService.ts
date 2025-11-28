@@ -737,6 +737,80 @@ export async function notifyAdminReturnPending(params: {
 }
 
 /**
+ * Admin notification: New order placed
+ */
+export async function notifyAdminNewOrder(params: {
+  orderId: string;
+  buyerName: string;
+  sellerName: string;
+  productName: string;
+  totalAmount: string;
+}) {
+  await notifyAllAdmins({
+    type: "admin_new_order",
+    title: "New Order Placed",
+    message: `${params.buyerName} placed an order for ${params.productName} ($${params.totalAmount}) from ${params.sellerName}.`,
+    link: `/admin/orders`,
+    metadata: {
+      orderId: params.orderId,
+      buyerName: params.buyerName,
+      sellerName: params.sellerName,
+      productName: params.productName,
+      totalAmount: params.totalAmount,
+    },
+    sendEmailNotification: false, // In-app only to avoid email spam
+  });
+}
+
+/**
+ * Admin notification: New booking created
+ */
+export async function notifyAdminNewBooking(params: {
+  bookingId: string;
+  buyerName: string;
+  sellerName: string;
+  serviceName: string;
+  amount: string;
+}) {
+  await notifyAllAdmins({
+    type: "admin_new_booking",
+    title: "New Booking Created",
+    message: `${params.buyerName} booked ${params.serviceName} ($${params.amount}) from ${params.sellerName}.`,
+    link: `/admin/bookings`,
+    metadata: {
+      bookingId: params.bookingId,
+      buyerName: params.buyerName,
+      sellerName: params.sellerName,
+      serviceName: params.serviceName,
+      amount: params.amount,
+    },
+    sendEmailNotification: false, // In-app only to avoid email spam
+  });
+}
+
+/**
+ * Admin notification: Seller payout request
+ */
+export async function notifyAdminPayoutRequest(params: {
+  sellerId: string;
+  sellerName: string;
+  amount: string;
+}) {
+  await notifyAllAdmins({
+    type: "admin_payout_request",
+    title: "Payout Request Submitted",
+    message: `${params.sellerName} has requested a payout of $${params.amount}.`,
+    link: `/admin/payouts`,
+    metadata: {
+      sellerId: params.sellerId,
+      sellerName: params.sellerName,
+      amount: params.amount,
+    },
+    sendEmailNotification: false, // In-app only
+  });
+}
+
+/**
  * Admin notification: New product listed
  */
 export async function notifyAdminNewProduct(params: {
