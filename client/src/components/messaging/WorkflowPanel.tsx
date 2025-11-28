@@ -172,6 +172,18 @@ export function WorkflowPanel({
     localStorage.setItem(storageKey, JSON.stringify(isCollapsed));
   }, [isCollapsed, conversationId]);
 
+  // Auto-select first variant/package when upload dialog opens
+  useEffect(() => {
+    if (showUploadDialog) {
+      if (productId && variants.length > 0 && !selectedVariantId) {
+        setSelectedVariantId(variants[0].id);
+      }
+      if (serviceId && packages.length > 0 && !selectedPackageId) {
+        setSelectedPackageId(packages[0].id);
+      }
+    }
+  }, [showUploadDialog, productId, serviceId, variants, packages, selectedVariantId, selectedPackageId]);
+
   if (!requiresDesignApproval && !requiresQuote) {
     return null;
   }
