@@ -27,6 +27,8 @@ import {
   CheckCircle,
   Clock,
   Lock,
+  Scale,
+  Ruler,
 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -87,6 +89,11 @@ export function WorkflowPanel({
   const [quotePackageId, setQuotePackageId] = useState<string>("custom");
   const [quoteExpires, setQuoteExpires] = useState("");
   const [quoteNotes, setQuoteNotes] = useState("");
+  // Shipping dimensions for product quotes
+  const [quoteWeight, setQuoteWeight] = useState("");
+  const [quoteLength, setQuoteLength] = useState("");
+  const [quoteWidth, setQuoteWidth] = useState("");
+  const [quoteHeight, setQuoteHeight] = useState("");
   const [uploadingFile, setUploadingFile] = useState(false);
   // Buyer's target variant selection at panel level
   const [buyerSelectedVariantId, setBuyerSelectedVariantId] = useState<string>("");
@@ -214,6 +221,10 @@ export function WorkflowPanel({
       expiresAt?: string;
       notes?: string;
       designApprovalId?: string;
+      weight?: number;
+      length?: number;
+      width?: number;
+      height?: number;
     }) => {
       return await apiRequest("POST", "/api/quotes", {
         conversationId,
@@ -226,6 +237,11 @@ export function WorkflowPanel({
         expiresAt: data.expiresAt || undefined,
         notes: data.notes || undefined,
         designApprovalId: data.designApprovalId || undefined,
+        // Include shipping dimensions for product quotes
+        weight: data.weight || undefined,
+        length: data.length || undefined,
+        width: data.width || undefined,
+        height: data.height || undefined,
       });
     },
     onSuccess: () => {
@@ -239,6 +255,10 @@ export function WorkflowPanel({
       setQuotePackageId("custom");
       setQuoteExpires("");
       setQuoteNotes("");
+      setQuoteWeight("");
+      setQuoteLength("");
+      setQuoteWidth("");
+      setQuoteHeight("");
       refetch();
     },
     onError: (error: Error) => {
@@ -415,6 +435,11 @@ export function WorkflowPanel({
       expiresAt: quoteExpires || undefined,
       notes: quoteNotes || undefined,
       designApprovalId: approvedDesignForQuoteVariant?.id || undefined,
+      // Include shipping dimensions for product quotes
+      weight: productId && quoteWeight ? parseFloat(quoteWeight) : undefined,
+      length: productId && quoteLength ? parseFloat(quoteLength) : undefined,
+      width: productId && quoteWidth ? parseFloat(quoteWidth) : undefined,
+      height: productId && quoteHeight ? parseFloat(quoteHeight) : undefined,
     });
   };
 
@@ -996,6 +1021,86 @@ export function WorkflowPanel({
                 />
               </div>
             </div>
+
+            {/* Shipping Dimensions - Only for products */}
+            {productId && (
+              <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
+                <Label className="flex items-center gap-2 text-sm font-medium">
+                  <Package className="h-4 w-4" />
+                  Shipping Dimensions (Required for shipping calculation)
+                </Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="quote-weight" className="text-xs text-muted-foreground">Weight (KG)</Label>
+                    <div className="relative">
+                      <Scale className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="quote-weight"
+                        type="number"
+                        step="0.001"
+                        min="0"
+                        placeholder="0.000"
+                        value={quoteWeight}
+                        onChange={(e) => setQuoteWeight(e.target.value)}
+                        className="pl-9"
+                        data-testid="input-quote-weight"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="quote-length" className="text-xs text-muted-foreground">Length (CM)</Label>
+                    <div className="relative">
+                      <Ruler className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="quote-length"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={quoteLength}
+                        onChange={(e) => setQuoteLength(e.target.value)}
+                        className="pl-9"
+                        data-testid="input-quote-length"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="quote-width" className="text-xs text-muted-foreground">Width (CM)</Label>
+                    <div className="relative">
+                      <Ruler className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="quote-width"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={quoteWidth}
+                        onChange={(e) => setQuoteWidth(e.target.value)}
+                        className="pl-9"
+                        data-testid="input-quote-width"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="quote-height" className="text-xs text-muted-foreground">Height (CM)</Label>
+                    <div className="relative">
+                      <Ruler className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="quote-height"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={quoteHeight}
+                        onChange={(e) => setQuoteHeight(e.target.value)}
+                        className="pl-9"
+                        data-testid="input-quote-height"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="quote-notes">Notes (Optional)</Label>

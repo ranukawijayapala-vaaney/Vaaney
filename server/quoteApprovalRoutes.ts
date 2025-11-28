@@ -118,7 +118,7 @@ export function setupQuoteApprovalRoutes(app: Express) {
       // This enforces the design-first workflow only when both workflows are in play
       if (requiresDesignApproval && requiresQuote) {
         // Get all design approvals for this conversation
-        const designApprovals = await storage.getDesignApprovalsForConversation(quoteData.conversationId as string);
+        const designApprovals = await storage.getDesignApprovalsByConversation(quoteData.conversationId as string);
         
         // Find an approved design that matches the variant/package (or custom if none specified)
         const variantId = quoteData.productVariantId || null;
@@ -207,7 +207,17 @@ export function setupQuoteApprovalRoutes(app: Express) {
         buyerId: conversation.buyerId!,
         quoteId: quote.id,
         itemName,
-        price: parseFloat(quoteData.price as string),
+        quoteAmount: quote.quotedPrice ? parseFloat(quote.quotedPrice).toFixed(2) : "0.00",
+      });
+
+      // Add auto-message to conversation about the quote
+      const priceDisplay = quote.quotedPrice ? parseFloat(quote.quotedPrice).toFixed(2) : "0.00";
+      const quoteMessage = `Quote sent for ${itemName}: $${priceDisplay} for ${quoteData.quantity} item(s).${quoteData.notes ? ` Notes: ${quoteData.notes}` : ''}`;
+      await storage.createMessage({
+        conversationId: quoteData.conversationId as string,
+        senderId: userId,
+        senderRole: "seller",
+        content: quoteMessage,
       });
 
       res.json(quote);
@@ -454,6 +464,15 @@ export function setupQuoteApprovalRoutes(app: Express) {
         sellerId: quote.sellerId,
         quoteId: quote.id,
         itemName,
+        quoteAmount: quote.quotedPrice ? parseFloat(quote.quotedPrice).toFixed(2) : "0.00",
+      });
+
+      // Add auto-message to conversation
+      await storage.createMessage({
+        conversationId: quote.conversationId,
+        senderId: userId,
+        senderRole: "buyer",
+        content: `Quote accepted for ${itemName}! I'll proceed with the purchase.`,
       });
       
       res.json(quote);
@@ -488,7 +507,17 @@ export function setupQuoteApprovalRoutes(app: Express) {
         sellerId: quote.sellerId,
         quoteId: quote.id,
         itemName,
-        reason,
+      });
+
+      // Add auto-message to conversation
+      const messageContent = reason 
+        ? `Quote declined for ${itemName}. Reason: ${reason}`
+        : `Quote declined for ${itemName}.`;
+      await storage.createMessage({
+        conversationId: quote.conversationId,
+        senderId: userId,
+        senderRole: "buyer",
+        content: messageContent,
       });
       
       res.json(quote);
@@ -855,6 +884,31 @@ export function setupQuoteApprovalRoutes(app: Express) {
       // Add "product" workflow context to conversation so it shows in conversation list
       await storage.addWorkflowContext(approvalData.conversationId, "product");
 
+      // Get item name for notification
+      let itemName = "Item";
+      if (approvalData.productId) {
+        const product = await storage.getProduct(approvalData.productId);
+        itemName = product?.name || "Product";
+      } else if (approvalData.serviceId) {
+        const service = await storage.getService(approvalData.serviceId);
+        itemName = service?.name || "Service";
+      }
+
+      // Send in-app notification to seller about new design
+      await notifyDesignSubmitted({
+        sellerId: conversation.sellerId!,
+        designApprovalId: approval.id,
+        itemName,
+      });
+
+      // Add auto-message to conversation
+      await storage.createMessage({
+        conversationId: approvalData.conversationId,
+        senderId: userId,
+        senderRole: "buyer",
+        content: `I've uploaded a design for ${itemName} for your review.`,
+      });
+
       res.json(approval);
     } catch (error: any) {
       console.error("Error creating design approval:", error);
@@ -1045,6 +1099,35 @@ export function setupQuoteApprovalRoutes(app: Express) {
 
       const { notes } = req.body;
       const approval = await storage.approveDesign(req.params.id, userId, notes);
+      
+      // Get item name for notification and message
+      let itemName = "Item";
+      if (approval.productId) {
+        const product = await storage.getProduct(approval.productId);
+        itemName = product?.name || "Product";
+      } else if (approval.serviceId) {
+        const service = await storage.getService(approval.serviceId);
+        itemName = service?.name || "Service";
+      }
+
+      // Send in-app notification to buyer
+      await notifyDesignApproved({
+        buyerId: approval.buyerId,
+        designApprovalId: approval.id,
+        itemName,
+      });
+
+      // Add auto-message to conversation
+      const messageContent = notes 
+        ? `Design approved for ${itemName}! ${notes}`
+        : `Design approved for ${itemName}! You can now proceed with your order.`;
+      await storage.createMessage({
+        conversationId: approval.conversationId,
+        senderId: userId,
+        senderRole: "seller",
+        content: messageContent,
+      });
+
       res.json(approval);
     } catch (error: any) {
       console.error("Error approving design:", error);
@@ -1063,6 +1146,36 @@ export function setupQuoteApprovalRoutes(app: Express) {
       const { notes } = req.body;
       // Notes are optional for rejection
       const approval = await storage.rejectDesign(req.params.id, userId, notes || undefined);
+      
+      // Get item name for notification and message
+      let itemName = "Item";
+      if (approval.productId) {
+        const product = await storage.getProduct(approval.productId);
+        itemName = product?.name || "Product";
+      } else if (approval.serviceId) {
+        const service = await storage.getService(approval.serviceId);
+        itemName = service?.name || "Service";
+      }
+
+      // Send in-app notification to buyer
+      await notifyDesignRejected({
+        buyerId: approval.buyerId,
+        designApprovalId: approval.id,
+        itemName,
+        rejectionReason: notes,
+      });
+
+      // Add auto-message to conversation
+      const messageContent = notes 
+        ? `Design rejected for ${itemName}. Reason: ${notes}`
+        : `Design rejected for ${itemName}. Please submit a new design.`;
+      await storage.createMessage({
+        conversationId: approval.conversationId,
+        senderId: userId,
+        senderRole: "seller",
+        content: messageContent,
+      });
+
       res.json(approval);
     } catch (error: any) {
       console.error("Error rejecting design:", error);
@@ -1084,6 +1197,33 @@ export function setupQuoteApprovalRoutes(app: Express) {
       }
 
       const approval = await storage.requestDesignChanges(req.params.id, userId, notes);
+      
+      // Get item name for notification and message
+      let itemName = "Item";
+      if (approval.productId) {
+        const product = await storage.getProduct(approval.productId);
+        itemName = product?.name || "Product";
+      } else if (approval.serviceId) {
+        const service = await storage.getService(approval.serviceId);
+        itemName = service?.name || "Service";
+      }
+
+      // Send in-app notification to buyer
+      await notifyDesignChangesRequested({
+        buyerId: approval.buyerId,
+        designApprovalId: approval.id,
+        itemName,
+        feedback: notes,
+      });
+
+      // Add auto-message to conversation
+      await storage.createMessage({
+        conversationId: approval.conversationId,
+        senderId: userId,
+        senderRole: "seller",
+        content: `Changes requested for ${itemName} design: ${notes}`,
+      });
+
       res.json(approval);
     } catch (error: any) {
       console.error("Error requesting design changes:", error);

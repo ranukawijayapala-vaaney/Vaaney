@@ -261,13 +261,16 @@ export async function notifyQuoteReceived(params: {
   itemName: string;
   quoteAmount: string;
 }) {
+  // Ensure valid numeric amount, default to 0.00 for legacy data
+  const parsedAmount = parseFloat(params.quoteAmount);
+  const amount = !isNaN(parsedAmount) && parsedAmount > 0 ? params.quoteAmount : "0.00";
   await createNotification({
     userId: params.buyerId,
     type: "quote_received",
     title: "Custom Quote Received",
-    message: `You've received a quote of $${params.quoteAmount} for ${params.itemName}.`,
+    message: `You've received a quote of $${amount} for ${params.itemName}.`,
     link: `/quotes`,
-    metadata: { quoteId: params.quoteId, quoteAmount: params.quoteAmount, productName: params.itemName },
+    metadata: { quoteId: params.quoteId, quoteAmount: amount, productName: params.itemName },
   });
 }
 
@@ -277,13 +280,16 @@ export async function notifyQuoteAccepted(params: {
   itemName: string;
   quoteAmount: string;
 }) {
+  // Ensure valid numeric amount, default to 0.00 for legacy data
+  const parsedAmount = parseFloat(params.quoteAmount);
+  const amount = !isNaN(parsedAmount) && parsedAmount > 0 ? params.quoteAmount : "0.00";
   await createNotification({
     userId: params.sellerId,
     type: "quote_accepted",
     title: "Quote Accepted",
-    message: `Your quote for ${params.itemName} ($${params.quoteAmount}) has been accepted!`,
+    message: `Your quote for ${params.itemName} ($${amount}) has been accepted!`,
     link: `/seller/quotes`,
-    metadata: { quoteId: params.quoteId, quoteAmount: params.quoteAmount, productName: params.itemName },
+    metadata: { quoteId: params.quoteId, quoteAmount: amount, productName: params.itemName },
   });
 }
 

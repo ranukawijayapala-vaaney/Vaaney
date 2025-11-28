@@ -556,6 +556,11 @@ export const quotes = pgTable("quotes", {
   status: varchar("status", { length: 20 }).notNull().default("requested").$type<QuoteStatus>(),
   expiresAt: timestamp("expires_at"), // Null when status="requested", set by seller when sending quote
   acceptedAt: timestamp("accepted_at"),
+  // Shipping dimensions for custom product quotes (not used for services)
+  weight: decimal("weight", { precision: 10, scale: 3 }), // Weight in KG
+  length: decimal("length", { precision: 10, scale: 2 }), // Length in CM
+  width: decimal("width", { precision: 10, scale: 2 }), // Width in CM
+  height: decimal("height", { precision: 10, scale: 2 }), // Height in CM
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -596,6 +601,18 @@ export const insertQuoteSchema = createInsertSchema(quotes, {
   specifications: z.string().optional(),
   expiresAt: z.union([z.string(), z.date()]).transform(val =>
     typeof val === 'string' ? new Date(val) : val
+  ).optional(),
+  weight: z.union([z.string(), z.number()]).transform(val => 
+    typeof val === 'string' ? parseFloat(val) : val
+  ).optional(),
+  length: z.union([z.string(), z.number()]).transform(val => 
+    typeof val === 'string' ? parseFloat(val) : val
+  ).optional(),
+  width: z.union([z.string(), z.number()]).transform(val => 
+    typeof val === 'string' ? parseFloat(val) : val
+  ).optional(),
+  height: z.union([z.string(), z.number()]).transform(val => 
+    typeof val === 'string' ? parseFloat(val) : val
   ).optional(),
 }).omit({
   id: true,

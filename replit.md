@@ -7,6 +7,17 @@ Vaaney is a full-stack e-commerce marketplace platform for the Maldivian market,
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (November 28, 2025)
+### Workflow Auto-Messages & Notifications
+- **Design Upload Auto-Message**: System posts message to conversation when buyer uploads design
+- **Design Approval Notifications**: In-app notifications for design approval, rejection, and change requests
+- **Quote Workflow Messages**: Auto-messages posted for quote send, accept, and reject actions
+- **In-App Only Notifications**: All workflow notifications are in-app only (no email) to reduce clutter
+
+### Product Quote Shipping Dimensions
+- **Schema Fields**: Added weight, length, width, height to quotes table (products only)
+- **Send Quote Dialog**: Shipping dimension inputs visible only when creating quotes for products (not services)
+- **Storage Layer**: Quote create/update methods handle shipping field persistence
+
 ### Custom Quote Direct Checkout
 - **Direct Checkout Flow**: Custom quotes (without existing variants) now redirect to checkout page instead of cart
 - **WorkflowTaskCard**: Accept button on custom quotes triggers redirect to `/checkout?quoteId={id}`
