@@ -382,6 +382,17 @@ export function WorkflowTaskCard({
                     </Button>
                   )}
 
+                  {isDesign && task.status === "approved" && userRole === "buyer" && task.serviceId && (
+                    <Button
+                      size="sm"
+                      onClick={() => onPurchase?.(task)}
+                      data-testid={`button-book-now-${task.id}`}
+                    >
+                      <Calendar className="h-3 w-3 mr-1" />
+                      Book Now
+                    </Button>
+                  )}
+
                   {isQuote && userRole === "buyer" && (task.status === "sent" || task.status === "pending") && (
                     <>
                       <Button

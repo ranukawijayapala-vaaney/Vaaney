@@ -478,12 +478,18 @@ export function WorkflowPanel({
 
   const handlePurchase = (task: WorkflowTask) => {
     if (task.type === "design" && task.variantId && task.productId && task.designApprovalId) {
-      // Directly add to cart instead of redirecting to product page
+      // Product design approved - add to cart
       addToCartMutation.mutate({
         productVariantId: task.variantId,
         quantity: 1,
         designApprovalId: task.designApprovalId,
       });
+    } else if (task.type === "design" && task.serviceId && task.designApprovalId) {
+      // Service design approved - redirect to booking page with designApprovalId
+      const bookingUrl = task.packageId 
+        ? `/book-service/${task.serviceId}?packageId=${task.packageId}&designApprovalId=${task.designApprovalId}`
+        : `/book-service/${task.serviceId}?designApprovalId=${task.designApprovalId}`;
+      window.location.href = bookingUrl;
     } else if (task.type === "quote" && task.quoteId) {
       // Check if it's a variant quote or custom quote
       const isCustomQuote = !task.variantId && !task.packageId;
