@@ -130,11 +130,12 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
     (product?.variants?.length === 1 && approvedDesigns.length > 0);
 
   const addToCartMutation = useMutation({
-    mutationFn: async (data: { variantId: string; quantity: number; designApprovalId?: string }) => {
+    mutationFn: async (data: { variantId: string; quantity: number; designApprovalId?: string; quoteId?: string }) => {
       return await apiRequest("POST", "/api/cart", { 
         productVariantId: data.variantId, 
         quantity: data.quantity,
-        designApprovalId: data.designApprovalId 
+        designApprovalId: data.designApprovalId,
+        quoteId: data.quoteId,
       });
     },
     onSuccess: () => {
@@ -162,29 +163,22 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
       return;
     }
 
-    // Validate quote requirement
-    if (product?.requiresQuote && (!activeQuote || activeQuote.status !== "accepted")) {
-      toast({ 
-        title: "Quote Required", 
-        description: "This product requires a custom quote before purchase. Please request a quote first.", 
-        variant: "destructive" 
-      });
-      return;
-    }
-
-    // Validate design approval requirement
-    if (product?.requiresDesignApproval && approvedDesigns.length === 0) {
-      toast({ 
-        title: "Design Approval Required", 
-        description: "This product requires design approval before purchase. Please upload your design in the messages.", 
-        variant: "destructive" 
-      });
-      return;
-    }
-
-    // Find the approval that matches the selected variant (or use single-variant fallback)
-    let designApprovalId: string | undefined = undefined;
+    // Business Logic for products with BOTH requiresDesignApproval AND requiresQuote:
+    // - Design approval unlocks the ability to purchase at listed variant price
+    // - Quote is OPTIONAL - only needed for custom specs/pricing
+    // - If buyer has both approved design AND accepted quote, use quote price
+    
+    // Validate design approval requirement (design-first is the gate for these products)
     if (product?.requiresDesignApproval) {
+      if (approvedDesigns.length === 0) {
+        toast({ 
+          title: "Design Approval Required", 
+          description: "This product requires design approval before purchase. Please upload your design in the messages.", 
+          variant: "destructive" 
+        });
+        return;
+      }
+      
       // Find approval matching the selected variant
       let matchingApproval = approvedDesigns.find((ad: any) => ad.variantId === selectedVariantId);
       
@@ -207,13 +201,41 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
         return;
       }
       
-      designApprovalId = matchingApproval.designApprovalId;
+      // Design is approved - can add to cart
+      // Check if there's also an accepted quote for this variant (for custom pricing)
+      // If quote exists and is accepted for same variant, use quote pricing
+      const hasAcceptedQuote = activeQuote && 
+        activeQuote.status === "accepted" && 
+        activeQuote.productVariantId === selectedVariantId;
+      
+      addToCartMutation.mutate({ 
+        variantId: selectedVariantId, 
+        quantity, 
+        designApprovalId: matchingApproval.designApprovalId,
+        quoteId: hasAcceptedQuote ? activeQuote.id : undefined,
+      });
+      return;
     }
 
+    // For products that ONLY require quote (no design approval)
+    if (product?.requiresQuote && (!activeQuote || activeQuote.status !== "accepted")) {
+      toast({ 
+        title: "Quote Required", 
+        description: "This product requires a custom quote before purchase. Please request a quote first.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    // Standard product or quote-only product with accepted quote
+    // Only include quoteId if it matches the selected variant (for proper pricing)
+    const quoteMatchesVariant = activeQuote?.status === "accepted" && 
+      activeQuote.productVariantId === selectedVariantId;
+    
     addToCartMutation.mutate({ 
       variantId: selectedVariantId, 
-      quantity, 
-      designApprovalId 
+      quantity,
+      quoteId: quoteMatchesVariant ? activeQuote.id : undefined,
     });
   };
 
