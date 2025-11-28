@@ -220,7 +220,7 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
   const requestQuoteMutation = useMutation({
     mutationFn: async (data: { variantId?: string }) => {
       // Use workflow initialization endpoint with selected variant
-      const selectedVariant = variants.find(v => v.id === data.variantId);
+      const selectedVariant = product.variants?.find((v: any) => v.id === data.variantId);
       const variantInfo = selectedVariant ? ` for ${selectedVariant.name}` : "";
       
       const conversation = await apiRequest("POST", "/api/conversations/workflows", {
@@ -250,7 +250,7 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
   const initiateDesignUploadMutation = useMutation({
     mutationFn: async (data: { variantId?: string }) => {
       // Use workflow initialization endpoint with selected variant
-      const selectedVariant = variants.find(v => v.id === data.variantId);
+      const selectedVariant = product.variants?.find((v: any) => v.id === data.variantId);
       const variantInfo = selectedVariant ? ` for ${selectedVariant.name}` : "";
       
       const conversation = await apiRequest("POST", "/api/conversations/workflows", {
