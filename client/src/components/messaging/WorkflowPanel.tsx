@@ -919,7 +919,14 @@ export function WorkflowPanel({
                     {variants.length > 0 && <Separator className="my-1" />}
                     {variants.map((v) => (
                       <SelectItem key={v.id} value={v.id}>
-                        {v.name} - ${parseFloat(v.price).toFixed(2)}
+                        <div className="flex items-center justify-between gap-2 w-full">
+                          <span>{v.name} - ${parseFloat(v.price).toFixed(2)}</span>
+                          {approvedDesignsMap.has(v.id) && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 dark:bg-green-950 dark:text-green-300 dark:border-green-700 text-xs">
+                              Approved
+                            </Badge>
+                          )}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -944,7 +951,14 @@ export function WorkflowPanel({
                     {packages.length > 0 && <Separator className="my-1" />}
                     {packages.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
-                        {p.name} - ${parseFloat(p.price).toFixed(2)}
+                        <div className="flex items-center justify-between gap-2 w-full">
+                          <span>{p.name} - ${parseFloat(p.price).toFixed(2)}</span>
+                          {approvedDesignsMap.has(p.id) && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 dark:bg-green-950 dark:text-green-300 dark:border-green-700 text-xs">
+                              Approved
+                            </Badge>
+                          )}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
