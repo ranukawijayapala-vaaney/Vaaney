@@ -457,10 +457,34 @@ export function WorkflowPanel({
     setShowQuoteDialog(true);
   };
 
+  // Add to cart mutation for approved designs
+  const addToCartMutation = useMutation({
+    mutationFn: async (data: { productVariantId: string; quantity: number; designApprovalId: string }) => {
+      return await apiRequest("POST", "/api/cart", {
+        productVariantId: data.productVariantId,
+        quantity: data.quantity,
+        designApprovalId: data.designApprovalId,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      toast({ title: "Added to cart successfully!" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to add to cart", description: error.message, variant: "destructive" });
+    },
+  });
+
   const handlePurchase = (task: WorkflowTask) => {
-    if (task.type === "design" && task.variantId && task.productId) {
-      window.location.href = `/product/${task.productId}?variantId=${task.variantId}&designApprovalId=${task.designApprovalId}`;
+    if (task.type === "design" && task.variantId && task.productId && task.designApprovalId) {
+      // Directly add to cart instead of redirecting to product page
+      addToCartMutation.mutate({
+        productVariantId: task.variantId,
+        quantity: 1,
+        designApprovalId: task.designApprovalId,
+      });
     } else if (task.type === "quote" && task.quoteId) {
+      // For custom quotes, redirect to checkout
       window.location.href = `/checkout?quoteId=${task.quoteId}`;
     }
   };
