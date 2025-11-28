@@ -716,17 +716,21 @@ export function WorkflowPanel({
             {renderCompactSummary()}
           </Button>
         </SheetTrigger>
-        <SheetContent side="bottom" className="h-[80vh]">
-          <SheetHeader>
+        <SheetContent side="bottom" className="h-[80vh] flex flex-col">
+          <SheetHeader className="flex-shrink-0">
             <SheetTitle>Workflow</SheetTitle>
           </SheetHeader>
-          <div className="flex flex-col h-full mt-4">
-            {renderWorkflowIntro()}
-            {renderBuyerVariantSelector()}
-            <ScrollArea className="flex-1">
+          <div className="flex flex-col flex-1 overflow-hidden mt-4">
+            <div className="flex-shrink-0">
+              {renderWorkflowIntro()}
+              {renderBuyerVariantSelector()}
+            </div>
+            <ScrollArea className="flex-1 min-h-0">
               {renderTaskList()}
             </ScrollArea>
-            {renderActions()}
+            <div className="flex-shrink-0">
+              {renderActions()}
+            </div>
           </div>
         </SheetContent>
       </Sheet>
