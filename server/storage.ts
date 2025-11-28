@@ -310,6 +310,37 @@ export interface IStorage {
   getApprovedDesignsLibrary(buyerId: string): Promise<DesignApproval[]>;
   getProductApprovedVariants(productId: string, buyerId: string): Promise<{variantId: string | null, designApprovalId: string, status: string, approvedAt: Date | null}[]>;
   
+  // Workflow summary for conversations - groups design approvals and quotes by variant/package
+  getWorkflowSummary(conversationId: string): Promise<{
+    tasks: Array<{
+      id: string;
+      type: "design" | "quote";
+      status: string;
+      variantId?: string | null;
+      packageId?: string | null;
+      variantName?: string;
+      packageName?: string;
+      productId?: string | null;
+      serviceId?: string | null;
+      quoteId?: string | null;
+      designApprovalId?: string | null;
+      linkedDesignApprovalId?: string | null;
+      linkedQuoteId?: string | null;
+      quotedPrice?: string | null;
+      quantity?: number;
+      specifications?: string | null;
+      expiresAt?: Date | null;
+      designFiles?: Array<{ url: string; filename: string; size: number; mimeType: string }>;
+      sellerNotes?: string | null;
+      createdAt: Date | null;
+      updatedAt: Date | null;
+    }>;
+    product?: { id: string; name: string; requiresDesignApproval: boolean; requiresQuote: boolean } | null;
+    service?: { id: string; name: string; requiresDesignApproval: boolean; requiresQuote: boolean } | null;
+    variants?: Array<{ id: string; name: string; price: string }>;
+    packages?: Array<{ id: string; name: string; price: string }>;
+  }>;
+  
   // Purchase requirement validation
   validatePurchaseRequirements(params: {
     kind: "product" | "service";
@@ -2756,6 +2787,221 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
     
     return approval;
+  }
+
+  async getWorkflowSummary(conversationId: string): Promise<{
+    tasks: Array<{
+      id: string;
+      type: "design" | "quote";
+      status: string;
+      variantId?: string | null;
+      packageId?: string | null;
+      variantName?: string;
+      packageName?: string;
+      productId?: string | null;
+      serviceId?: string | null;
+      quoteId?: string | null;
+      designApprovalId?: string | null;
+      linkedDesignApprovalId?: string | null;
+      linkedQuoteId?: string | null;
+      quotedPrice?: string | null;
+      quantity?: number;
+      specifications?: string | null;
+      expiresAt?: Date | null;
+      designFiles?: Array<{ url: string; filename: string; size: number; mimeType: string }>;
+      sellerNotes?: string | null;
+      createdAt: Date | null;
+      updatedAt: Date | null;
+    }>;
+    product?: { id: string; name: string; requiresDesignApproval: boolean; requiresQuote: boolean } | null;
+    service?: { id: string; name: string; requiresDesignApproval: boolean; requiresQuote: boolean } | null;
+    variants?: Array<{ id: string; name: string; price: string }>;
+    packages?: Array<{ id: string; name: string; price: string }>;
+  }> {
+    const conversation = await this.getConversation(conversationId);
+    if (!conversation) {
+      return { tasks: [] };
+    }
+
+    const tasks: Array<{
+      id: string;
+      type: "design" | "quote";
+      status: string;
+      variantId?: string | null;
+      packageId?: string | null;
+      variantName?: string;
+      packageName?: string;
+      productId?: string | null;
+      serviceId?: string | null;
+      quoteId?: string | null;
+      designApprovalId?: string | null;
+      linkedDesignApprovalId?: string | null;
+      linkedQuoteId?: string | null;
+      quotedPrice?: string | null;
+      quantity?: number;
+      specifications?: string | null;
+      expiresAt?: Date | null;
+      designFiles?: Array<{ url: string; filename: string; size: number; mimeType: string }>;
+      sellerNotes?: string | null;
+      createdAt: Date | null;
+      updatedAt: Date | null;
+    }> = [];
+
+    // Fetch all quotes for this conversation (excluding superseded)
+    const conversationQuotes = await db
+      .select()
+      .from(quotes)
+      .where(
+        and(
+          eq(quotes.conversationId, conversationId),
+          sql`${quotes.status} != 'superseded'`
+        )
+      )
+      .orderBy(desc(quotes.createdAt));
+
+    // Fetch all design approvals for this conversation (excluding superseded)
+    const conversationDesigns = await db
+      .select()
+      .from(designApprovals)
+      .where(
+        and(
+          eq(designApprovals.conversationId, conversationId),
+          sql`${designApprovals.status} != 'superseded'`
+        )
+      )
+      .orderBy(desc(designApprovals.createdAt));
+
+    // Get variant/package names for enrichment
+    const variantIds = new Set<string>();
+    const packageIds = new Set<string>();
+    
+    conversationQuotes.forEach(q => {
+      if (q.productVariantId) variantIds.add(q.productVariantId);
+      if (q.servicePackageId) packageIds.add(q.servicePackageId);
+    });
+    conversationDesigns.forEach(d => {
+      if (d.variantId) variantIds.add(d.variantId);
+      if (d.packageId) packageIds.add(d.packageId);
+    });
+
+    // Fetch variant names
+    const variantMap = new Map<string, string>();
+    if (variantIds.size > 0) {
+      const variantResults = await db
+        .select({ id: productVariants.id, name: productVariants.name })
+        .from(productVariants)
+        .where(inArray(productVariants.id, Array.from(variantIds)));
+      variantResults.forEach(v => variantMap.set(v.id, v.name));
+    }
+
+    // Fetch package names
+    const packageMap = new Map<string, string>();
+    if (packageIds.size > 0) {
+      const packageResults = await db
+        .select({ id: servicePackages.id, name: servicePackages.name })
+        .from(servicePackages)
+        .where(inArray(servicePackages.id, Array.from(packageIds)));
+      packageResults.forEach(p => packageMap.set(p.id, p.name));
+    }
+
+    // Convert quotes to tasks
+    for (const quote of conversationQuotes) {
+      tasks.push({
+        id: quote.id,
+        type: "quote",
+        status: quote.status,
+        variantId: quote.productVariantId,
+        packageId: quote.servicePackageId,
+        variantName: quote.productVariantId ? variantMap.get(quote.productVariantId) : undefined,
+        packageName: quote.servicePackageId ? packageMap.get(quote.servicePackageId) : undefined,
+        productId: quote.productId,
+        serviceId: quote.serviceId,
+        quoteId: quote.id,
+        linkedDesignApprovalId: quote.designApprovalId,
+        quotedPrice: quote.quotedPrice,
+        quantity: quote.quantity,
+        specifications: quote.specifications,
+        expiresAt: quote.expiresAt,
+        createdAt: quote.createdAt,
+        updatedAt: quote.updatedAt,
+      });
+    }
+
+    // Convert design approvals to tasks
+    for (const design of conversationDesigns) {
+      tasks.push({
+        id: design.id,
+        type: "design",
+        status: design.status,
+        variantId: design.variantId,
+        packageId: design.packageId,
+        variantName: design.variantId ? variantMap.get(design.variantId) : undefined,
+        packageName: design.packageId ? packageMap.get(design.packageId) : undefined,
+        productId: design.productId,
+        serviceId: design.serviceId,
+        designApprovalId: design.id,
+        linkedQuoteId: design.quoteId,
+        designFiles: design.designFiles as Array<{ url: string; filename: string; size: number; mimeType: string }>,
+        sellerNotes: design.sellerNotes,
+        createdAt: design.createdAt,
+        updatedAt: design.updatedAt,
+      });
+    }
+
+    // Sort tasks by createdAt descending
+    tasks.sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
+    });
+
+    // Get product/service info
+    let product: { id: string; name: string; requiresDesignApproval: boolean; requiresQuote: boolean } | null = null;
+    let service: { id: string; name: string; requiresDesignApproval: boolean; requiresQuote: boolean } | null = null;
+    let variants: Array<{ id: string; name: string; price: string }> = [];
+    let packages: Array<{ id: string; name: string; price: string }> = [];
+
+    if (conversation.productId) {
+      const productData = await this.getProduct(conversation.productId);
+      if (productData) {
+        product = {
+          id: productData.id,
+          name: productData.name,
+          requiresDesignApproval: productData.requiresDesignApproval,
+          requiresQuote: productData.requiresQuote,
+        };
+        const variantData = await db
+          .select({ id: productVariants.id, name: productVariants.name, price: productVariants.price })
+          .from(productVariants)
+          .where(eq(productVariants.productId, productData.id));
+        variants = variantData.map(v => ({ id: v.id, name: v.name, price: v.price }));
+      }
+    }
+
+    if (conversation.serviceId) {
+      const serviceData = await this.getService(conversation.serviceId);
+      if (serviceData) {
+        service = {
+          id: serviceData.id,
+          name: serviceData.name,
+          requiresDesignApproval: serviceData.requiresDesignApproval,
+          requiresQuote: serviceData.requiresQuote,
+        };
+        const packageData = await db
+          .select({ id: servicePackages.id, name: servicePackages.name, price: servicePackages.price })
+          .from(servicePackages)
+          .where(eq(servicePackages.serviceId, serviceData.id));
+        packages = packageData.map(p => ({ id: p.id, name: p.name, price: p.price }));
+      }
+    }
+
+    return {
+      tasks,
+      product,
+      service,
+      variants,
+      packages,
+    };
   }
 
   // Purchase Requirement Validation Implementation

@@ -4847,6 +4847,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get workflow summary for a conversation (all design approvals and quotes grouped by variant/package)
+  app.get("/api/conversations/:id/workflow-summary", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const conversation = await storage.getConversation(req.params.id);
+      if (!conversation) {
+        return res.status(404).json({ message: "Conversation not found" });
+      }
+      
+      // Check if user has access to this conversation
+      const hasAccess = user.role === "admin" || 
+                        conversation.buyerId === userId || 
+                        conversation.sellerId === userId;
+      
+      if (!hasAccess) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      const summary = await storage.getWorkflowSummary(req.params.id);
+      res.json(summary);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Initialize a purchase workflow (design upload or quote request)
   // This endpoint finds/creates conversation and sets workflow context in one transaction
   app.post("/api/conversations/workflows", isAuthenticated, requireRole(["buyer"]), async (req: AuthRequest, res: Response) => {
