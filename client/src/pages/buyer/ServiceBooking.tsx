@@ -172,8 +172,8 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
         ? service.packages?.find(p => p.id === targetPackageId)?.name 
         : null;
       
-      // Use the pre-purchase workflow endpoint with context: "quote" to create proper quote record
-      const conversation: any = await apiRequest("POST", "/api/pre-purchase/workflow", {
+      // Use the conversations workflow endpoint with context: "quote" to create proper quote record
+      const conversation: any = await apiRequest("POST", "/api/conversations/workflows", {
         serviceId: service.id,
         servicePackageId: targetPackageId,
         context: "quote",

@@ -460,8 +460,8 @@ export function WorkflowPanel({
   // Mutation to request quote for a specific package/variant from within WorkflowPanel
   const requestQuoteMutation = useMutation({
     mutationFn: async (data: { variantId?: string; packageId?: string }) => {
-      // Use the pre-purchase workflow endpoint with context: "quote" to create quote request
-      const response = await apiRequest("POST", "/api/pre-purchase/workflow", {
+      // Use the conversations workflow endpoint with context: "quote" to create quote request
+      const response = await apiRequest("POST", "/api/conversations/workflows", {
         productId: productId || undefined,
         serviceId: serviceId || undefined,
         productVariantId: data.variantId || undefined,
