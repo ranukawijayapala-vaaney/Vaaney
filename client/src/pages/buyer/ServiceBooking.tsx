@@ -102,8 +102,25 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
     enabled: !!serviceId,
   });
 
-  // Fetch active quote for this service (if requiresQuote is true)
-  const { data: activeQuote } = useQuery<any>({
+  // Extract quoteId from URL params - this takes priority for quote data
+  const quoteIdFromUrl = new URLSearchParams(window.location.search).get('quoteId');
+  
+  // Fetch specific quote by ID when quoteId is in URL params (takes priority)
+  const { data: urlQuote } = useQuery<any>({
+    queryKey: ["/api/quotes", quoteIdFromUrl],
+    queryFn: async () => {
+      if (!quoteIdFromUrl) return null;
+      try {
+        return await apiRequest("GET", `/api/quotes/${quoteIdFromUrl}`);
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!quoteIdFromUrl,
+  });
+
+  // Fetch active quote for this service (fallback when no quoteId in URL)
+  const { data: conversationQuote } = useQuery<any>({
     queryKey: ["/api/quotes/active", serviceId],
     queryFn: async () => {
       if (!serviceId) return null;
@@ -118,8 +135,11 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
         return null;
       }
     },
-    enabled: !!service?.requiresQuote,
+    enabled: !!service?.requiresQuote && !quoteIdFromUrl,
   });
+  
+  // Use URL quote if available and accepted, otherwise fallback to conversation quote
+  const activeQuote = (urlQuote?.status === "accepted" ? urlQuote : null) || conversationQuote;
 
   // Hydrate acceptedQuoteId from activeQuote data (survives page refresh)
   // The booking submission uses quote data as authoritative source, so UI selection is informational
@@ -1373,6 +1393,9 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Package</p>
                     <p className="font-semibold text-sm">{selectedPackage.name}</p>
+                    {activeQuote?.status === "accepted" && activeQuote?.quotedPrice && (
+                      <Badge variant="secondary" className="mt-1">Quoted Price</Badge>
+                    )}
                   </div>
                   
                   {estimatedDeliveryDate && (
@@ -1387,7 +1410,9 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
                   <div className="flex justify-between items-center pt-2">
                     <span className="text-sm font-medium">Total</span>
                     <span className="text-2xl font-bold text-primary" data-testid="text-summary-total">
-                      ${selectedPackage.price}
+                      ${activeQuote?.status === "accepted" && activeQuote?.quotedPrice 
+                        ? activeQuote.quotedPrice 
+                        : selectedPackage.price}
                     </span>
                   </div>
                 </>

@@ -289,7 +289,7 @@ export interface IStorage {
   getQuotesBySeller(sellerId: string, status?: QuoteStatus): Promise<Quote[]>;
   acceptQuote(id: string, buyerId: string): Promise<Quote>;
   rejectQuote(id: string, buyerId: string, reason?: string): Promise<Quote>;
-  supersedePreviousQuotes(conversationId: string, newQuoteId: string): Promise<void>;
+  supersedePreviousQuotes(conversationId: string, newQuoteId: string, variantId?: string | null, packageId?: string | null): Promise<void>;
   expireOldQuotes(): Promise<void>;
   getActiveQuoteForItem(buyerId: string, productId?: string, serviceId?: string): Promise<Quote | undefined>;
   getActiveQuoteForConversation(conversationId: string): Promise<Quote | undefined>;
@@ -2195,8 +2195,14 @@ export class DatabaseStorage implements IStorage {
     const quote = results[0];
     
     // Only auto-supersede if this is a seller-sent quote (not a buyer-requested quote)
+    // Pass variant/package IDs to only supersede quotes for the same item type
     if (quote.status !== "requested") {
-      await this.supersedePreviousQuotes(quoteData.conversationId, quote.id);
+      await this.supersedePreviousQuotes(
+        quoteData.conversationId, 
+        quote.id,
+        quoteData.productVariantId || null,
+        quoteData.servicePackageId || null
+      );
     }
     
     return quote;
@@ -2303,6 +2309,33 @@ export class DatabaseStorage implements IStorage {
         }
       }
 
+      // Supersede any other accepted quotes for the same conversation/variant/package
+      // This ensures only ONE accepted quote exists per variant/package context
+      const supersededConditions = [
+        eq(quotes.conversationId, quote.conversationId),
+        eq(quotes.status, "accepted"),
+        sql`${quotes.id} != ${id}`
+      ];
+      
+      // Filter by variant/package to only supersede matching quotes
+      if (quote.productVariantId) {
+        supersededConditions.push(eq(quotes.productVariantId, quote.productVariantId));
+      } else if (quote.servicePackageId) {
+        supersededConditions.push(eq(quotes.servicePackageId, quote.servicePackageId));
+      } else {
+        // For custom quotes (no variant/package), match null variant/package
+        supersededConditions.push(isNull(quotes.productVariantId));
+        supersededConditions.push(isNull(quotes.servicePackageId));
+      }
+      
+      await tx
+        .update(quotes)
+        .set({ 
+          status: "superseded", 
+          updatedAt: new Date() 
+        })
+        .where(and(...supersededConditions));
+
       // Update quote status to accepted (row is locked, safe to update)
       const [updatedQuote] = await tx
         .update(quotes)
@@ -2351,17 +2384,41 @@ export class DatabaseStorage implements IStorage {
     return updatedQuote;
   }
 
-  async supersedePreviousQuotes(conversationId: string, newQuoteId: string): Promise<void> {
+  async supersedePreviousQuotes(conversationId: string, newQuoteId: string, variantId?: string | null, packageId?: string | null): Promise<void> {
+    // Supersede all previous quotes for this conversation that are in open/inactive states
+    // This includes: sent, pending, rejected (quotes still awaiting action or already declined)
+    // We do NOT touch: accepted (buyer already agreed), purchased, superseded, expired
+    // We also filter by variant/package to only supersede quotes for the same item
+    const conditions = [
+      eq(quotes.conversationId, conversationId),
+      sql`${quotes.id} != ${newQuoteId}`,
+      inArray(quotes.status, ["sent", "pending", "rejected", "requested"])
+    ];
+    
+    // If variantId or packageId specified, only supersede matching quotes
+    if (variantId !== undefined) {
+      if (variantId === null) {
+        conditions.push(isNull(quotes.productVariantId));
+      } else {
+        conditions.push(eq(quotes.productVariantId, variantId));
+      }
+    }
+    
+    if (packageId !== undefined) {
+      if (packageId === null) {
+        conditions.push(isNull(quotes.servicePackageId));
+      } else {
+        conditions.push(eq(quotes.servicePackageId, packageId));
+      }
+    }
+    
     await db
       .update(quotes)
-      .set({ status: "superseded", updatedAt: new Date() })
-      .where(
-        and(
-          eq(quotes.conversationId, conversationId),
-          sql`${quotes.id} != ${newQuoteId}`,
-          inArray(quotes.status, ["sent", "pending"])
-        )
-      );
+      .set({ 
+        status: "superseded", 
+        updatedAt: new Date() 
+      })
+      .where(and(...conditions));
   }
 
   async expireOldQuotes(): Promise<void> {
