@@ -397,7 +397,7 @@ export default function BuyerCustomQuotes() {
                       <Button
                         variant="default"
                         size="sm"
-                        onClick={() => setLocation(`/book-service/${quote.serviceId}?quoteId=${quote.id}${quote.packageId ? `&packageId=${quote.packageId}` : ''}`)}
+                        onClick={() => setLocation(`/checkout?quoteId=${quote.id}`)}
                         className="flex items-center gap-2"
                         data-testid={`button-book-now-${quote.id}`}
                       >
@@ -408,7 +408,7 @@ export default function BuyerCustomQuotes() {
                       <Button
                         variant="default"
                         size="sm"
-                        onClick={() => handleViewConversation(quote.conversationId)}
+                        onClick={() => setLocation(`/checkout?quoteId=${quote.id}`)}
                         className="flex items-center gap-2"
                         data-testid={`button-add-to-cart-${quote.id}`}
                       >
