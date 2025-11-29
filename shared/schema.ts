@@ -599,9 +599,29 @@ export const insertQuoteSchema = createInsertSchema(quotes, {
   ).optional(),
   quantity: z.number().int().positive().default(1),
   specifications: z.string().optional(),
-  expiresAt: z.union([z.string(), z.date()]).transform(val =>
-    typeof val === 'string' ? new Date(val) : val
-  ).optional(),
+  expiresAt: z.union([z.string(), z.date()])
+    .refine(val => {
+      if (typeof val === 'string') {
+        // Validate the date string format (YYYY-MM-DD or ISO date)
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (dateRegex.test(val)) return true;
+        // Try parsing as ISO date
+        const parsed = new Date(val);
+        return !isNaN(parsed.getTime());
+      }
+      return val instanceof Date && !isNaN(val.getTime());
+    }, { message: "Invalid date format. Use YYYY-MM-DD format." })
+    .transform(val => {
+      if (typeof val === 'string') {
+        // Parse YYYY-MM-DD format to UTC Date
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (dateRegex.test(val)) {
+          return new Date(val + 'T00:00:00.000Z');
+        }
+        return new Date(val);
+      }
+      return val;
+    }).optional(),
   weight: z.union([z.string(), z.number()]).transform(val => 
     typeof val === 'string' ? parseFloat(val) : val
   ).optional(),

@@ -50,6 +50,13 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
   const [showPrePurchaseDialog, setShowPrePurchaseDialog] = useState(false);
   const [pendingPackageId, setPendingPackageId] = useState<string | null>(null);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+  const [acceptedQuoteId, setAcceptedQuoteId] = useState<string | null>(null);
+  
+  // Helper to normalize packageId: returns valid ID or null (never empty string)
+  const normalizedPackageId = selectedPackageId && selectedPackageId.trim() !== "" ? selectedPackageId : null;
+  
+  // Lock selection when using accepted quote to prevent accidental changes
+  const isSelectionLocked = !!acceptedQuoteId && activeQuote?.status === "accepted";
 
   // Reset state when service ID changes (fixes back button navigation)
   useEffect(() => {
@@ -71,6 +78,7 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
     setPendingPackageSelection(null);
     setShowPrePurchaseDialog(false);
     setPendingPackageId(null);
+    setAcceptedQuoteId(null);
   }, [serviceId]);
 
   // Get current user to determine messages route
@@ -115,6 +123,32 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
     },
     enabled: !!service?.requiresQuote,
   });
+
+  // Hydrate acceptedQuoteId from activeQuote data (survives page refresh)
+  // The booking submission uses quote data as authoritative source, so UI selection is informational
+  useEffect(() => {
+    if (activeQuote?.status === "accepted" && activeQuote?.id) {
+      // Set the accepted quote ID when we have an accepted quote
+      if (!acceptedQuoteId) {
+        setAcceptedQuoteId(activeQuote.id);
+      }
+      
+      // Set initial package selection from quote (on first load only)
+      // Don't force - let the user navigate, but submission will use quote's data
+      if (!selectedPackageId && !isCustomQuoteSelected) {
+        if (activeQuote.packageId && service?.packages) {
+          const packageExists = service.packages.some((pkg: ServicePackage) => pkg.id === activeQuote.packageId);
+          if (packageExists) {
+            setSelectedPackageId(activeQuote.packageId);
+            setIsCustomQuoteSelected(false);
+          }
+        } else if (!activeQuote.packageId) {
+          // Custom quote - set custom mode
+          setIsCustomQuoteSelected(true);
+        }
+      }
+    }
+  }, [activeQuote, service, acceptedQuoteId, selectedPackageId, isCustomQuoteSelected]);
 
   // Fetch ALL approved designs for this service conversation
   // This allows checking package-specific approvals without refetching
@@ -244,6 +278,38 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
       setIsCustomQuoteSelected(true);
       setSelectedPackageId("");
       setActiveTab("review");
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [service]);
+
+  // Handle navigation from accepted quote "Book Now" button
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const quoteIdParam = params.get('quoteId');
+    const packageIdParam = params.get('packageId');
+    
+    // If coming from accepted quote with quoteId, pre-select the package and go to checkout
+    if (quoteIdParam && service) {
+      // Store the accepted quote ID for checkout flow
+      setAcceptedQuoteId(quoteIdParam);
+      
+      if (packageIdParam) {
+        // Verify this package exists in the service
+        const packageExists = service.packages?.some(pkg => pkg.id === packageIdParam);
+        if (packageExists) {
+          setSelectedPackageId(packageIdParam);
+          setIsCustomQuoteSelected(false);
+        }
+      } else {
+        // Custom quote without package
+        setIsCustomQuoteSelected(true);
+        setSelectedPackageId("");
+      }
+      
+      // Go directly to review tab for checkout
+      setActiveTab("review");
+      
+      // Clean up URL parameters
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, [service]);
@@ -577,14 +643,37 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
   };
 
   const handleBookingSubmit = () => {
-    if (!service || !selectedPackageId) {
-      toast({ title: "Please select a package", variant: "destructive" });
+    if (!service) {
+      toast({ title: "Service not found", variant: "destructive" });
       return;
     }
 
-    const selectedPkg = service.packages.find(pkg => pkg.id === selectedPackageId);
-    if (!selectedPkg) {
-      toast({ title: "Invalid package selected", variant: "destructive" });
+    // When using an accepted quote, prioritize quote's data as the authoritative source
+    const usingAcceptedQuote = acceptedQuoteId && activeQuote?.status === "accepted";
+    
+    // Determine package ID: quote's package takes precedence, then UI selection
+    const finalPackageId = usingAcceptedQuote && activeQuote?.packageId 
+      ? activeQuote.packageId 
+      : normalizedPackageId;
+    
+    const selectedPkg = finalPackageId 
+      ? service.packages.find(pkg => pkg.id === finalPackageId)
+      : null;
+    
+    // For standard packages, require package selection
+    // Custom quotes (no package) are allowed when using accepted quote
+    const isCustomQuoteCheckout = usingAcceptedQuote && !activeQuote?.packageId;
+    if (!isCustomQuoteCheckout && !selectedPkg) {
+      toast({ title: "Please select a package", variant: "destructive" });
+      return;
+    }
+    
+    // Get price: quote's price takes precedence for accepted quotes, otherwise from package
+    const bookingAmount = usingAcceptedQuote 
+      ? activeQuote?.quotedPrice 
+      : selectedPkg?.price;
+    if (!bookingAmount && bookingAmount !== 0) {
+      toast({ title: "Unable to determine price", variant: "destructive" });
       return;
     }
 
@@ -636,16 +725,17 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
 
     createBookingMutation.mutate({
       serviceId: service.id,
-      packageId: selectedPackageId,
+      packageId: finalPackageId, // Uses quote's package or UI selection (null for custom quotes)
       scheduledDate: scheduledDate.toISOString(),
       scheduledTime,
-      amount: selectedPkg.price,
+      amount: bookingAmount,
       notes: notes || undefined,
       sellerId: service.sellerId,
       paymentMethod,
       bankAccountId: paymentMethod === "bank_transfer" ? selectedBankAccountId : null,
       transferSlipUrl: paymentMethod === "bank_transfer" ? transferSlipUrl : null,
       transferSlipObjectPath: paymentMethod === "bank_transfer" ? transferSlipObjectPath : null,
+      quoteId: acceptedQuoteId || null, // Include accepted quote ID for checkout flow
     });
   };
 

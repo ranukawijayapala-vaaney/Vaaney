@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ import {
   ArrowRight,
   Loader2,
   AlertCircle,
+  CalendarCheck,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useMutation } from "@tanstack/react-query";
@@ -111,10 +113,14 @@ export function WorkflowTaskCard({
   onRefresh,
 }: WorkflowTaskCardProps) {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showChangesDialog, setShowChangesDialog] = useState(false);
   const [notes, setNotes] = useState("");
+  
+  // Determine if this is a service quote vs product quote
+  const isServiceQuote = task.type === "quote" && !!task.serviceId;
 
   const approveMutation = useMutation({
     mutationFn: async () => {
@@ -452,14 +458,30 @@ export function WorkflowTaskCard({
                   )}
 
                   {isQuote && task.status === "accepted" && userRole === "buyer" && (
-                    <Button
-                      size="sm"
-                      onClick={() => onPurchase?.(task)}
-                      data-testid={isCustomQuote ? `button-checkout-quote-${task.id}` : `button-add-to-cart-quote-${task.id}`}
-                    >
-                      <ShoppingCart className="h-3 w-3 mr-1" />
-                      {isCustomQuote ? "Proceed to Checkout" : "Add to Cart"}
-                    </Button>
+                    isServiceQuote ? (
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const params = new URLSearchParams();
+                          params.set('quoteId', task.id);
+                          if (task.packageId) params.set('packageId', task.packageId);
+                          setLocation(`/book-service/${task.serviceId}?${params.toString()}`);
+                        }}
+                        data-testid={`button-book-now-quote-${task.id}`}
+                      >
+                        <CalendarCheck className="h-3 w-3 mr-1" />
+                        Book Now
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={() => onPurchase?.(task)}
+                        data-testid={isCustomQuote ? `button-checkout-quote-${task.id}` : `button-add-to-cart-quote-${task.id}`}
+                      >
+                        <ShoppingCart className="h-3 w-3 mr-1" />
+                        {isCustomQuote ? "Proceed to Checkout" : "Add to Cart"}
+                      </Button>
+                    )
                   )}
                 </div>
               </div>
