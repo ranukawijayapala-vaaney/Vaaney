@@ -2233,7 +2233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/buyer/bookings", isAuthenticated, requireRole(["buyer"]), async (req: AuthRequest, res: Response) => {
     const userId = (req.user as any)?.id;
-    const { sellerId, bankAccountId, transferSlipUrl, transferSlipObjectPath, ...bookingData } = req.body;
+    const { sellerId, bankAccountId, transferSlipUrl, transferSlipObjectPath, quoteId, ...bookingData } = req.body;
     try {
       const parsedData = insertBookingSchema.extend({
         paymentMethod: z.enum(["bank_transfer", "ipg"]).optional(),
@@ -2291,10 +2291,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Validate service package exists BEFORE creating booking
-      const [servicePackage] = await db.select().from(servicePackages).where(eq(servicePackages.id, parsedData.packageId)).limit(1);
-      if (!servicePackage) {
-        return res.status(400).json({ message: "Service package not found" });
+      // Validate service package exists BEFORE creating booking (may be null for custom quotes)
+      let servicePackage = null;
+      if (parsedData.packageId) {
+        const [pkg] = await db.select().from(servicePackages).where(eq(servicePackages.id, parsedData.packageId)).limit(1);
+        if (!pkg) {
+          return res.status(400).json({ message: "Service package not found" });
+        }
+        servicePackage = pkg;
+      }
+      
+      // Validate and fetch quote if quoteId is provided
+      // Quote's quotedPrice is the AUTHORITATIVE source for amount
+      let acceptedQuote = null;
+      if (quoteId) {
+        const [foundQuote] = await db.select().from(quotes).where(eq(quotes.id, quoteId)).limit(1);
+        if (!foundQuote) {
+          return res.status(400).json({ message: "Quote not found" });
+        }
+        if (foundQuote.status !== "accepted") {
+          return res.status(400).json({ message: "Quote must be accepted before booking" });
+        }
+        if (foundQuote.buyerId !== userId) {
+          return res.status(403).json({ message: "Quote does not belong to you" });
+        }
+        acceptedQuote = foundQuote;
+      }
+      
+      // Determine the authoritative amount:
+      // 1. If quote exists, use quote's quotedPrice (trusted source)
+      // 2. Otherwise use package price
+      const authoritativeAmount = acceptedQuote 
+        ? parseFloat(acceptedQuote.quotedPrice)
+        : (servicePackage ? parseFloat(servicePackage.price) : null);
+      
+      if (authoritativeAmount === null) {
+        return res.status(400).json({ message: "Unable to determine booking price" });
       }
       
       // Validate seller exists
@@ -2306,12 +2338,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // All validated, use transaction for atomic operation
       const booking = await db.transaction(async (tx) => {
         // Create booking with appropriate status for payment method
+        // Use authoritativeAmount (from quote or package) as the booking amount
         const [newBooking] = await tx.insert(bookings).values({
           serviceId: parsedData.serviceId,
           packageId: parsedData.packageId,
           scheduledDate: parsedData.scheduledDate,
           scheduledTime: parsedData.scheduledTime,
-          amount: parsedData.amount,
+          amount: authoritativeAmount.toFixed(2), // Use authoritative amount, not client-provided
           notes: parsedData.notes,
           paymentMethod: parsedData.paymentMethod,
           paymentReference: parsedData.paymentReference,
@@ -2320,13 +2353,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sellerId,
           status: parsedData.paymentMethod === "bank_transfer" ? "pending_payment" : "pending_confirmation",
           transferSlipObjectPath: parsedData.paymentMethod === "bank_transfer" ? transferSlipObjectPath : null,
+          quoteId: quoteId || null, // Link to the quote if one was used
         }).returning();
         
-        // Calculate commission and create transaction
-        const amount = parseFloat(servicePackage.price);
+        // Calculate commission and create transaction using authoritative amount
         const commissionRate = parseFloat(seller.commissionRate || "0");
-        const commissionAmount = amount * (commissionRate / 100);
-        const sellerPayout = amount - commissionAmount;
+        const commissionAmount = authoritativeAmount * (commissionRate / 100);
+        const sellerPayout = authoritativeAmount - commissionAmount;
         
         // Create transaction with pending status (waiting for payment)
         await tx.insert(transactions).values({
@@ -2335,7 +2368,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           bookingId: newBooking.id,
           buyerId: userId,
           sellerId: sellerId,
-          amount: amount.toFixed(2),
+          amount: authoritativeAmount.toFixed(2),
           commissionRate: commissionRate.toFixed(2),
           commissionAmount: commissionAmount.toFixed(2),
           sellerPayout: sellerPayout.toFixed(2),
@@ -2359,8 +2392,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           bookingId: booking.id,
           buyerName,
           sellerName,
-          serviceName: service?.name || servicePackage.name || "Service",
-          amount: parsedData.amount,
+          serviceName: service?.name || servicePackage?.name || "Service",
+          amount: authoritativeAmount.toFixed(2),
         });
       } catch (notifError) {
         console.error("Error sending admin booking notification:", notifError);
@@ -2371,7 +2404,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           await notifyAdminOrderPendingPayment({
             orderId: booking.id,
-            amount: parsedData.amount,
+            amount: authoritativeAmount.toFixed(2),
             buyerName,
           });
         } catch (notifError) {
@@ -2380,12 +2413,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // If IPG payment, return redirect URL to payment gateway
+      // Use authoritativeAmount (from quote or package) for payment
       if (parsedData.paymentMethod === "ipg") {
-        const amount = parseFloat(servicePackage.price);
-        
         const ipgUrl = new URL(`${req.protocol}://${req.get('host')}/mock-ipg`);
         ipgUrl.searchParams.set("transactionRef", booking.id);
-        ipgUrl.searchParams.set("amount", amount.toFixed(2));
+        ipgUrl.searchParams.set("amount", authoritativeAmount.toFixed(2));
         ipgUrl.searchParams.set("merchantId", "VAANEY_MERCHANT");
         ipgUrl.searchParams.set("transactionType", "booking");
         ipgUrl.searchParams.set("returnUrl", `${req.protocol}://${req.get('host')}/bookings`);
