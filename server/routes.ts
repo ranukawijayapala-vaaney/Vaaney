@@ -2303,6 +2303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Validate and fetch quote if quoteId is provided
       // Quote's quotedPrice is the AUTHORITATIVE source for amount
+      // SECURITY: Verify quote matches the booking's service, seller, and package
       let acceptedQuote = null;
       if (quoteId) {
         const [foundQuote] = await db.select().from(quotes).where(eq(quotes.id, quoteId)).limit(1);
@@ -2314,6 +2315,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         if (foundQuote.buyerId !== userId) {
           return res.status(403).json({ message: "Quote does not belong to you" });
+        }
+        // Validate quote matches the booking's service
+        if (foundQuote.serviceId !== parsedData.serviceId) {
+          return res.status(400).json({ message: "Quote does not match the selected service" });
+        }
+        // Validate quote matches the seller
+        if (foundQuote.sellerId !== sellerId) {
+          return res.status(400).json({ message: "Quote does not match the seller" });
+        }
+        // Validate quote's package matches (if quote has a package)
+        // A quote with no package is a custom quote and can be used for any package selection
+        // A quote with a package must match the selected package
+        if (foundQuote.servicePackageId && parsedData.packageId && foundQuote.servicePackageId !== parsedData.packageId) {
+          return res.status(400).json({ message: "Quote does not match the selected package" });
         }
         acceptedQuote = foundQuote;
       }
