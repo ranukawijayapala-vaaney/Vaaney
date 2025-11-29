@@ -91,7 +91,7 @@ import {
   type InsertChatSession,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql, lt, gte, inArray, or, isNull } from "drizzle-orm";
+import { eq, and, desc, sql, lt, gte, inArray, notInArray, or, isNull } from "drizzle-orm";
 
 /**
  * Currency/Decimal Conversion Utilities
@@ -2401,13 +2401,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getActiveQuoteForConversation(conversationId: string): Promise<Quote | undefined> {
+    // Return latest quote for this conversation that isn't superseded or expired
+    // This includes "purchased" quotes so we can properly check if buyer wants to request a new quote
     const results = await db
       .select()
       .from(quotes)
       .where(
         and(
           eq(quotes.conversationId, conversationId),
-          inArray(quotes.status, ["requested", "sent", "pending", "accepted"]),
+          // Exclude only superseded and expired - include requested/sent/pending/accepted/purchased/rejected
+          notInArray(quotes.status, ["superseded", "expired"]),
           or(
             isNull(quotes.expiresAt),
             gte(quotes.expiresAt, new Date())

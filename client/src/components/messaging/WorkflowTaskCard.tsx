@@ -64,6 +64,7 @@ interface WorkflowTaskCardProps {
   task: WorkflowTask;
   userRole: "buyer" | "seller";
   conversationId: string;
+  requiresQuote?: boolean;
   onUploadDesign?: (variantId?: string, packageId?: string) => void;
   onRequestQuote?: (variantId?: string, packageId?: string) => void;
   onSendQuote?: (task: WorkflowTask) => void;
@@ -102,6 +103,7 @@ export function WorkflowTaskCard({
   task,
   userRole,
   conversationId,
+  requiresQuote = false,
   onUploadDesign,
   onRequestQuote,
   onSendQuote,
@@ -383,14 +385,27 @@ export function WorkflowTaskCard({
                   )}
 
                   {isDesign && task.status === "approved" && userRole === "buyer" && task.serviceId && (
-                    <Button
-                      size="sm"
-                      onClick={() => onPurchase?.(task)}
-                      data-testid={`button-book-now-${task.id}`}
-                    >
-                      <Calendar className="h-3 w-3 mr-1" />
-                      Book Now
-                    </Button>
+                    <>
+                      {requiresQuote && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onRequestQuote?.(task.variantId || undefined, task.packageId || undefined)}
+                          data-testid={`button-request-quote-${task.id}`}
+                        >
+                          <FileText className="h-3 w-3 mr-1" />
+                          Request Quote
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        onClick={() => onPurchase?.(task)}
+                        data-testid={`button-book-now-${task.id}`}
+                      >
+                        <Calendar className="h-3 w-3 mr-1" />
+                        Book Now
+                      </Button>
+                    </>
                   )}
 
                   {isQuote && userRole === "buyer" && (task.status === "sent" || task.status === "pending") && (

@@ -161,21 +161,26 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
   });
 
   // Request quote mutation - MUST be declared before useEffect that uses it
+  // Accepts optional packageId to request quote for a specific package (used when design is approved)
   const requestQuoteMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (packageId?: string) => {
       if (!service) throw new Error("Service not found");
-      const conversation: any = await apiRequest("POST", "/api/conversations", {
-        type: "pre_purchase_service",
-        subject: `Quote Request for ${service.name}`,
-        serviceId: service.id,
-      });
       
-      if (conversation?.id) {
-        await apiRequest("POST", `/api/conversations/${conversation.id}/messages`, {
-          content: `Hi, I'm interested in booking ${service.name}. The standard packages don't meet my requirements. Could you please provide me with a custom quote?`,
-        });
-        await queryClient.invalidateQueries({ queryKey: ["/api/conversations", conversation.id] });
-      }
+      // Determine which package to request quote for
+      const targetPackageId = packageId || selectedPackageId || undefined;
+      const packageName = targetPackageId 
+        ? service.packages?.find(p => p.id === targetPackageId)?.name 
+        : null;
+      
+      // Use the pre-purchase workflow endpoint with context: "quote" to create proper quote record
+      const conversation: any = await apiRequest("POST", "/api/pre-purchase/workflow", {
+        serviceId: service.id,
+        servicePackageId: targetPackageId,
+        context: "quote",
+        initialMessage: packageName 
+          ? `Hi, I'm interested in ${service.name} - ${packageName}. Could you please provide me with a custom quote?`
+          : `Hi, I'm interested in booking ${service.name}. The standard packages don't meet my requirements. Could you please provide me with a custom quote?`,
+      });
       
       return conversation;
     },
@@ -408,7 +413,7 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
     setPendingPackageId(null);
     // Navigate to request new quote workflow
     if (service) {
-      requestQuoteMutation.mutate();
+      requestQuoteMutation.mutate(undefined);
     }
   };
 
@@ -517,7 +522,7 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
       window.history.replaceState({}, '', window.location.pathname);
     } else if (action === 'request-quote' && service.requiresQuote && !requestQuoteMutation.isPending) {
       // Trigger quote request workflow (allows requesting new quote even if one exists)
-      requestQuoteMutation.mutate();
+      requestQuoteMutation.mutate(undefined);
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, [service, canNavigateToMessages, createDesignApprovalConversationMutation, requestQuoteMutation]);
@@ -838,7 +843,7 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
               </TabsTrigger>
               <TabsTrigger 
                 value="review" 
-                disabled={!selectedPackageId && !isCustomQuoteSelected || isBlockedByDesignApproval} 
+                disabled={(!selectedPackageId && !isCustomQuoteSelected) || !!isBlockedByDesignApproval} 
                 data-testid="tab-review"
               >
                 Review & Payment
@@ -975,7 +980,7 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
 
                         <Button
                           size="lg"
-                          onClick={() => requestQuoteMutation.mutate()}
+                          onClick={() => requestQuoteMutation.mutate(undefined)}
                           disabled={requestQuoteMutation.isPending}
                           className="w-full gap-2"
                           data-testid="button-request-quote"

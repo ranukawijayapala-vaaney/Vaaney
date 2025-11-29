@@ -5340,20 +5340,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       conversation = await storage.addWorkflowContext(conversation.id, workflowContext);
 
       // If quote context, create a quote request record with status="requested"
-      // Deduplicate: check for existing pending quote first
+      // Deduplicate: only prevent duplicate quotes if there's a pending/requested/sent quote for same variant
       if (context === "quote") {
         try {
           // Check if an active quote already exists for this conversation
           const existingQuote = await storage.getActiveQuoteForConversation(conversation.id);
           
-          // Only create new quote if no active quote exists, or if active quote is for a different variant
-          const shouldCreate = !existingQuote || (
+          // Determine if we should create a new quote:
+          // - No existing active quote → create
+          // - Existing quote is completed (accepted/purchased/rejected) → allow new quote request
+          // - Existing quote is pending/requested/sent for SAME variant → skip (duplicate prevention)
+          // - Existing quote is for DIFFERENT variant → create
+          const completedStatuses = ["accepted", "purchased", "rejected"];
+          const shouldCreate = !existingQuote || 
+            // Allow new quote if previous was already completed (buyer wants a new negotiation)
+            completedStatuses.includes(existingQuote.status) ||
             // Different variant/package than requested
             (productVariantId && existingQuote.productVariantId !== productVariantId) ||
             (servicePackageId && existingQuote.servicePackageId !== servicePackageId) ||
             // Requesting custom but existing is for specific variant
-            (!productVariantId && !servicePackageId && (existingQuote.productVariantId || existingQuote.servicePackageId))
-          );
+            (!productVariantId && !servicePackageId && (existingQuote.productVariantId || existingQuote.servicePackageId));
           
           if (shouldCreate) {
             await storage.createQuote({
