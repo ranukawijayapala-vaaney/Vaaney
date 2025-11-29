@@ -74,24 +74,32 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
   // Get current user for auth checks (properly handles 401 for guests)
   const { user } = useAuth();
 
-  // Fetch active quote for this product (if requiresQuote is true)
-  const { data: activeQuote } = useQuery<any>({
-    queryKey: ["/api/quotes/active", product?.id],
+  // Fetch active quote for this product and selected variant (if requiresQuote is true)
+  // When Quote Workflow Only is enabled, buyers can request quotes for each variant independently
+  // Only fetch when a variant is selected to avoid showing stale/incorrect quote status
+  const { data: rawActiveQuote } = useQuery<any>({
+    queryKey: ["/api/quotes/active", product?.id, selectedVariantId],
     queryFn: async () => {
-      if (!product?.id) return null;
+      if (!product?.id || !selectedVariantId) return null;
       const conversations: any[] = await apiRequest("GET", "/api/conversations");
       const productConversation = conversations.find(c => 
         c.type === "pre_purchase_product" && c.productId === product.id
       );
       if (!productConversation?.id) return null;
       try {
-        return await apiRequest("GET", `/api/quotes/active?conversationId=${productConversation.id}&productId=${product.id}`);
+        // Include productVariantId to get quote for specific variant
+        // "custom" means custom specifications (no specific variant)
+        return await apiRequest("GET", `/api/quotes/active?conversationId=${productConversation.id}&productId=${product.id}&productVariantId=${selectedVariantId}`);
       } catch {
         return null;
       }
     },
-    enabled: !!product?.id && product?.requiresQuote === true,
+    enabled: !!product?.id && product?.requiresQuote === true && !!selectedVariantId,
   });
+  
+  // Validate that the returned quote matches the currently selected variant
+  // This prevents stale data from showing when switching between variants due to cache
+  const activeQuote = rawActiveQuote?.productVariantId === selectedVariantId ? rawActiveQuote : null;
 
   // Fetch ALL approved designs for this product (if requiresDesignApproval is true)
   const { data: approvedDesigns = [] } = useQuery<any[]>({
@@ -254,9 +262,10 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
       
       return conversation;
     },
-    onSuccess: (conversation) => {
+    onSuccess: (_conversation, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/quotes/active", product?.id] });
+      // Use mutation variables to invalidate the correct cache key even if selection changed during request
+      queryClient.invalidateQueries({ queryKey: ["/api/quotes/active", product?.id, variables.variantId] });
       toast({ 
         title: "Quote request sent!", 
         description: "The seller will respond with a custom quote in your messages.",

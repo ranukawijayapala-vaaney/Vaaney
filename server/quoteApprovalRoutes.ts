@@ -236,8 +236,8 @@ export function setupQuoteApprovalRoutes(app: Express) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const { conversationId, productId, serviceId } = req.query;
-      console.log("[QUOTE ACTIVE] Request params:", { conversationId, productId, serviceId, userId });
+      const { conversationId, productId, serviceId, productVariantId, servicePackageId } = req.query;
+      console.log("[QUOTE ACTIVE] Request params:", { conversationId, productId, serviceId, productVariantId, servicePackageId, userId });
       
       // Prioritize conversation-based lookup
       if (conversationId) {
@@ -253,8 +253,21 @@ export function setupQuoteApprovalRoutes(app: Express) {
           return res.status(403).json({ message: "Not authorized to access this quote" });
         }
         
-        const quote = await storage.getActiveQuoteForConversation(conversationId as string);
-        console.log("[QUOTE ACTIVE] Quote found:", quote ? `yes (id: ${quote.id}, status: ${quote.status})` : "no");
+        // Pass variant/package filter if provided
+        // "custom" value means custom specifications (null in DB)
+        const variantFilter = productVariantId !== undefined 
+          ? (productVariantId === "custom" ? null : productVariantId as string) 
+          : undefined;
+        const packageFilter = servicePackageId !== undefined 
+          ? (servicePackageId === "custom" ? null : servicePackageId as string) 
+          : undefined;
+        
+        const quote = await storage.getActiveQuoteForConversation(
+          conversationId as string,
+          variantFilter,
+          packageFilter
+        );
+        console.log("[QUOTE ACTIVE] Quote found:", quote ? `yes (id: ${quote.id}, status: ${quote.status}, variantId: ${quote.productVariantId})` : "no");
         return res.json(quote || null);
       }
       

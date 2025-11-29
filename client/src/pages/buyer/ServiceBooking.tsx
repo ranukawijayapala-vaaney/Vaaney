@@ -132,26 +132,47 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
     enabled: !!quoteIdFromUrl,
   });
 
-  // Fetch active quote for this service (fallback when no quoteId in URL)
-  const { data: conversationQuote } = useQuery<any>({
-    queryKey: ["/api/quotes/active", serviceId],
+  // Fetch active quote for this service and selected package (fallback when no quoteId in URL)
+  // When Quote Workflow Only is enabled, buyers can request quotes for each package independently
+  // Only fetch when a package is selected to avoid showing stale/incorrect quote status
+  const hasPackageSelection = isCustomQuoteSelected || !!selectedPackageId;
+  const { data: rawConversationQuote } = useQuery<any>({
+    queryKey: ["/api/quotes/active", serviceId, selectedPackageId, isCustomQuoteSelected],
     queryFn: async () => {
-      if (!serviceId) return null;
+      if (!serviceId || !hasPackageSelection) return null;
       const conversations: any[] = await apiRequest("GET", "/api/conversations");
       const serviceConversation = conversations.find(c => 
         c.type === "pre_purchase_service" && c.serviceId === serviceId
       );
       if (!serviceConversation?.id) return null;
       try {
-        return await apiRequest("GET", `/api/quotes/active?conversationId=${serviceConversation.id}&serviceId=${serviceId}`);
+        // Include servicePackageId to get quote for specific package
+        // "custom" means custom specifications (no specific package)
+        const packageParam = isCustomQuoteSelected 
+          ? "&servicePackageId=custom" 
+          : `&servicePackageId=${selectedPackageId}`;
+        return await apiRequest("GET", `/api/quotes/active?conversationId=${serviceConversation.id}&serviceId=${serviceId}${packageParam}`);
       } catch {
         return null;
       }
     },
-    enabled: !!service?.requiresQuote && !quoteIdFromUrl,
+    enabled: !!service?.requiresQuote && !quoteIdFromUrl && hasPackageSelection,
   });
   
-  // Use URL quote if available and accepted, otherwise fallback to conversation quote
+  // Validate that the returned quote matches the currently selected package
+  // This prevents stale data from showing when switching between packages due to cache
+  const quoteMatchesSelection = () => {
+    if (!rawConversationQuote) return false;
+    if (isCustomQuoteSelected) {
+      // Custom quote: servicePackageId should be null/undefined
+      return !rawConversationQuote.servicePackageId;
+    }
+    // Package-specific quote: should match selected package
+    return rawConversationQuote.servicePackageId === selectedPackageId;
+  };
+  const conversationQuote = quoteMatchesSelection() ? rawConversationQuote : null;
+  
+  // Use URL quote if available and accepted, otherwise fallback to validated conversation quote
   const activeQuote = (urlQuote?.status === "accepted" ? urlQuote : null) || conversationQuote;
 
   // Hydrate acceptedQuoteId from activeQuote data (survives page refresh)
@@ -226,12 +247,13 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
 
   // Request quote mutation - MUST be declared before useEffect that uses it
   // Accepts optional packageId to request quote for a specific package (used when design is approved)
+  // Also tracks isCustom flag for proper cache invalidation
   const requestQuoteMutation = useMutation({
-    mutationFn: async (packageId?: string) => {
+    mutationFn: async (data: { packageId?: string; isCustom?: boolean }) => {
       if (!service) throw new Error("Service not found");
       
       // Determine which package to request quote for
-      const targetPackageId = packageId || selectedPackageId || undefined;
+      const targetPackageId = data.packageId || selectedPackageId || undefined;
       const packageName = targetPackageId 
         ? service.packages?.find(p => p.id === targetPackageId)?.name 
         : null;
@@ -248,9 +270,15 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
       
       return conversation;
     },
-    onSuccess: () => {
+    onSuccess: (_conversation, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/quotes/active", serviceId] });
+      // Use mutation variables to invalidate the correct cache key even if selection changed during request
+      // Key structure must match useQuery: ["/api/quotes/active", serviceId, selectedPackageId, isCustomQuoteSelected]
+      // For custom quotes: selectedPackageId is "" (empty string), isCustomQuoteSelected is true
+      // For package quotes: selectedPackageId is the package ID, isCustomQuoteSelected is false
+      const isCustom = variables.isCustom ?? false;
+      const pkgId = isCustom ? "" : (variables.packageId || "");
+      queryClient.invalidateQueries({ queryKey: ["/api/quotes/active", serviceId, pkgId, isCustom] });
       toast({ 
         title: "Quote request sent!", 
         description: "The seller will respond with a custom quote in your messages.",
@@ -509,9 +537,12 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
     const packageToRequest = pendingPackageId;
     setShowPrePurchaseDialog(false);
     setPendingPackageId(null);
-    // Navigate to request new quote workflow - pass the package ID if one was selected
+    // Navigate to request new quote workflow - pass the package ID and custom flag for proper cache invalidation
     if (service) {
-      requestQuoteMutation.mutate(packageToRequest || undefined);
+      requestQuoteMutation.mutate({ 
+        packageId: packageToRequest || undefined,
+        isCustom: !packageToRequest // Custom if no specific package
+      });
     }
   };
 
@@ -620,7 +651,7 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
       window.history.replaceState({}, '', window.location.pathname);
     } else if (action === 'request-quote' && service.requiresQuote && !requestQuoteMutation.isPending) {
       // Trigger quote request workflow (allows requesting new quote even if one exists)
-      requestQuoteMutation.mutate(undefined);
+      requestQuoteMutation.mutate({ packageId: undefined, isCustom: true });
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, [service, canNavigateToMessages, createDesignApprovalConversationMutation, requestQuoteMutation]);
@@ -1102,7 +1133,7 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
 
                         <Button
                           size="lg"
-                          onClick={() => requestQuoteMutation.mutate(undefined)}
+                          onClick={() => requestQuoteMutation.mutate({ packageId: undefined, isCustom: true })}
                           disabled={requestQuoteMutation.isPending}
                           className="w-full gap-2"
                           data-testid="button-request-quote"

@@ -292,7 +292,7 @@ export interface IStorage {
   supersedePreviousQuotes(conversationId: string, newQuoteId: string, variantId?: string | null, packageId?: string | null): Promise<void>;
   expireOldQuotes(): Promise<void>;
   getActiveQuoteForItem(buyerId: string, productId?: string, serviceId?: string): Promise<Quote | undefined>;
-  getActiveQuoteForConversation(conversationId: string): Promise<Quote | undefined>;
+  getActiveQuoteForConversation(conversationId: string, productVariantId?: string | null, servicePackageId?: string | null): Promise<Quote | undefined>;
   
   // Design approval management
   createDesignApproval(approval: InsertDesignApproval & { conversationId: string; buyerId: string; sellerId: string }): Promise<DesignApproval>;
@@ -2457,23 +2457,49 @@ export class DatabaseStorage implements IStorage {
     return quote;
   }
 
-  async getActiveQuoteForConversation(conversationId: string): Promise<Quote | undefined> {
+  async getActiveQuoteForConversation(conversationId: string, productVariantId?: string | null, servicePackageId?: string | null): Promise<Quote | undefined> {
     // Return latest quote for this conversation that isn't superseded or expired
+    // Optionally filter by specific variant/package for variant-scoped quote lookups
     // This includes "purchased" quotes so we can properly check if buyer wants to request a new quote
+    
+    const conditions = [
+      eq(quotes.conversationId, conversationId),
+      // Exclude only superseded and expired - include requested/sent/pending/accepted/purchased/rejected
+      notInArray(quotes.status, ["superseded", "expired"]),
+      or(
+        isNull(quotes.expiresAt),
+        gte(quotes.expiresAt, new Date())
+      )
+    ];
+    
+    // If productVariantId is provided, filter by it
+    // null means "custom specifications" (no specific variant)
+    // undefined means "don't filter by variant" (return any quote)
+    if (productVariantId !== undefined) {
+      if (productVariantId === null || productVariantId === "custom") {
+        // Custom specifications - look for quotes with no variantId
+        conditions.push(isNull(quotes.productVariantId));
+      } else {
+        // Specific variant - look for quotes with this variantId
+        conditions.push(eq(quotes.productVariantId, productVariantId));
+      }
+    }
+    
+    // Same logic for servicePackageId
+    if (servicePackageId !== undefined) {
+      if (servicePackageId === null || servicePackageId === "custom") {
+        // Custom specifications - look for quotes with no packageId
+        conditions.push(isNull(quotes.servicePackageId));
+      } else {
+        // Specific package - look for quotes with this packageId
+        conditions.push(eq(quotes.servicePackageId, servicePackageId));
+      }
+    }
+    
     const results = await db
       .select()
       .from(quotes)
-      .where(
-        and(
-          eq(quotes.conversationId, conversationId),
-          // Exclude only superseded and expired - include requested/sent/pending/accepted/purchased/rejected
-          notInArray(quotes.status, ["superseded", "expired"]),
-          or(
-            isNull(quotes.expiresAt),
-            gte(quotes.expiresAt, new Date())
-          )
-        )
-      )
+      .where(and(...conditions))
       .orderBy(desc(quotes.createdAt))
       .limit(1)
       .execute();
