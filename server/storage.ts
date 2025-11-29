@@ -2460,12 +2460,14 @@ export class DatabaseStorage implements IStorage {
   async getActiveQuoteForConversation(conversationId: string, productVariantId?: string | null, servicePackageId?: string | null): Promise<Quote | undefined> {
     // Return latest quote for this conversation that isn't superseded or expired
     // Optionally filter by specific variant/package for variant-scoped quote lookups
-    // This includes "purchased" quotes so we can properly check if buyer wants to request a new quote
+    // IMPORTANT: Also exclude quotes that have already been used in an order/booking
+    // so buyers can request new quotes after completing a purchase
     
     const conditions = [
       eq(quotes.conversationId, conversationId),
-      // Exclude only superseded and expired - include requested/sent/pending/accepted/purchased/rejected
-      notInArray(quotes.status, ["superseded", "expired"]),
+      // Exclude only superseded and expired - include requested/sent/pending/accepted/rejected
+      // Note: "purchased" status quotes are considered inactive so buyers can request new quotes
+      notInArray(quotes.status, ["superseded", "expired", "purchased"]),
       or(
         isNull(quotes.expiresAt),
         gte(quotes.expiresAt, new Date())
@@ -2496,6 +2498,7 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
+    // Get the latest non-purchased quote
     const results = await db
       .select()
       .from(quotes)
@@ -2504,7 +2507,38 @@ export class DatabaseStorage implements IStorage {
       .limit(1)
       .execute();
     
-    return results[0] ?? undefined;
+    const quote = results[0];
+    
+    // Additional check: Even if the quote isn't marked as "purchased" yet,
+    // check if it's been used in an actual order or booking
+    // This handles edge cases where order creation doesn't immediately update quote status
+    if (quote && quote.status === "accepted") {
+      // Check if this quote has been used in an order
+      const [usedInOrder] = await db
+        .select({ id: orders.id })
+        .from(orders)
+        .where(eq(orders.quoteId, quote.id))
+        .limit(1);
+      
+      if (usedInOrder) {
+        // Quote has been used in an order, don't return it as active
+        return undefined;
+      }
+      
+      // Check if this quote has been used in a booking
+      const [usedInBooking] = await db
+        .select({ id: bookings.id })
+        .from(bookings)
+        .where(eq(bookings.quoteId, quote.id))
+        .limit(1);
+      
+      if (usedInBooking) {
+        // Quote has been used in a booking, don't return it as active
+        return undefined;
+      }
+    }
+    
+    return quote;
   }
 
   // Design Approval Management Implementation
