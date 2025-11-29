@@ -409,11 +409,13 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
   };
 
   const handleRequestNewQuote = () => {
+    // Capture the pending package ID before clearing it
+    const packageToRequest = pendingPackageId;
     setShowPrePurchaseDialog(false);
     setPendingPackageId(null);
-    // Navigate to request new quote workflow
+    // Navigate to request new quote workflow - pass the package ID if one was selected
     if (service) {
-      requestQuoteMutation.mutate(undefined);
+      requestQuoteMutation.mutate(packageToRequest || undefined);
     }
   };
 
