@@ -397,7 +397,7 @@ export default function BuyerCustomQuotes() {
                       <Button
                         variant="default"
                         size="sm"
-                        onClick={() => setLocation(`/checkout?quoteId=${quote.id}`)}
+                        onClick={() => setLocation(`/book-service/${quote.serviceId}?quoteId=${quote.id}${quote.servicePackageId ? `&packageId=${quote.servicePackageId}` : ''}`)}
                         className="flex items-center gap-2"
                         data-testid={`button-book-now-${quote.id}`}
                       >

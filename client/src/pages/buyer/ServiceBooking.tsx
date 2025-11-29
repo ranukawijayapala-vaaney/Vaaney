@@ -1336,13 +1336,38 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
             </CardHeader>
             <CardContent className="space-y-3">
               {isCustomQuoteSelected ? (
-                <div className="text-center py-4">
-                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                  <p className="font-medium mb-1">Custom Quote</p>
-                  <p className="text-sm text-muted-foreground">
-                    Price will be determined after seller review
-                  </p>
-                </div>
+                activeQuote?.status === "accepted" && activeQuote?.quotedPrice ? (
+                  <>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Quote</p>
+                      <p className="font-semibold text-sm">Custom Quote - Accepted</p>
+                    </div>
+                    
+                    {activeQuote.validUntil && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Valid Until</p>
+                        <p className="font-semibold text-sm">{new Date(activeQuote.validUntil).toLocaleDateString()}</p>
+                      </div>
+                    )}
+
+                    <Separator />
+
+                    <div className="flex justify-between items-center pt-2">
+                      <span className="text-sm font-medium">Total</span>
+                      <span className="text-2xl font-bold text-primary" data-testid="text-summary-total">
+                        ${activeQuote.quotedPrice}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-4">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="font-medium mb-1">Custom Quote</p>
+                    <p className="text-sm text-muted-foreground">
+                      Price will be determined after seller review
+                    </p>
+                  </div>
+                )
               ) : selectedPackage ? (
                 <>
                   <div>

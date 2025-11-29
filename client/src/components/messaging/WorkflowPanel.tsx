@@ -528,12 +528,13 @@ export function WorkflowPanel({
         : `/book-service/${task.serviceId}?designApprovalId=${task.designApprovalId}`;
       window.location.href = bookingUrl;
     } else if (task.type === "quote" && task.quoteId) {
-      // Check if it's a variant quote or custom quote
-      const isCustomQuote = !task.variantId && !task.packageId;
-      
-      if (isCustomQuote) {
-        // Custom quotes (no variant/package) - redirect to checkout
-        window.location.href = `/checkout?quoteId=${task.quoteId}`;
+      // Service quotes go to ServiceBooking, product quotes go to cart/checkout
+      if (task.serviceId) {
+        // Service quotes - redirect to ServiceBooking with quote context
+        const bookingUrl = task.packageId 
+          ? `/book-service/${task.serviceId}?quoteId=${task.quoteId}&packageId=${task.packageId}${task.designApprovalId ? `&designApprovalId=${task.designApprovalId}` : ''}`
+          : `/book-service/${task.serviceId}?quoteId=${task.quoteId}${task.designApprovalId ? `&designApprovalId=${task.designApprovalId}` : ''}`;
+        window.location.href = bookingUrl;
       } else if (task.variantId) {
         // Product variant quotes - add to cart with quote details
         addToCartMutation.mutate({
@@ -542,8 +543,8 @@ export function WorkflowPanel({
           quoteId: task.quoteId || undefined,
           designApprovalId: task.designApprovalId || undefined,
         });
-      } else if (task.packageId) {
-        // Service package quotes - redirect to checkout with quote
+      } else {
+        // Product custom quotes (no variant) - redirect to checkout
         window.location.href = `/checkout?quoteId=${task.quoteId}`;
       }
     }

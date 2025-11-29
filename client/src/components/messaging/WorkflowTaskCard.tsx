@@ -187,16 +187,28 @@ export function WorkflowTaskCard({
       // Also refresh messages to show any system messages
       queryClient.invalidateQueries({ queryKey: ["/api/conversations", conversationId] });
       
-      if (isCustomQuote) {
-        // Custom quote - redirect to checkout with this quote
+      // Use task.quoteId if available, fallback to task.id for quote tasks
+      const quoteId = task.quoteId || task.id;
+      
+      if (task.serviceId) {
+        // Service quote - redirect to ServiceBooking with quote context
+        toast({ title: "Quote accepted! Redirecting to booking..." });
+        onRefresh?.();
+        setTimeout(() => {
+          const bookingUrl = task.packageId 
+            ? `/book-service/${task.serviceId}?quoteId=${quoteId}&packageId=${task.packageId}`
+            : `/book-service/${task.serviceId}?quoteId=${quoteId}`;
+          window.location.href = bookingUrl;
+        }, 500);
+      } else if (isCustomQuote) {
+        // Product custom quote - redirect to checkout with this quote
         toast({ title: "Quote accepted! Redirecting to checkout..." });
         onRefresh?.();
-        // Redirect to checkout with the quote ID
         setTimeout(() => {
-          window.location.href = `/checkout?quoteId=${task.id}`;
+          window.location.href = `/checkout?quoteId=${quoteId}`;
         }, 500);
       } else {
-        // Variant quote - added to cart
+        // Product variant quote - added to cart
         toast({ title: "Quote accepted! Added to cart." });
         onRefresh?.();
       }
