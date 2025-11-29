@@ -189,6 +189,17 @@ export function WorkflowPanel({
       variantId?: string;
       packageId?: string;
     }) => {
+      // Determine context based on what's being uploaded:
+      // - "quote" for Custom Specifications (no variantId/packageId)
+      // - "product" for product variants
+      // - "service" for service packages
+      let context: "quote" | "product" | "service" = "quote";
+      if (data.variantId) {
+        context = "product";
+      } else if (data.packageId) {
+        context = "service";
+      }
+      
       return await apiRequest("POST", "/api/design-approvals", {
         conversationId,
         productId,
@@ -196,7 +207,7 @@ export function WorkflowPanel({
         variantId: data.variantId || undefined,
         packageId: data.packageId || undefined,
         designFiles: [data.designFile],
-        context: "product",
+        context,
       });
     },
     onSuccess: () => {
