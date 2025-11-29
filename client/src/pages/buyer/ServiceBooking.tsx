@@ -54,9 +54,6 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
   
   // Helper to normalize packageId: returns valid ID or null (never empty string)
   const normalizedPackageId = selectedPackageId && selectedPackageId.trim() !== "" ? selectedPackageId : null;
-  
-  // Lock selection when using accepted quote to prevent accidental changes
-  const isSelectionLocked = !!acceptedQuoteId && activeQuote?.status === "accepted";
 
   // Reset state when service ID changes (fixes back button navigation)
   useEffect(() => {

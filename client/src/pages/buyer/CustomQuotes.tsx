@@ -393,16 +393,29 @@ export default function BuyerCustomQuotes() {
                   )}
 
                   {quote.status === "accepted" && (
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => handleViewConversation(quote.conversationId)}
-                      className="flex items-center gap-2"
-                      data-testid={`button-add-to-cart-${quote.id}`}
-                    >
-                      <ShoppingCart className="h-4 w-4" />
-                      Add to Cart
-                    </Button>
+                    quote.serviceId ? (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => setLocation(`/book-service/${quote.serviceId}?quoteId=${quote.id}${quote.packageId ? `&packageId=${quote.packageId}` : ''}`)}
+                        className="flex items-center gap-2"
+                        data-testid={`button-book-now-${quote.id}`}
+                      >
+                        <Calendar className="h-4 w-4" />
+                        Book Now
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => handleViewConversation(quote.conversationId)}
+                        className="flex items-center gap-2"
+                        data-testid={`button-add-to-cart-${quote.id}`}
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                        Add to Cart
+                      </Button>
+                    )
                   )}
                 </div>
               </CardContent>
