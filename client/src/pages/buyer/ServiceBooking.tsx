@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Calendar, ChevronRight, Check, CreditCard, Building2, Package as PackageIcon, Edit2, ChevronDown, MessageCircle, FileText, Upload, X, AlertTriangle } from "lucide-react";
@@ -102,11 +102,24 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
     enabled: !!serviceId,
   });
 
-  // Extract quoteId from URL params - this takes priority for quote data
-  const quoteIdFromUrl = new URLSearchParams(window.location.search).get('quoteId');
+  // Extract URL parameters reactively using useLocation
+  const [location] = useLocation();
+  
+  // Parse URL params - recompute whenever location changes
+  const urlParams = useMemo(() => {
+    const search = window.location.search;
+    const params = new URLSearchParams(search);
+    return {
+      quoteId: params.get('quoteId'),
+      packageId: params.get('packageId'),
+      designApprovalId: params.get('designApprovalId')
+    };
+  }, [location]);
+  
+  const quoteIdFromUrl = urlParams.quoteId;
   
   // Fetch specific quote by ID when quoteId is in URL params (takes priority)
-  const { data: urlQuote } = useQuery<any>({
+  const { data: urlQuote, isLoading: isUrlQuoteLoading } = useQuery<any>({
     queryKey: ["/api/quotes", quoteIdFromUrl],
     queryFn: async () => {
       if (!quoteIdFromUrl) return null;
