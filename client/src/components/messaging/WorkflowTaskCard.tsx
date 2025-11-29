@@ -178,6 +178,8 @@ export function WorkflowTaskCard({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/conversations", conversationId, "workflow-summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      // Also refresh messages to show any system messages
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations", conversationId] });
       
       if (isCustomQuote) {
         // Custom quote - redirect to checkout with this quote
@@ -204,6 +206,8 @@ export function WorkflowTaskCard({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/conversations", conversationId, "workflow-summary"] });
+      // Also refresh messages so the rejection message appears in the chat
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations", conversationId] });
       toast({ title: "Quote rejected" });
       setShowRejectDialog(false);
       setNotes("");

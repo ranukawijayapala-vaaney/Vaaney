@@ -161,17 +161,22 @@ export default function BuyerMessages() {
     const urlParams = new URLSearchParams(window.location.search);
     const conversationId = urlParams.get('conversation');
     
-    if (conversationId && conversations.length > 0) {
-      // Verify the conversation exists and belongs to the user
+    if (conversationId) {
+      // Set the conversation ID directly - the individual conversation query will validate
+      setSelectedConversationId(conversationId);
+      
+      // If the conversation isn't in our list, refresh the list
       const conversationExists = conversations.some(c => c.id === conversationId);
-      if (conversationExists) {
-        setSelectedConversationId(conversationId);
-        // Clear only the conversation parameter while preserving other query params
-        urlParams.delete('conversation');
-        const newSearch = urlParams.toString();
-        const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '');
-        window.history.replaceState({}, '', newUrl);
+      if (!conversationExists && conversations.length > 0) {
+        // Refresh conversations list to include the new/updated conversation
+        queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
       }
+      
+      // Clear only the conversation parameter while preserving other query params
+      urlParams.delete('conversation');
+      const newSearch = urlParams.toString();
+      const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '');
+      window.history.replaceState({}, '', newUrl);
     }
   }, [conversations]);
 

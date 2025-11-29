@@ -67,11 +67,22 @@ export default function SellerMessages() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const conversationId = params.get("conversation");
-    if (conversationId && conversations.length > 0) {
+    if (conversationId) {
+      // Set the conversation ID directly - the individual conversation query will validate
+      setSelectedConversationId(conversationId);
+      
+      // If the conversation isn't in our list, refresh the list
       const conversationExists = conversations.some(c => c.id === conversationId);
-      if (conversationExists) {
-        setSelectedConversationId(conversationId);
+      if (!conversationExists && conversations.length > 0) {
+        // Refresh conversations list to include the new/updated conversation
+        queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
       }
+      
+      // Clear the conversation parameter from URL
+      params.delete("conversation");
+      const newSearch = params.toString();
+      const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '');
+      window.history.replaceState({}, '', newUrl);
     }
   }, [conversations, location]);
 
