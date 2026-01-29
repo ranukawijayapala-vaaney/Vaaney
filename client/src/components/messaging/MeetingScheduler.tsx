@@ -58,16 +58,7 @@ export function MeetingScheduler({ conversationId, userRole, userId }: MeetingSc
   const [meetingDescription, setMeetingDescription] = useState("");
 
   const { data: meetings = [], isLoading } = useQuery<Meeting[]>({
-    queryKey: ["/api/meetings/conversation", conversationId],
-    queryFn: async () => {
-      const response = await fetch(`/api/meetings/conversation/${conversationId}`, {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        throw new Error("Failed to fetch meetings");
-      }
-      return response.json();
-    },
+    queryKey: [`/api/meetings/conversation/${conversationId}`],
     enabled: !!conversationId,
   });
 
@@ -86,7 +77,7 @@ export function MeetingScheduler({ conversationId, userRole, userId }: MeetingSc
         title: "Meeting Proposed",
         description: "Your meeting request has been sent.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/meetings/conversation", conversationId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/meetings/conversation/${conversationId}`] });
       setShowScheduleDialog(false);
       resetForm();
     },
@@ -108,7 +99,7 @@ export function MeetingScheduler({ conversationId, userRole, userId }: MeetingSc
         title: "Meeting Confirmed",
         description: "The meeting has been confirmed.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/meetings/conversation", conversationId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/meetings/conversation/${conversationId}`] });
     },
     onError: (error: any) => {
       toast({
@@ -128,7 +119,7 @@ export function MeetingScheduler({ conversationId, userRole, userId }: MeetingSc
         title: "Meeting Cancelled",
         description: "The meeting has been cancelled.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/meetings/conversation", conversationId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/meetings/conversation/${conversationId}`] });
     },
     onError: (error: any) => {
       toast({
