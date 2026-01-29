@@ -7,6 +7,7 @@ import { ConversationList } from "@/components/messaging/ConversationList";
 import { MessageThread } from "@/components/messaging/MessageThread";
 import { MessageInput } from "@/components/messaging/MessageInput";
 import { WorkflowPanel } from "@/components/messaging/WorkflowPanel";
+import { MeetingScheduler } from "@/components/messaging/MeetingScheduler";
 import { MessageCircle, Plus, CheckCircle, ArrowLeft, HeadphonesIcon, Package } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -357,9 +358,9 @@ export default function BuyerMessages() {
             )}
           </Card>
 
-          {/* Workflow Panel - Show below message thread on mobile */}
+          {/* Workflow Panel & Meeting Scheduler - Show below message thread on mobile */}
           {selectedConversationId && conversationContext && (
-            <div className="xl:hidden mt-4">
+            <div className="xl:hidden mt-4 space-y-4">
               <WorkflowPanel
                 conversationId={selectedConversationId}
                 productId={conversationContext.conversation.productId}
@@ -373,13 +374,20 @@ export default function BuyerMessages() {
                 packages={conversationContext.packages}
                 conversation={conversationContext.conversation}
               />
+              {user && (
+                <MeetingScheduler
+                  conversationId={selectedConversationId}
+                  userRole="buyer"
+                  userId={user.id}
+                />
+              )}
             </div>
           )}
         </div>
 
-        {/* Workflow Panel - Desktop sidebar only */}
+        {/* Workflow Panel & Meeting Scheduler - Desktop sidebar only */}
         {selectedConversationId && conversationContext && (
-          <div className="hidden xl:block">
+          <div className="hidden xl:block space-y-4">
             <WorkflowPanel
               conversationId={selectedConversationId}
               productId={conversationContext.conversation.productId}
@@ -393,6 +401,13 @@ export default function BuyerMessages() {
               packages={conversationContext.packages}
               conversation={conversationContext.conversation}
             />
+            {user && (
+              <MeetingScheduler
+                conversationId={selectedConversationId}
+                userRole="buyer"
+                userId={user.id}
+              />
+            )}
           </div>
         )}
       </div>

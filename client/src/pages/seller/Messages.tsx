@@ -7,6 +7,7 @@ import { ConversationList } from "@/components/messaging/ConversationList";
 import { MessageThread } from "@/components/messaging/MessageThread";
 import { MessageInput } from "@/components/messaging/MessageInput";
 import { WorkflowPanel } from "@/components/messaging/WorkflowPanel";
+import { MeetingScheduler } from "@/components/messaging/MeetingScheduler";
 import { MessageCircle, CheckCircle, Plus, HeadphonesIcon, Store, ArrowLeft } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -362,23 +363,32 @@ export default function SellerMessages() {
         </Card>
         </div>
 
-        {/* Workflow Panel - Right Column (Desktop), Drawer (Mobile) */}
+        {/* Workflow Panel & Meeting Scheduler - Right Column (Desktop), Drawer (Mobile) */}
         {selectedConversationId && conversationContext && (
-          <WorkflowPanel
-            conversationId={selectedConversationId}
-            requiresDesignApproval={conversationContext.requiresDesignApproval}
-            requiresQuote={conversationContext.requiresQuote}
-            userRole="seller"
-            productId={conversationContext.conversation.productId}
-            serviceId={conversationContext.conversation.serviceId}
-            itemName={conversationContext.linkedItem?.name}
-            variants={conversationContext.variants}
-            packages={conversationContext.packages}
-            conversation={conversationContext.conversation}
-            approvedDesign={approvedDesign}
-            pendingDesigns={pendingDesigns}
-            activeQuote={activeQuote}
-          />
+          <div className="space-y-4">
+            <WorkflowPanel
+              conversationId={selectedConversationId}
+              requiresDesignApproval={conversationContext.requiresDesignApproval}
+              requiresQuote={conversationContext.requiresQuote}
+              userRole="seller"
+              productId={conversationContext.conversation.productId}
+              serviceId={conversationContext.conversation.serviceId}
+              itemName={conversationContext.linkedItem?.name}
+              variants={conversationContext.variants}
+              packages={conversationContext.packages}
+              conversation={conversationContext.conversation}
+              approvedDesign={approvedDesign}
+              pendingDesigns={pendingDesigns}
+              activeQuote={activeQuote}
+            />
+            {user && (
+              <MeetingScheduler
+                conversationId={selectedConversationId}
+                userRole="seller"
+                userId={user.id}
+              />
+            )}
+          </div>
         )}
       </div>
 

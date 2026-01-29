@@ -55,6 +55,7 @@ import SellerReturns from "@/pages/seller/Returns";
 import SellerQuotes from "@/pages/seller/Quotes";
 import SellerDesigns from "@/pages/seller/Designs";
 
+import MeetingRoom from "@/pages/MeetingRoom";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import Users from "@/pages/admin/Users";
 import Verifications from "@/pages/admin/Verifications";
@@ -95,6 +96,7 @@ function Router() {
         <Route path="/about" component={AboutUs} />
         <Route path="/mock-ipg" component={MockIPG} />
         <Route path="/admin-setup" component={AdminSetup} />
+        <Route path="/meeting/:meetingId" component={MeetingRoom} />
         <Route path="/marketplace">
           {() => (
             <GuestLayout>
@@ -179,6 +181,7 @@ function Router() {
           <Route path="/book-service/:id">
             {(params) => <ServiceBooking serviceId={params.id} />}
           </Route>
+          <Route path="/meeting/:meetingId" component={MeetingRoom} />
           <Route path="/mock-ipg" component={MockIPG} />
           <Route component={NotFound} />
         </Switch>
@@ -211,6 +214,7 @@ function Router() {
           <Route path="/book-service/:id">
             {(params) => <ServiceBooking serviceId={params.id} />}
           </Route>
+          <Route path="/meeting/:meetingId" component={MeetingRoom} />
           <Route path="/mock-ipg" component={MockIPG} />
           <Route component={NotFound} />
         </Switch>
