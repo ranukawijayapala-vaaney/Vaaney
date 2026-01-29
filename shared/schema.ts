@@ -1614,3 +1614,55 @@ export const chatSessionsRelations = relations(chatSessions, ({ one }) => ({
 
 export type ChatSession = typeof chatSessions.$inferSelect;
 export type InsertChatSession = typeof chatSessions.$inferInsert;
+
+// Meeting status enum
+export type MeetingStatus = "proposed" | "confirmed" | "cancelled" | "completed";
+
+// Meetings table for scheduling video calls between buyers and sellers
+export const meetings = pgTable("meetings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  conversationId: varchar("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  proposedById: varchar("proposed_by_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  buyerId: varchar("buyer_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  sellerId: varchar("seller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  scheduledAt: timestamp("scheduled_at").notNull(),
+  durationMinutes: integer("duration_minutes").notNull().default(30),
+  status: varchar("status", { length: 20 }).notNull().default("proposed").$type<MeetingStatus>(),
+  roomName: varchar("room_name", { length: 255 }), // Twilio room name
+  title: varchar("title", { length: 255 }),
+  description: text("description"),
+  confirmedAt: timestamp("confirmed_at"),
+  cancelledAt: timestamp("cancelled_at"),
+  cancelReason: text("cancel_reason"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const meetingsRelations = relations(meetings, ({ one }) => ({
+  conversation: one(conversations, {
+    fields: [meetings.conversationId],
+    references: [conversations.id],
+  }),
+  proposedBy: one(users, {
+    fields: [meetings.proposedById],
+    references: [users.id],
+  }),
+  buyer: one(users, {
+    fields: [meetings.buyerId],
+    references: [users.id],
+  }),
+  seller: one(users, {
+    fields: [meetings.sellerId],
+    references: [users.id],
+  }),
+}));
+
+export const insertMeetingSchema = createInsertSchema(meetings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type Meeting = typeof meetings.$inferSelect;
+export type InsertMeeting = z.infer<typeof insertMeetingSchema>;

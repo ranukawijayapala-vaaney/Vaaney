@@ -89,6 +89,10 @@ import {
   chatSessions,
   type ChatSession,
   type InsertChatSession,
+  meetings,
+  type Meeting,
+  type InsertMeeting,
+  type MeetingStatus,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, lt, gte, inArray, notInArray, or, isNull } from "drizzle-orm";
@@ -371,6 +375,18 @@ export interface IStorage {
   createChatSession(userId: string, sessionId: string, context: any): Promise<ChatSession>;
   getChatSession(userId: string, sessionId: string): Promise<ChatSession | undefined>;
   updateChatSession(id: string, messages: any[], context: any): Promise<ChatSession>;
+  
+  // Meeting management (for video calls between buyers and sellers)
+  createMeeting(meeting: InsertMeeting): Promise<Meeting>;
+  getMeeting(id: string): Promise<Meeting | undefined>;
+  getMeetingsByConversation(conversationId: string): Promise<Meeting[]>;
+  getMeetingsByUser(userId: string, status?: MeetingStatus): Promise<Meeting[]>;
+  getUpcomingMeetings(userId: string): Promise<Meeting[]>;
+  updateMeetingStatus(id: string, status: MeetingStatus, updates?: Partial<Meeting>): Promise<Meeting>;
+  confirmMeeting(id: string, userId: string): Promise<Meeting>;
+  cancelMeeting(id: string, userId: string, reason?: string): Promise<Meeting>;
+  completeMeeting(id: string): Promise<Meeting>;
+  setMeetingRoom(id: string, roomName: string): Promise<Meeting>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3490,6 +3506,147 @@ export class DatabaseStorage implements IStorage {
     }
     
     return session;
+  }
+
+  // Meeting Management Implementation
+  
+  async createMeeting(meetingData: InsertMeeting): Promise<Meeting> {
+    const [meeting] = await db
+      .insert(meetings)
+      .values(meetingData)
+      .returning();
+    return meeting;
+  }
+
+  async getMeeting(id: string): Promise<Meeting | undefined> {
+    const [meeting] = await db
+      .select()
+      .from(meetings)
+      .where(eq(meetings.id, id));
+    return meeting;
+  }
+
+  async getMeetingsByConversation(conversationId: string): Promise<Meeting[]> {
+    return await db
+      .select()
+      .from(meetings)
+      .where(eq(meetings.conversationId, conversationId))
+      .orderBy(desc(meetings.scheduledAt));
+  }
+
+  async getMeetingsByUser(userId: string, status?: MeetingStatus): Promise<Meeting[]> {
+    const conditions = [
+      or(
+        eq(meetings.buyerId, userId),
+        eq(meetings.sellerId, userId)
+      )
+    ];
+    
+    if (status) {
+      conditions.push(eq(meetings.status, status));
+    }
+    
+    return await db
+      .select()
+      .from(meetings)
+      .where(and(...conditions))
+      .orderBy(desc(meetings.scheduledAt));
+  }
+
+  async getUpcomingMeetings(userId: string): Promise<Meeting[]> {
+    return await db
+      .select()
+      .from(meetings)
+      .where(
+        and(
+          or(
+            eq(meetings.buyerId, userId),
+            eq(meetings.sellerId, userId)
+          ),
+          inArray(meetings.status, ["proposed", "confirmed"]),
+          gte(meetings.scheduledAt, new Date())
+        )
+      )
+      .orderBy(meetings.scheduledAt);
+  }
+
+  async updateMeetingStatus(id: string, status: MeetingStatus, updates?: Partial<Meeting>): Promise<Meeting> {
+    const [meeting] = await db
+      .update(meetings)
+      .set({
+        status,
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(meetings.id, id))
+      .returning();
+    
+    if (!meeting) {
+      throw new Error("Meeting not found");
+    }
+    
+    return meeting;
+  }
+
+  async confirmMeeting(id: string, userId: string): Promise<Meeting> {
+    const meeting = await this.getMeeting(id);
+    if (!meeting) {
+      throw new Error("Meeting not found");
+    }
+    
+    // Only the other party can confirm (not the proposer)
+    if (meeting.proposedById === userId) {
+      throw new Error("Cannot confirm your own meeting proposal");
+    }
+    
+    // Verify user is a participant
+    if (meeting.buyerId !== userId && meeting.sellerId !== userId) {
+      throw new Error("Not authorized to confirm this meeting");
+    }
+    
+    return await this.updateMeetingStatus(id, "confirmed", {
+      confirmedAt: new Date(),
+    });
+  }
+
+  async cancelMeeting(id: string, userId: string, reason?: string): Promise<Meeting> {
+    const meeting = await this.getMeeting(id);
+    if (!meeting) {
+      throw new Error("Meeting not found");
+    }
+    
+    // Verify user is a participant
+    if (meeting.buyerId !== userId && meeting.sellerId !== userId) {
+      throw new Error("Not authorized to cancel this meeting");
+    }
+    
+    return await this.updateMeetingStatus(id, "cancelled", {
+      cancelledAt: new Date(),
+      cancelReason: reason,
+    });
+  }
+
+  async completeMeeting(id: string): Promise<Meeting> {
+    return await this.updateMeetingStatus(id, "completed", {
+      completedAt: new Date(),
+    });
+  }
+
+  async setMeetingRoom(id: string, roomName: string): Promise<Meeting> {
+    const [meeting] = await db
+      .update(meetings)
+      .set({
+        roomName,
+        updatedAt: new Date(),
+      })
+      .where(eq(meetings.id, id))
+      .returning();
+    
+    if (!meeting) {
+      throw new Error("Meeting not found");
+    }
+    
+    return meeting;
   }
 }
 
