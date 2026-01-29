@@ -61,6 +61,7 @@ import { trackShipments, isShipmentDelivered } from "./aramex";
 import { setupShippingRoutes } from "./shippingRoutes";
 import { setupQuoteApprovalRoutes } from "./quoteApprovalRoutes";
 import notificationRoutes from "./notificationRoutes";
+import meetingRoutes from "./meetingRoutes";
 import emailVerificationRoutes from "./emailVerificationRoutes";
 import {
   notifyOrderPaid,
@@ -6544,6 +6545,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Setup notification routes
   app.use("/api/notifications", isAuthenticated, notificationRoutes);
+  
+  // Setup meeting routes (video calls)
+  app.use("/api/meetings", meetingRoutes);
   
   // Setup email verification routes
   app.use("/api/auth", emailVerificationRoutes);
