@@ -43,8 +43,18 @@ export default function MeetingRoom() {
   
   const localVideoRef = useRef<HTMLDivElement>(null);
   const remoteVideosRef = useRef<HTMLDivElement>(null);
+  
+  // Refs to hold current state for cleanup functions
+  const roomRef = useRef<Room | null>(null);
+  const localTracksRef = useRef<LocalTrack[]>([]);
+  const screenTrackRef = useRef<LocalVideoTrack | null>(null);
+  const screenStreamRef = useRef<MediaStream | null>(null);
 
   const attachTrack = useCallback((track: any, container: HTMLDivElement) => {
+    // Clear any existing video elements first
+    const existingElements = container.querySelectorAll('video, audio');
+    existingElements.forEach(el => el.remove());
+    
     const element = track.attach();
     element.style.width = "100%";
     element.style.height = "100%";
@@ -89,6 +99,19 @@ export default function MeetingRoom() {
     });
   }, [detachTrack]);
 
+  // Sync refs with state
+  useEffect(() => {
+    roomRef.current = room;
+  }, [room]);
+  
+  useEffect(() => {
+    localTracksRef.current = localTracks;
+  }, [localTracks]);
+  
+  useEffect(() => {
+    screenTrackRef.current = screenTrack;
+  }, [screenTrack]);
+
   useEffect(() => {
     const joinMeeting = async () => {
       if (!meetingId) {
@@ -106,6 +129,7 @@ export default function MeetingRoom() {
           video: { width: 640, height: 480 },
         });
         setLocalTracks(tracks);
+        localTracksRef.current = tracks;
 
         if (localVideoRef.current) {
           const videoTrack = tracks.find(track => track.kind === "video");
@@ -120,19 +144,22 @@ export default function MeetingRoom() {
         });
 
         setRoom(newRoom);
+        roomRef.current = newRoom;
 
         newRoom.participants.forEach(handleParticipantConnected);
         newRoom.on("participantConnected", handleParticipantConnected);
         newRoom.on("participantDisconnected", handleParticipantDisconnected);
 
         newRoom.on("disconnected", () => {
-          localTracks.forEach(track => {
+          // Use refs to get current tracks
+          localTracksRef.current.forEach(track => {
             if ('stop' in track) {
               (track as LocalVideoTrack | LocalAudioTrack).stop();
             }
             detachTrack(track);
           });
           setRoom(null);
+          roomRef.current = null;
           setParticipants([]);
         });
 
@@ -147,10 +174,18 @@ export default function MeetingRoom() {
     joinMeeting();
 
     return () => {
-      if (room) {
-        room.disconnect();
+      // Use refs to get current state for cleanup
+      if (roomRef.current) {
+        roomRef.current.disconnect();
       }
-      localTracks.forEach(track => {
+      // Stop screen share stream if active
+      if (screenStreamRef.current) {
+        screenStreamRef.current.getTracks().forEach(t => t.stop());
+      }
+      if (screenTrackRef.current) {
+        screenTrackRef.current.stop();
+      }
+      localTracksRef.current.forEach(track => {
         if ('stop' in track) {
           (track as LocalVideoTrack | LocalAudioTrack).stop();
         }
@@ -158,6 +193,16 @@ export default function MeetingRoom() {
       });
     };
   }, [meetingId]);
+
+  // Re-attach local video when loading completes and ref becomes available
+  useEffect(() => {
+    if (!isLoading && localVideoRef.current && localTracks.length > 0) {
+      const videoTrack = localTracks.find(track => track.kind === "video");
+      if (videoTrack) {
+        attachTrack(videoTrack, localVideoRef.current);
+      }
+    }
+  }, [isLoading, localTracks, attachTrack]);
 
   const toggleVideo = useCallback(() => {
     const videoTrack = localTracks.find(track => track.kind === "video") as LocalVideoTrack;
@@ -189,31 +234,77 @@ export default function MeetingRoom() {
     if (isScreenSharing && screenTrack) {
       room.localParticipant.unpublishTrack(screenTrack);
       screenTrack.stop();
+      // Also stop the underlying stream
+      if (screenStreamRef.current) {
+        screenStreamRef.current.getTracks().forEach(t => t.stop());
+        screenStreamRef.current = null;
+      }
       setScreenTrack(null);
+      screenTrackRef.current = null;
       setIsScreenSharing(false);
     } else {
       try {
         const stream = await navigator.mediaDevices.getDisplayMedia({
           video: true,
-        });
-        const track = new LocalVideoTrack(stream.getVideoTracks()[0], {
+          audio: false,
+        } as DisplayMediaStreamOptions);
+        
+        // Store stream reference for cleanup
+        screenStreamRef.current = stream;
+        
+        const mediaStreamTrack = stream.getVideoTracks()[0];
+        
+        // Create LocalVideoTrack from the MediaStreamTrack
+        const track = new LocalVideoTrack(mediaStreamTrack, {
           name: "screen-share",
+          logLevel: "warn",
         });
         
-        room.localParticipant.publishTrack(track);
+        // Publish the track to the room
+        await room.localParticipant.publishTrack(track);
         setScreenTrack(track);
+        screenTrackRef.current = track;
         setIsScreenSharing(true);
 
-        track.on("stopped", () => {
-          room.localParticipant.unpublishTrack(track);
+        // Listen for when the user stops sharing via browser UI
+        const handleEnded = () => {
+          if (roomRef.current) {
+            roomRef.current.localParticipant.unpublishTrack(track);
+          }
+          track.stop();
+          if (screenStreamRef.current) {
+            screenStreamRef.current.getTracks().forEach(t => t.stop());
+            screenStreamRef.current = null;
+          }
           setScreenTrack(null);
+          screenTrackRef.current = null;
+          setIsScreenSharing(false);
+        };
+        
+        mediaStreamTrack.addEventListener("ended", handleEnded);
+
+        // Also handle the Twilio track stopped event
+        track.on("stopped", () => {
+          if (roomRef.current) {
+            roomRef.current.localParticipant.unpublishTrack(track);
+          }
+          if (screenStreamRef.current) {
+            screenStreamRef.current.getTracks().forEach(t => t.stop());
+            screenStreamRef.current = null;
+          }
+          setScreenTrack(null);
+          screenTrackRef.current = null;
           setIsScreenSharing(false);
         });
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to share screen:", err);
+        // User cancelled the screen share dialog - don't show error
+        if (err.name === "NotAllowedError" || err.name === "AbortError") {
+          return;
+        }
         toast({
           title: "Screen Share Failed",
-          description: "Could not start screen sharing",
+          description: err.message || "Could not start screen sharing",
           variant: "destructive",
         });
       }
@@ -221,19 +312,26 @@ export default function MeetingRoom() {
   }, [room, isScreenSharing, screenTrack, toast]);
 
   const leaveCall = useCallback(() => {
-    if (room) {
-      room.disconnect();
+    // Use refs to get current state for cleanup
+    if (roomRef.current) {
+      roomRef.current.disconnect();
     }
-    if (screenTrack) {
-      screenTrack.stop();
+    // Stop screen share stream
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach(t => t.stop());
+      screenStreamRef.current = null;
     }
-    localTracks.forEach(track => {
+    if (screenTrackRef.current) {
+      screenTrackRef.current.stop();
+      screenTrackRef.current = null;
+    }
+    localTracksRef.current.forEach(track => {
       if ('stop' in track) {
         (track as LocalVideoTrack | LocalAudioTrack).stop();
       }
     });
-    window.close();
-  }, [room, screenTrack, localTracks]);
+    setLocation("/buyer/messages");
+  }, [setLocation]);
 
   if (isLoading) {
     return (
