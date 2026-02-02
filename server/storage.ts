@@ -419,7 +419,8 @@ export interface IStorage {
   } | undefined>;
   updateSellerProfile(sellerId: string, profile: {
     shopName?: string;
-    shopLogo?: string;
+    shopLogo?: string | null;
+    shopBackgroundImage?: string | null;
     location?: string;
     expertise?: string[];
     aboutUs?: string;
@@ -3817,7 +3818,8 @@ export class DatabaseStorage implements IStorage {
 
   async updateSellerProfile(sellerId: string, profile: {
     shopName?: string;
-    shopLogo?: string;
+    shopLogo?: string | null;
+    shopBackgroundImage?: string | null;
     location?: string;
     expertise?: string[];
     aboutUs?: string;

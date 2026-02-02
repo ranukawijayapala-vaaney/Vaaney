@@ -84,10 +84,22 @@ export default function SellerProfile() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-b">
+      <div 
+        className="relative border-b bg-gradient-to-r from-primary/10 to-primary/5"
+        style={seller.shopBackgroundImage ? {
+          backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.5)), url(${seller.shopBackgroundImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        } : undefined}
+      >
         <div className="container mx-auto px-4 py-8 max-w-6xl">
           <Link href="/">
-            <Button variant="ghost" size="sm" className="mb-4" data-testid="button-back-home">
+            <Button 
+              variant={seller.shopBackgroundImage ? "secondary" : "ghost"} 
+              size="sm" 
+              className="mb-4"
+              data-testid="button-back-home"
+            >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Marketplace
             </Button>
@@ -103,15 +115,26 @@ export default function SellerProfile() {
             
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-2">
-                <h1 className="text-2xl md:text-3xl font-bold" data-testid="text-shop-name">{shopName}</h1>
+                <h1 
+                  className={`text-2xl md:text-3xl font-bold ${seller.shopBackgroundImage ? "text-white drop-shadow-lg" : ""}`}
+                  data-testid="text-shop-name"
+                >
+                  {shopName}
+                </h1>
                 {seller.verificationStatus === "verified" && (
-                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                  <Badge 
+                    variant="secondary" 
+                    className={seller.shopBackgroundImage 
+                      ? "bg-green-600/80 text-white border-green-400/50" 
+                      : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                    }
+                  >
                     Verified Seller
                   </Badge>
                 )}
               </div>
               
-              <div className="flex flex-wrap gap-4 text-muted-foreground mb-4">
+              <div className={`flex flex-wrap gap-4 mb-4 ${seller.shopBackgroundImage ? "text-white/90" : "text-muted-foreground"}`}>
                 {seller.location && (
                   <div className="flex items-center gap-1">
                     <MapPin className="w-4 h-4" />
@@ -135,7 +158,11 @@ export default function SellerProfile() {
               {seller.expertise && seller.expertise.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {seller.expertise.map((exp, idx) => (
-                    <Badge key={idx} variant="outline" className="text-sm">
+                    <Badge 
+                      key={idx} 
+                      variant="outline" 
+                      className={`text-sm ${seller.shopBackgroundImage ? "border-white/50 text-white bg-white/10" : ""}`}
+                    >
                       {exp}
                     </Badge>
                   ))}

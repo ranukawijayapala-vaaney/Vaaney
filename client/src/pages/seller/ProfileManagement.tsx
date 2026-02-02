@@ -181,6 +181,10 @@ export default function ProfileManagement() {
   const [expertiseList, setExpertiseList] = useState<string[]>([]);
   const [projectImages, setProjectImages] = useState<string[]>([]);
   const [galleryCaption, setGalleryCaption] = useState("");
+  const [shopLogo, setShopLogo] = useState<string | null>(null);
+  const [shopBackgroundImage, setShopBackgroundImage] = useState<string | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingBackground, setIsUploadingBackground] = useState(false);
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery<SellerProject[]>({
     queryKey: ["/api/seller/projects"],
@@ -202,11 +206,17 @@ export default function ProfileManagement() {
     },
   });
 
-  useState(() => {
+  useEffect(() => {
     if (user?.expertise) {
       setExpertiseList(user.expertise);
     }
-  });
+    if (user?.shopLogo) {
+      setShopLogo(user.shopLogo);
+    }
+    if (user?.shopBackgroundImage) {
+      setShopBackgroundImage(user.shopBackgroundImage);
+    }
+  }, [user]);
 
   const projectForm = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
@@ -223,6 +233,8 @@ export default function ProfileManagement() {
         ...data,
         expertise: expertiseList,
         yearsExperience: data.yearsExperience || null,
+        shopLogo,
+        shopBackgroundImage,
       };
       return apiRequest("PUT", "/api/seller/profile", payload);
     },
@@ -345,6 +357,58 @@ export default function ProfileManagement() {
     }
   };
 
+  const handleImageUpload = async (
+    file: File,
+    setUploading: (val: boolean) => void,
+    setUrl: (url: string | null) => void
+  ) => {
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Invalid file", description: "Please select an image file", variant: "destructive" });
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Maximum file size is 10MB", variant: "destructive" });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const result = await apiRequest(
+        "POST",
+        "/api/object-storage/upload-url",
+        { fileName: file.name, contentType: file.type }
+      ) as { uploadUrl: string; objectPath: string };
+
+      const uploadResponse = await fetch(result.uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+
+      if (!uploadResponse.ok) throw new Error("Upload failed");
+
+      await apiRequest("POST", "/api/object-storage/finalize-upload", {
+        objectPath: result.objectPath,
+        visibility: "public",
+      });
+
+      const normalizedPath = result.objectPath.startsWith("/")
+        ? `/objects${result.objectPath.split(".private")[1] || result.objectPath}`
+        : result.objectPath;
+      
+      setUrl(normalizedPath);
+      toast({ title: "Image uploaded successfully" });
+    } catch (error) {
+      toast({ 
+        title: "Upload failed", 
+        description: error instanceof Error ? error.message : "An error occurred", 
+        variant: "destructive" 
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -383,6 +447,106 @@ export default function ProfileManagement() {
             <CardContent>
               <Form {...profileForm}>
                 <form onSubmit={profileForm.handleSubmit((data) => updateProfileMutation.mutate(data))} className="space-y-6">
+                  {/* Branding Section */}
+                  <div className="space-y-4">
+                    <Label className="text-base font-medium">Shop Branding</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Logo Upload */}
+                      <div className="space-y-2">
+                        <Label>Shop Logo</Label>
+                        <p className="text-sm text-muted-foreground">
+                          A square logo works best (recommended: 200x200px)
+                        </p>
+                        <div className="relative">
+                          {shopLogo ? (
+                            <div className="relative w-32 h-32 rounded-lg border overflow-hidden bg-muted">
+                              <img src={shopLogo} alt="Shop logo" className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => setShopLogo(null)}
+                                className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-destructive-foreground"
+                                data-testid="button-remove-logo"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed rounded-lg cursor-pointer hover-elevate bg-muted/50">
+                              <div className="flex flex-col items-center justify-center p-2">
+                                {isUploadingLogo ? (
+                                  <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
+                                ) : (
+                                  <>
+                                    <ImageIcon className="w-6 h-6 mb-1 text-muted-foreground" />
+                                    <span className="text-xs text-muted-foreground text-center">Upload Logo</span>
+                                  </>
+                                )}
+                              </div>
+                              <input
+                                type="file"
+                                className="hidden"
+                                accept="image/*"
+                                disabled={isUploadingLogo}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleImageUpload(file, setIsUploadingLogo, setShopLogo);
+                                }}
+                                data-testid="input-upload-logo"
+                              />
+                            </label>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Background Image Upload */}
+                      <div className="space-y-2">
+                        <Label>Header Background Image</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Wide image for your profile header (recommended: 1200x400px)
+                        </p>
+                        <div className="relative">
+                          {shopBackgroundImage ? (
+                            <div className="relative w-full h-24 rounded-lg border overflow-hidden bg-muted">
+                              <img src={shopBackgroundImage} alt="Background" className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => setShopBackgroundImage(null)}
+                                className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-destructive-foreground"
+                                data-testid="button-remove-background"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer hover-elevate bg-muted/50">
+                              <div className="flex flex-col items-center justify-center p-2">
+                                {isUploadingBackground ? (
+                                  <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
+                                ) : (
+                                  <>
+                                    <ImageIcon className="w-6 h-6 mb-1 text-muted-foreground" />
+                                    <span className="text-xs text-muted-foreground text-center">Upload Background</span>
+                                  </>
+                                )}
+                              </div>
+                              <input
+                                type="file"
+                                className="hidden"
+                                accept="image/*"
+                                disabled={isUploadingBackground}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleImageUpload(file, setIsUploadingBackground, setShopBackgroundImage);
+                                }}
+                                data-testid="input-upload-background"
+                              />
+                            </label>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={profileForm.control}

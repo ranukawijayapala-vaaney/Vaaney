@@ -76,6 +76,7 @@ export const users = pgTable("users", {
   // Extended seller profile fields
   shopName: varchar("shop_name", { length: 255 }),
   shopLogo: varchar("shop_logo"),
+  shopBackgroundImage: varchar("shop_background_image"),
   location: varchar("location", { length: 255 }),
   expertise: text("expertise").array(),
   aboutUs: text("about_us"),
