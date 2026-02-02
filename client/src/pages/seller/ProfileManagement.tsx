@@ -109,11 +109,7 @@ export default function ProfileManagement() {
         expertise: expertiseList,
         yearsExperience: data.yearsExperience || null,
       };
-      return apiRequest("/api/seller/profile", {
-        method: "PUT",
-        body: JSON.stringify(payload),
-        headers: { "Content-Type": "application/json" },
-      });
+      return apiRequest("PUT", "/api/seller/profile", payload);
     },
     onSuccess: () => {
       toast({ title: "Profile updated successfully" });
@@ -130,11 +126,7 @@ export default function ProfileManagement() {
         ...data,
         images: data.images ? data.images.split(",").map(s => s.trim()).filter(Boolean) : [],
       };
-      return apiRequest("/api/seller/projects", {
-        method: "POST",
-        body: JSON.stringify(payload),
-        headers: { "Content-Type": "application/json" },
-      });
+      return apiRequest("POST", "/api/seller/projects", payload);
     },
     onSuccess: () => {
       toast({ title: "Project added successfully" });
@@ -153,11 +145,7 @@ export default function ProfileManagement() {
         ...data,
         images: data.images ? data.images.split(",").map(s => s.trim()).filter(Boolean) : [],
       };
-      return apiRequest(`/api/seller/projects/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-        headers: { "Content-Type": "application/json" },
-      });
+      return apiRequest("PUT", `/api/seller/projects/${id}`, payload);
     },
     onSuccess: () => {
       toast({ title: "Project updated successfully" });
@@ -173,7 +161,7 @@ export default function ProfileManagement() {
 
   const deleteProjectMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest(`/api/seller/projects/${id}`, { method: "DELETE" });
+      return apiRequest("DELETE", `/api/seller/projects/${id}`);
     },
     onSuccess: () => {
       toast({ title: "Project deleted successfully" });
