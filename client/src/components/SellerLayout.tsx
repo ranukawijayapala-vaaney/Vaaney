@@ -1,4 +1,4 @@
-import { LayoutDashboard, Store, Calendar as CalendarIcon, DollarSign, MessageCircle, LogOut, ShoppingBag, Package2, Menu, X, Rocket, ChevronDown, Truck, User, AlertCircle, RotateCcw, FileText, FileImage } from "lucide-react";
+import { LayoutDashboard, Store, Calendar as CalendarIcon, DollarSign, MessageCircle, LogOut, ShoppingBag, Package2, Menu, X, Rocket, ChevronDown, Truck, User, AlertCircle, RotateCcw, FileText, FileImage, Building2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +28,7 @@ export function SellerLayout({ children }: SellerLayoutProps) {
   const isInventoryActive = location === "/seller/products" || location === "/seller/services";
   const isSalesActive = location === "/seller/orders" || location === "/seller/bookings" || location === "/seller/returns";
   const isLeadsActive = location === "/seller/quotes" || location === "/seller/designs";
-  const isMoreActive = location === "/seller/boost" || location === "/seller/payouts" || location === "/profile";
+  const isMoreActive = location === "/seller/boost" || location === "/seller/payouts" || location === "/profile" || location === "/seller/profile-management";
 
   return (
     <div className="min-h-screen bg-background">
@@ -178,6 +178,12 @@ export function SellerLayout({ children }: SellerLayoutProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild data-testid="link-shop-profile">
+                    <Link href="/seller/profile-management">
+                      <Building2 className="h-4 w-4 mr-2" />
+                      Shop Profile
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem asChild data-testid="link-boost">
                     <Link href="/seller/boost">
                       <Rocket className="h-4 w-4 mr-2" />
@@ -193,7 +199,7 @@ export function SellerLayout({ children }: SellerLayoutProps) {
                   <DropdownMenuItem asChild data-testid="link-profile">
                     <Link href="/profile">
                       <User className="h-4 w-4 mr-2" />
-                      Profile
+                      My Account
                     </Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -299,6 +305,12 @@ export function SellerLayout({ children }: SellerLayoutProps) {
                 </Button>
 
                 <div className="text-xs font-semibold text-muted-foreground px-3 py-2">More</div>
+                <Button asChild variant="ghost" size="sm" className="w-full justify-start pl-6" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-shop-profile">
+                  <Link href="/seller/profile-management">
+                    <Building2 className="h-4 w-4 mr-2" />
+                    Shop Profile
+                  </Link>
+                </Button>
                 <Button asChild variant="ghost" size="sm" className="w-full justify-start pl-6" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-boost">
                   <Link href="/seller/boost">
                     <Rocket className="h-4 w-4 mr-2" />
@@ -314,7 +326,7 @@ export function SellerLayout({ children }: SellerLayoutProps) {
                 <Button asChild variant="ghost" size="sm" className="w-full justify-start pl-6" onClick={() => setMobileMenuOpen(false)} data-testid="mobile-link-profile">
                   <Link href="/profile">
                     <User className="h-4 w-4 mr-2" />
-                    Profile
+                    My Account
                   </Link>
                 </Button>
 

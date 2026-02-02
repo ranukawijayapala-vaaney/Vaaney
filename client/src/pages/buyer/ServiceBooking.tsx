@@ -23,8 +23,10 @@ import type { Service, ServicePackage, PaymentMethod } from "@shared/schema";
 interface ServiceWithPackages extends Service {
   packages: ServicePackage[];
   seller: {
+    id: string;
     firstName: string;
     lastName: string;
+    shopName?: string;
   };
 }
 
@@ -964,12 +966,20 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
                   </Collapsible>
 
                   {service.seller && (
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Badge variant="secondary" className="text-xs">Verified</Badge>
                         <span className="text-sm text-muted-foreground">
-                          {service.seller.firstName} {service.seller.lastName}
+                          {service.seller.shopName || `${service.seller.firstName} ${service.seller.lastName}`}
                         </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/seller/${service.seller.id}`)}
+                          data-testid="link-view-seller-profile"
+                        >
+                          View Seller Profile
+                        </Button>
                       </div>
                       <Button
                         variant="outline"

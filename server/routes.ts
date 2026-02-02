@@ -965,6 +965,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: seller.id,
           firstName: seller.firstName,
           lastName: seller.lastName,
+          shopName: seller.shopName,
           verificationStatus: seller.verificationStatus
         } : null
       });
@@ -1013,8 +1014,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...service, 
         packages,
         seller: seller ? {
+          id: seller.id,
           firstName: seller.firstName,
           lastName: seller.lastName,
+          shopName: seller.shopName,
           verificationStatus: seller.verificationStatus
         } : null
       });
@@ -1133,6 +1136,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const ratings = await storage.getSellerRatings(req.params.sellerId);
       res.json(ratings);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Public Seller Profile - accessible by buyers
+  app.get("/api/sellers/:sellerId/profile", async (req: Request, res: Response) => {
+    try {
+      const profile = await storage.getSellerProfile(req.params.sellerId);
+      if (!profile) {
+        return res.status(404).json({ message: "Seller not found" });
+      }
+      res.json(profile);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Seller profile update - seller only
+  app.put("/api/seller/profile", isAuthenticated, requireRole(["seller"]), async (req: AuthRequest, res: Response) => {
+    try {
+      const profile = await storage.updateSellerProfile(req.user!.id, req.body);
+      res.json(profile);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Seller projects management
+  app.get("/api/seller/projects", isAuthenticated, requireRole(["seller"]), async (req: AuthRequest, res: Response) => {
+    try {
+      const projects = await storage.getSellerProjects(req.user!.id);
+      res.json(projects);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/seller/projects", isAuthenticated, requireRole(["seller"]), async (req: AuthRequest, res: Response) => {
+    try {
+      const project = await storage.createSellerProject({ ...req.body, sellerId: req.user!.id });
+      res.status(201).json(project);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/seller/projects/:id", isAuthenticated, requireRole(["seller"]), async (req: AuthRequest, res: Response) => {
+    try {
+      const project = await storage.updateSellerProject(req.params.id, req.user!.id, req.body);
+      res.json(project);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/seller/projects/:id", isAuthenticated, requireRole(["seller"]), async (req: AuthRequest, res: Response) => {
+    try {
+      await storage.deleteSellerProject(req.params.id, req.user!.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Seller gallery management
+  app.get("/api/seller/gallery", isAuthenticated, requireRole(["seller"]), async (req: AuthRequest, res: Response) => {
+    try {
+      const category = req.query.category as string | undefined;
+      const gallery = await storage.getSellerGallery(req.user!.id, category);
+      res.json(gallery);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/seller/gallery", isAuthenticated, requireRole(["seller"]), async (req: AuthRequest, res: Response) => {
+    try {
+      const image = await storage.createSellerGalleryImage({ ...req.body, sellerId: req.user!.id });
+      res.status(201).json(image);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/seller/gallery/:id", isAuthenticated, requireRole(["seller"]), async (req: AuthRequest, res: Response) => {
+    try {
+      const image = await storage.updateSellerGalleryImage(req.params.id, req.user!.id, req.body);
+      res.json(image);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/seller/gallery/:id", isAuthenticated, requireRole(["seller"]), async (req: AuthRequest, res: Response) => {
+    try {
+      await storage.deleteSellerGalleryImage(req.params.id, req.user!.id);
+      res.status(204).send();
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

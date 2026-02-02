@@ -54,8 +54,10 @@ import SellerMessages from "@/pages/seller/Messages";
 import SellerReturns from "@/pages/seller/Returns";
 import SellerQuotes from "@/pages/seller/Quotes";
 import SellerDesigns from "@/pages/seller/Designs";
+import ProfileManagement from "@/pages/seller/ProfileManagement";
 
 import MeetingRoom from "@/pages/MeetingRoom";
+import SellerProfile from "@/pages/SellerProfile";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import Users from "@/pages/admin/Users";
 import Verifications from "@/pages/admin/Verifications";
@@ -115,6 +117,13 @@ function Router() {
           {(params) => (
             <GuestLayout>
               <ServiceBooking serviceId={params.id} />
+            </GuestLayout>
+          )}
+        </Route>
+        <Route path="/seller/:sellerId">
+          {(params) => (
+            <GuestLayout>
+              <SellerProfile />
             </GuestLayout>
           )}
         </Route>
@@ -181,6 +190,7 @@ function Router() {
           <Route path="/book-service/:id">
             {(params) => <ServiceBooking serviceId={params.id} />}
           </Route>
+          <Route path="/seller/:sellerId" component={SellerProfile} />
           <Route path="/meeting/:meetingId" component={MeetingRoom} />
           <Route path="/mock-ipg" component={MockIPG} />
           <Route component={NotFound} />
@@ -206,6 +216,7 @@ function Router() {
           <Route path="/seller/payouts" component={Payouts} />
           <Route path="/seller/quotes" component={SellerQuotes} />
           <Route path="/seller/designs" component={SellerDesigns} />
+          <Route path="/seller/profile-management" component={ProfileManagement} />
           <Route path="/notifications" component={Notifications} />
           <Route path="/profile" component={Profile} />
           <Route path="/product/:id">
@@ -214,6 +225,7 @@ function Router() {
           <Route path="/book-service/:id">
             {(params) => <ServiceBooking serviceId={params.id} />}
           </Route>
+          <Route path="/seller/:sellerId" component={SellerProfile} />
           <Route path="/meeting/:meetingId" component={MeetingRoom} />
           <Route path="/mock-ipg" component={MockIPG} />
           <Route component={NotFound} />
@@ -242,6 +254,7 @@ function Router() {
           <Route path="/admin/bookings" component={AdminBookings} />
           <Route path="/notifications" component={Notifications} />
           <Route path="/profile" component={Profile} />
+          <Route path="/seller/:sellerId" component={SellerProfile} />
           <Route path="/mock-ipg" component={MockIPG} />
           <Route component={NotFound} />
         </Switch>

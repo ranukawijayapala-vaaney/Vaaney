@@ -73,6 +73,15 @@ export const users = pgTable("users", {
   bankAccountNumber: varchar("bank_account_number", { length: 100 }),
   bankAccountHolderName: varchar("bank_account_holder_name", { length: 255 }),
   bankSwiftCode: varchar("bank_swift_code", { length: 20 }),
+  // Extended seller profile fields
+  shopName: varchar("shop_name", { length: 255 }),
+  shopLogo: varchar("shop_logo"),
+  location: varchar("location", { length: 255 }),
+  expertise: text("expertise").array(),
+  aboutUs: text("about_us"),
+  yearsExperience: integer("years_experience"),
+  facilities: text("facilities"),
+  facilityImages: text("facility_images").array(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -91,6 +100,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   shippingAddresses: many(shippingAddresses),
   createdBankAccounts: many(bankAccounts, { relationName: "createdBankAccounts" }),
   updatedBankAccounts: many(bankAccounts, { relationName: "updatedBankAccounts" }),
+  sellerProjects: many(sellerProjects),
+  sellerGallery: many(sellerGallery),
 }));
 
 export type User = typeof users.$inferSelect;
@@ -108,6 +119,50 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
 
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type InsertPasswordResetToken = typeof passwordResetTokens.$inferInsert;
+
+// Seller Projects table - for showcasing past major projects
+export const sellerProjects = pgTable("seller_projects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sellerId: varchar("seller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  images: text("images").array(),
+  year: integer("year"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const sellerProjectsRelations = relations(sellerProjects, ({ one }) => ({
+  seller: one(users, {
+    fields: [sellerProjects.sellerId],
+    references: [users.id],
+  }),
+}));
+
+export type SellerProject = typeof sellerProjects.$inferSelect;
+export type InsertSellerProject = typeof sellerProjects.$inferInsert;
+export const insertSellerProjectSchema = createInsertSchema(sellerProjects).omit({ id: true, createdAt: true });
+
+// Seller Gallery table - for facility and portfolio images
+export const sellerGallery = pgTable("seller_gallery", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sellerId: varchar("seller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  imageUrl: varchar("image_url").notNull(),
+  caption: varchar("caption", { length: 255 }),
+  category: varchar("category", { length: 50 }), // 'facility', 'portfolio', 'team', etc.
+  displayOrder: integer("display_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const sellerGalleryRelations = relations(sellerGallery, ({ one }) => ({
+  seller: one(users, {
+    fields: [sellerGallery.sellerId],
+    references: [users.id],
+  }),
+}));
+
+export type SellerGalleryImage = typeof sellerGallery.$inferSelect;
+export type InsertSellerGalleryImage = typeof sellerGallery.$inferInsert;
+export const insertSellerGallerySchema = createInsertSchema(sellerGallery).omit({ id: true, createdAt: true });
 
 // Shipping Addresses table - for buyers to store multiple shipping addresses
 export const shippingAddresses = pgTable("shipping_addresses", {

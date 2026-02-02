@@ -534,7 +534,15 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
           {product.seller && (
             <div className="flex items-center gap-2">
               <Badge variant="secondary">Verified Seller</Badge>
-              <span className="text-sm">{product.seller.firstName} {product.seller.lastName}</span>
+              <span className="text-sm">{product.seller.shopName || `${product.seller.firstName} ${product.seller.lastName}`}</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => navigate(`/seller/${product.seller.id}`)}
+                data-testid="link-view-seller-profile"
+              >
+                View Seller Profile
+              </Button>
             </div>
           )}
 

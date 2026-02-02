@@ -93,6 +93,12 @@ import {
   type Meeting,
   type InsertMeeting,
   type MeetingStatus,
+  sellerProjects,
+  sellerGallery,
+  type SellerProject,
+  type InsertSellerProject,
+  type SellerGalleryImage,
+  type InsertSellerGalleryImage,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, lt, gte, inArray, notInArray, or, isNull } from "drizzle-orm";
@@ -387,6 +393,45 @@ export interface IStorage {
   cancelMeeting(id: string, userId: string, reason?: string): Promise<Meeting>;
   completeMeeting(id: string): Promise<Meeting>;
   setMeetingRoom(id: string, roomName: string): Promise<Meeting>;
+  
+  // Seller profile management
+  getSellerProfile(sellerId: string): Promise<{
+    seller: User;
+    projects: SellerProject[];
+    gallery: SellerGalleryImage[];
+    products: Product[];
+    services: Service[];
+    ratings: Array<{
+      id: string;
+      rating: number;
+      comment: string | null;
+      images: string[] | null;
+      createdAt: Date;
+      buyer: { firstName: string | null; lastName: string | null };
+    }>;
+  } | undefined>;
+  updateSellerProfile(sellerId: string, profile: {
+    shopName?: string;
+    shopLogo?: string;
+    location?: string;
+    expertise?: string[];
+    aboutUs?: string;
+    yearsExperience?: number;
+    facilities?: string;
+    facilityImages?: string[];
+  }): Promise<User>;
+  
+  // Seller projects management
+  createSellerProject(project: InsertSellerProject & { sellerId: string }): Promise<SellerProject>;
+  getSellerProjects(sellerId: string): Promise<SellerProject[]>;
+  updateSellerProject(id: string, sellerId: string, project: Partial<InsertSellerProject>): Promise<SellerProject>;
+  deleteSellerProject(id: string, sellerId: string): Promise<void>;
+  
+  // Seller gallery management
+  createSellerGalleryImage(image: InsertSellerGalleryImage & { sellerId: string }): Promise<SellerGalleryImage>;
+  getSellerGallery(sellerId: string, category?: string): Promise<SellerGalleryImage[]>;
+  updateSellerGalleryImage(id: string, sellerId: string, image: Partial<InsertSellerGalleryImage>): Promise<SellerGalleryImage>;
+  deleteSellerGalleryImage(id: string, sellerId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -3647,6 +3692,196 @@ export class DatabaseStorage implements IStorage {
     }
     
     return meeting;
+  }
+
+  // Seller profile management
+  async getSellerProfile(sellerId: string): Promise<{
+    seller: User;
+    projects: SellerProject[];
+    gallery: SellerGalleryImage[];
+    products: Product[];
+    services: Service[];
+    ratings: Array<{
+      id: string;
+      rating: number;
+      comment: string | null;
+      images: string[] | null;
+      createdAt: Date;
+      buyer: { firstName: string | null; lastName: string | null };
+    }>;
+  } | undefined> {
+    const [seller] = await db.select().from(users).where(and(eq(users.id, sellerId), eq(users.role, "seller")));
+    if (!seller) return undefined;
+
+    const projectsList = await db.select().from(sellerProjects)
+      .where(eq(sellerProjects.sellerId, sellerId))
+      .orderBy(desc(sellerProjects.year), desc(sellerProjects.createdAt));
+
+    const galleryList = await db.select().from(sellerGallery)
+      .where(eq(sellerGallery.sellerId, sellerId))
+      .orderBy(sellerGallery.displayOrder, sellerGallery.createdAt);
+
+    const productsList = await db.select().from(products)
+      .where(eq(products.sellerId, sellerId))
+      .orderBy(desc(products.createdAt));
+
+    const servicesList = await db.select().from(services)
+      .where(eq(services.sellerId, sellerId))
+      .orderBy(desc(services.createdAt));
+
+    // Get seller ratings from both order and booking ratings
+    const orderRatingsList = await db
+      .select({
+        id: orderRatings.id,
+        rating: orderRatings.rating,
+        comment: orderRatings.comment,
+        images: orderRatings.images,
+        createdAt: orderRatings.createdAt,
+        buyerFirstName: users.firstName,
+        buyerLastName: users.lastName,
+      })
+      .from(orderRatings)
+      .leftJoin(users, eq(orderRatings.buyerId, users.id))
+      .where(eq(orderRatings.sellerId, sellerId))
+      .orderBy(desc(orderRatings.createdAt));
+
+    const bookingRatingsList = await db
+      .select({
+        id: bookingRatings.id,
+        rating: bookingRatings.rating,
+        comment: bookingRatings.comment,
+        images: bookingRatings.images,
+        createdAt: bookingRatings.createdAt,
+        buyerFirstName: users.firstName,
+        buyerLastName: users.lastName,
+      })
+      .from(bookingRatings)
+      .leftJoin(users, eq(bookingRatings.buyerId, users.id))
+      .where(eq(bookingRatings.sellerId, sellerId))
+      .orderBy(desc(bookingRatings.createdAt));
+
+    const allRatings = [
+      ...orderRatingsList.map(r => ({
+        id: r.id,
+        rating: r.rating,
+        comment: r.comment,
+        images: r.images,
+        createdAt: r.createdAt!,
+        buyer: { firstName: r.buyerFirstName, lastName: r.buyerLastName },
+      })),
+      ...bookingRatingsList.map(r => ({
+        id: r.id,
+        rating: r.rating,
+        comment: r.comment,
+        images: r.images,
+        createdAt: r.createdAt!,
+        buyer: { firstName: r.buyerFirstName, lastName: r.buyerLastName },
+      })),
+    ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    return {
+      seller,
+      projects: projectsList,
+      gallery: galleryList,
+      products: productsList,
+      services: servicesList,
+      ratings: allRatings,
+    };
+  }
+
+  async updateSellerProfile(sellerId: string, profile: {
+    shopName?: string;
+    shopLogo?: string;
+    location?: string;
+    expertise?: string[];
+    aboutUs?: string;
+    yearsExperience?: number;
+    facilities?: string;
+    facilityImages?: string[];
+  }): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        ...profile,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, sellerId))
+      .returning();
+    
+    if (!user) {
+      throw new Error("Seller not found");
+    }
+    
+    return user;
+  }
+
+  // Seller projects management
+  async createSellerProject(project: InsertSellerProject & { sellerId: string }): Promise<SellerProject> {
+    const [newProject] = await db.insert(sellerProjects).values(project).returning();
+    return newProject;
+  }
+
+  async getSellerProjects(sellerId: string): Promise<SellerProject[]> {
+    return db.select().from(sellerProjects)
+      .where(eq(sellerProjects.sellerId, sellerId))
+      .orderBy(desc(sellerProjects.year), desc(sellerProjects.createdAt));
+  }
+
+  async updateSellerProject(id: string, sellerId: string, project: Partial<InsertSellerProject>): Promise<SellerProject> {
+    const [updated] = await db
+      .update(sellerProjects)
+      .set(project)
+      .where(and(eq(sellerProjects.id, id), eq(sellerProjects.sellerId, sellerId)))
+      .returning();
+    
+    if (!updated) {
+      throw new Error("Project not found or unauthorized");
+    }
+    
+    return updated;
+  }
+
+  async deleteSellerProject(id: string, sellerId: string): Promise<void> {
+    const result = await db
+      .delete(sellerProjects)
+      .where(and(eq(sellerProjects.id, id), eq(sellerProjects.sellerId, sellerId)));
+  }
+
+  // Seller gallery management
+  async createSellerGalleryImage(image: InsertSellerGalleryImage & { sellerId: string }): Promise<SellerGalleryImage> {
+    const [newImage] = await db.insert(sellerGallery).values(image).returning();
+    return newImage;
+  }
+
+  async getSellerGallery(sellerId: string, category?: string): Promise<SellerGalleryImage[]> {
+    const conditions = [eq(sellerGallery.sellerId, sellerId)];
+    if (category) {
+      conditions.push(eq(sellerGallery.category, category));
+    }
+    
+    return db.select().from(sellerGallery)
+      .where(and(...conditions))
+      .orderBy(sellerGallery.displayOrder, sellerGallery.createdAt);
+  }
+
+  async updateSellerGalleryImage(id: string, sellerId: string, image: Partial<InsertSellerGalleryImage>): Promise<SellerGalleryImage> {
+    const [updated] = await db
+      .update(sellerGallery)
+      .set(image)
+      .where(and(eq(sellerGallery.id, id), eq(sellerGallery.sellerId, sellerId)))
+      .returning();
+    
+    if (!updated) {
+      throw new Error("Gallery image not found or unauthorized");
+    }
+    
+    return updated;
+  }
+
+  async deleteSellerGalleryImage(id: string, sellerId: string): Promise<void> {
+    await db
+      .delete(sellerGallery)
+      .where(and(eq(sellerGallery.id, id), eq(sellerGallery.sellerId, sellerId)));
   }
 }
 
