@@ -144,6 +144,13 @@ function Router() {
       <Switch>
         <Route path="/" component={RoleSelection} />
         <Route path="/role-selection" component={RoleSelection} />
+        <Route path="/book-service/:id">
+          {(params) => <ServiceBooking serviceId={params.id} />}
+        </Route>
+        <Route path="/seller/:sellerId" component={SellerProfile} />
+        <Route path="/product/:id">
+          {(params) => <ProductDetail productId={params.id} />}
+        </Route>
         <Route component={NotFound} />
       </Switch>
     );
@@ -153,6 +160,13 @@ function Router() {
     return (
       <Switch>
         <Route path="/" component={PendingVerification} />
+        <Route path="/book-service/:id">
+          {(params) => <ServiceBooking serviceId={params.id} />}
+        </Route>
+        <Route path="/seller/:sellerId" component={SellerProfile} />
+        <Route path="/product/:id">
+          {(params) => <ProductDetail productId={params.id} />}
+        </Route>
         <Route component={PendingVerification} />
       </Switch>
     );
@@ -163,6 +177,13 @@ function Router() {
       <Switch>
         <Route path="/" component={RejectedVerification} />
         <Route path="/role-selection" component={RoleSelection} />
+        <Route path="/book-service/:id">
+          {(params) => <ServiceBooking serviceId={params.id} />}
+        </Route>
+        <Route path="/seller/:sellerId" component={SellerProfile} />
+        <Route path="/product/:id">
+          {(params) => <ProductDetail productId={params.id} />}
+        </Route>
         <Route component={RejectedVerification} />
       </Switch>
     );
