@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { connect, Room, LocalTrack, RemoteParticipant, LocalVideoTrack, LocalAudioTrack, createLocalTracks, createLocalVideoTrack } from "twilio-video";
+import type { User } from "@shared/schema";
 
 interface MeetingDetails {
   token: string;
@@ -30,6 +32,10 @@ export default function MeetingRoom() {
   const { meetingId } = useParams<{ meetingId: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  
+  const { data: user } = useQuery<User>({
+    queryKey: ["/api/user"],
+  });
   
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -330,8 +336,10 @@ export default function MeetingRoom() {
         (track as LocalVideoTrack | LocalAudioTrack).stop();
       }
     });
-    setLocation("/buyer/messages");
-  }, [setLocation]);
+    // Redirect based on user role
+    const messagesRoute = user?.role === "seller" ? "/seller/messages" : "/messages";
+    setLocation(messagesRoute);
+  }, [setLocation, user?.role]);
 
   if (isLoading) {
     return (
