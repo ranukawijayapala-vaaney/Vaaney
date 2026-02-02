@@ -1538,6 +1538,10 @@ export type NotificationType =
   | "boost_payment_failed"
   // Welcome notification for new users
   | "welcome"
+  // Meeting notifications
+  | "meeting_proposed"
+  | "meeting_confirmed"
+  | "meeting_cancelled"
   // Admin notifications
   | "admin_new_user"
   | "admin_verification_pending"

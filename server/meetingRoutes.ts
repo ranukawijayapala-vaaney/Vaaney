@@ -2,6 +2,11 @@ import { Router } from "express";
 import { storage } from "./storage";
 import { z } from "zod";
 import { generateVideoAccessToken, createVideoRoom } from "./twilio";
+import { 
+  notifyMeetingProposed, 
+  notifyMeetingConfirmed, 
+  notifyMeetingCancelled 
+} from "./services/notificationService";
 
 const router = Router();
 
@@ -50,6 +55,44 @@ router.post("/propose", requireAuth, async (req: any, res: any) => {
       status: "proposed",
     });
 
+    // Get proposer and recipient details
+    const proposer = await storage.getUser(userId);
+    const recipientId = userId === conversation.buyerId ? conversation.sellerId : conversation.buyerId;
+    const proposerName = proposer ? `${proposer.firstName || ""} ${proposer.lastName || ""}`.trim() || proposer.email : "Someone";
+    const recipientRole = userId === conversation.buyerId ? "seller" : "buyer";
+
+    // Format meeting time for message
+    const scheduledDate = new Date(data.scheduledAt);
+    const meetingDateStr = scheduledDate.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+    });
+    const meetingTimeStr = scheduledDate.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    // Create conversation message about the meeting proposal
+    await storage.createMessage({
+      conversationId: data.conversationId,
+      senderId: userId,
+      senderRole: userId === conversation.buyerId ? "buyer" : "seller",
+      content: `[Video Meeting Proposed] ${meetingDateStr} at ${meetingTimeStr} (${data.durationMinutes} minutes)${data.title ? ` - "${data.title}"` : ""}`,
+    });
+
+    // Send notification to recipient
+    await notifyMeetingProposed({
+      recipientId,
+      proposerName,
+      meetingId: meeting.id,
+      meetingTitle: data.title,
+      scheduledAt: scheduledDate,
+      durationMinutes: data.durationMinutes,
+      conversationId: data.conversationId,
+      recipientRole: recipientRole as "buyer" | "seller",
+    });
+
     res.status(201).json(meeting);
   } catch (error: any) {
     console.error("Error proposing meeting:", error);
@@ -66,7 +109,57 @@ router.post("/:id/confirm", requireAuth, async (req: any, res: any) => {
     const { id } = req.params;
     const userId = req.user!.id;
 
+    // Get meeting details before confirming
+    const meetingBefore = await storage.getMeeting(id);
+    if (!meetingBefore) {
+      return res.status(404).json({ error: "Meeting not found" });
+    }
+
     const meeting = await storage.confirmMeeting(id, userId);
+
+    // Get conversation and user details
+    const conversation = await storage.getConversation(meeting.conversationId);
+    const confirmer = await storage.getUser(userId);
+    const confirmerName = confirmer ? `${confirmer.firstName || ""} ${confirmer.lastName || ""}`.trim() || confirmer.email : "Someone";
+    
+    // The proposer is the one who should be notified
+    const recipientId = meeting.proposedById;
+    const recipientRole = meeting.proposedById === meeting.buyerId ? "buyer" : "seller";
+
+    // Format meeting time for message
+    const scheduledDate = new Date(meeting.scheduledAt);
+    const meetingDateStr = scheduledDate.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+    });
+    const meetingTimeStr = scheduledDate.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    // Create conversation message about meeting confirmation
+    if (conversation) {
+      await storage.createMessage({
+        conversationId: meeting.conversationId,
+        senderId: userId,
+        senderRole: userId === conversation.buyerId ? "buyer" : "seller",
+        content: `[Video Meeting Confirmed] ${meetingDateStr} at ${meetingTimeStr}. You can join up to 15 minutes before the scheduled time.`,
+      });
+    }
+
+    // Send notification to proposer
+    await notifyMeetingConfirmed({
+      recipientId,
+      confirmerName,
+      meetingId: meeting.id,
+      meetingTitle: meeting.title || undefined,
+      scheduledAt: scheduledDate,
+      durationMinutes: meeting.durationMinutes,
+      conversationId: meeting.conversationId,
+      recipientRole: recipientRole as "buyer" | "seller",
+    });
+
     res.json(meeting);
   } catch (error: any) {
     console.error("Error confirming meeting:", error);
@@ -81,7 +174,57 @@ router.post("/:id/cancel", requireAuth, async (req: any, res: any) => {
     const userId = req.user!.id;
     const { reason } = req.body;
 
+    // Get meeting details before cancelling
+    const meetingBefore = await storage.getMeeting(id);
+    if (!meetingBefore) {
+      return res.status(404).json({ error: "Meeting not found" });
+    }
+
     const meeting = await storage.cancelMeeting(id, userId, reason);
+
+    // Get conversation and user details
+    const conversation = await storage.getConversation(meeting.conversationId);
+    const canceller = await storage.getUser(userId);
+    const cancellerName = canceller ? `${canceller.firstName || ""} ${canceller.lastName || ""}`.trim() || canceller.email : "Someone";
+    
+    // The other party should be notified
+    const recipientId = userId === meeting.buyerId ? meeting.sellerId : meeting.buyerId;
+    const recipientRole = recipientId === meeting.buyerId ? "buyer" : "seller";
+
+    // Format meeting time for message
+    const scheduledDate = new Date(meeting.scheduledAt);
+    const meetingDateStr = scheduledDate.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+    });
+    const meetingTimeStr = scheduledDate.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    // Create conversation message about meeting cancellation
+    if (conversation) {
+      await storage.createMessage({
+        conversationId: meeting.conversationId,
+        senderId: userId,
+        senderRole: userId === conversation.buyerId ? "buyer" : "seller",
+        content: `[Video Meeting Cancelled] The meeting scheduled for ${meetingDateStr} at ${meetingTimeStr} has been cancelled${reason ? `. Reason: ${reason}` : ""}`,
+      });
+    }
+
+    // Send notification to other party
+    await notifyMeetingCancelled({
+      recipientId,
+      cancellerName,
+      meetingId: meeting.id,
+      meetingTitle: meeting.title || undefined,
+      scheduledAt: scheduledDate,
+      reason,
+      conversationId: meeting.conversationId,
+      recipientRole: recipientRole as "buyer" | "seller",
+    });
+
     res.json(meeting);
   } catch (error: any) {
     console.error("Error cancelling meeting:", error);

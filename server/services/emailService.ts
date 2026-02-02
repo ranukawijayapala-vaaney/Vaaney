@@ -161,6 +161,12 @@ export function generateEmailTemplate(
     deliverables?: Array<{ fileName: string; fileUrl: string; fileSize: number }>;
     userRole?: string;
     userEmail?: string;
+    meetingTitle?: string;
+    meetingDate?: string;
+    meetingTime?: string;
+    meetingDuration?: number;
+    meetingLink?: string;
+    proposerName?: string;
   }
 ): { subject: string; html: string } {
   const baseUrl = process.env.PRODUCTION_URL || "https://vaaney.com";
@@ -593,6 +599,53 @@ export function generateEmailTemplate(
           <p style="margin: 0;"><strong>Seller:</strong> ${data.recipientName || "N/A"}</p>
         </div>
         <a href="${baseUrl}/admin/dashboard" style="display: inline-block; background: ${brandColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">View Dashboard</a>
+      `),
+    },
+    meeting_proposed: {
+      subject: "Video Meeting Request - Vaaney",
+      html: wrapTemplate(`
+        <h2 style="color: ${brandColor}; margin-top: 0;">Video Meeting Request</h2>
+        <p>Hi ${data.recipientName || "there"},</p>
+        <p><strong>${data.proposerName || "Someone"}</strong> has requested a video meeting with you.</p>
+        <div style="background: #f0f9ff; padding: 16px; border-radius: 8px; margin: 16px 0;">
+          ${data.meetingTitle ? `<p style="margin: 0 0 8px 0;"><strong>Topic:</strong> ${data.meetingTitle}</p>` : ""}
+          <p style="margin: 0 0 8px 0;"><strong>Date:</strong> ${data.meetingDate || "TBD"}</p>
+          <p style="margin: 0 0 8px 0;"><strong>Time:</strong> ${data.meetingTime || "TBD"}</p>
+          <p style="margin: 0;"><strong>Duration:</strong> ${data.meetingDuration || 30} minutes</p>
+        </div>
+        <p>Please respond to confirm or reschedule the meeting.</p>
+        <a href="${data.link || baseUrl + '/messages'}" style="display: inline-block; background: ${brandColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">View Request</a>
+      `),
+    },
+    meeting_confirmed: {
+      subject: "Video Meeting Confirmed - Vaaney",
+      html: wrapTemplate(`
+        <h2 style="color: ${brandColor}; margin-top: 0;">Meeting Confirmed!</h2>
+        <p>Hi ${data.recipientName || "there"},</p>
+        <p>Your video meeting has been confirmed.</p>
+        <div style="background: #f0f9ff; padding: 16px; border-radius: 8px; margin: 16px 0;">
+          ${data.meetingTitle ? `<p style="margin: 0 0 8px 0;"><strong>Topic:</strong> ${data.meetingTitle}</p>` : ""}
+          <p style="margin: 0 0 8px 0;"><strong>Date:</strong> ${data.meetingDate || "TBD"}</p>
+          <p style="margin: 0 0 8px 0;"><strong>Time:</strong> ${data.meetingTime || "TBD"}</p>
+          <p style="margin: 0;"><strong>Duration:</strong> ${data.meetingDuration || 30} minutes</p>
+        </div>
+        <p>You can join the meeting up to 15 minutes before the scheduled time.</p>
+        <a href="${data.meetingLink || baseUrl + '/messages'}" style="display: inline-block; background: ${brandColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">Join Meeting</a>
+      `),
+    },
+    meeting_cancelled: {
+      subject: "Video Meeting Cancelled - Vaaney",
+      html: wrapTemplate(`
+        <h2 style="color: #ef4444; margin-top: 0;">Meeting Cancelled</h2>
+        <p>Hi ${data.recipientName || "there"},</p>
+        <p>A scheduled video meeting has been cancelled.</p>
+        <div style="background: #fef2f2; padding: 16px; border-radius: 8px; margin: 16px 0;">
+          ${data.meetingTitle ? `<p style="margin: 0 0 8px 0;"><strong>Topic:</strong> ${data.meetingTitle}</p>` : ""}
+          <p style="margin: 0 0 8px 0;"><strong>Originally Scheduled:</strong> ${data.meetingDate || "N/A"} at ${data.meetingTime || "N/A"}</p>
+          ${data.reason ? `<p style="margin: 0;"><strong>Reason:</strong> ${data.reason}</p>` : ""}
+        </div>
+        <p>You can propose a new meeting time if needed.</p>
+        <a href="${data.link || baseUrl + '/messages'}" style="display: inline-block; background: ${brandColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">Send Message</a>
       `),
     },
   };

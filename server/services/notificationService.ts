@@ -896,3 +896,138 @@ export async function notifyAdminNewService(params: {
     sendEmailNotification: false, // In-app only to avoid email spam
   });
 }
+
+/**
+ * Meeting notification: Meeting proposed
+ */
+export async function notifyMeetingProposed(params: {
+  recipientId: string;
+  proposerName: string;
+  meetingId: string;
+  meetingTitle?: string;
+  scheduledAt: Date;
+  durationMinutes: number;
+  conversationId: string;
+  recipientRole: "buyer" | "seller";
+}) {
+  const meetingDate = params.scheduledAt.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const meetingTime = params.scheduledAt.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const link = params.recipientRole === "seller" ? "/seller/messages" : "/messages";
+
+  await createNotification({
+    userId: params.recipientId,
+    type: "meeting_proposed",
+    title: "Video Meeting Request",
+    message: `${params.proposerName} has requested a video meeting${params.meetingTitle ? ` about "${params.meetingTitle}"` : ""} on ${meetingDate} at ${meetingTime}`,
+    link,
+    metadata: {
+      meetingId: params.meetingId,
+      proposerName: params.proposerName,
+      meetingTitle: params.meetingTitle,
+      meetingDate,
+      meetingTime,
+      meetingDuration: params.durationMinutes,
+      conversationId: params.conversationId,
+    },
+    sendEmailNotification: true,
+  });
+}
+
+/**
+ * Meeting notification: Meeting confirmed
+ */
+export async function notifyMeetingConfirmed(params: {
+  recipientId: string;
+  confirmerName: string;
+  meetingId: string;
+  meetingTitle?: string;
+  scheduledAt: Date;
+  durationMinutes: number;
+  conversationId: string;
+  recipientRole: "buyer" | "seller";
+}) {
+  const meetingDate = params.scheduledAt.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const meetingTime = params.scheduledAt.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const baseUrl = process.env.PRODUCTION_URL || "https://vaaney.com";
+  const meetingLink = `${baseUrl}/meeting/${params.meetingId}`;
+  const messagesLink = params.recipientRole === "seller" ? "/seller/messages" : "/messages";
+
+  await createNotification({
+    userId: params.recipientId,
+    type: "meeting_confirmed",
+    title: "Meeting Confirmed",
+    message: `Your video meeting${params.meetingTitle ? ` "${params.meetingTitle}"` : ""} on ${meetingDate} at ${meetingTime} has been confirmed by ${params.confirmerName}`,
+    link: messagesLink,
+    metadata: {
+      meetingId: params.meetingId,
+      confirmerName: params.confirmerName,
+      meetingTitle: params.meetingTitle,
+      meetingDate,
+      meetingTime,
+      meetingDuration: params.durationMinutes,
+      meetingLink,
+      conversationId: params.conversationId,
+    },
+    sendEmailNotification: true,
+  });
+}
+
+/**
+ * Meeting notification: Meeting cancelled
+ */
+export async function notifyMeetingCancelled(params: {
+  recipientId: string;
+  cancellerName: string;
+  meetingId: string;
+  meetingTitle?: string;
+  scheduledAt: Date;
+  reason?: string;
+  conversationId: string;
+  recipientRole: "buyer" | "seller";
+}) {
+  const meetingDate = params.scheduledAt.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const meetingTime = params.scheduledAt.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const link = params.recipientRole === "seller" ? "/seller/messages" : "/messages";
+
+  await createNotification({
+    userId: params.recipientId,
+    type: "meeting_cancelled",
+    title: "Meeting Cancelled",
+    message: `${params.cancellerName} has cancelled the video meeting${params.meetingTitle ? ` "${params.meetingTitle}"` : ""} scheduled for ${meetingDate} at ${meetingTime}${params.reason ? `. Reason: ${params.reason}` : ""}`,
+    link,
+    metadata: {
+      meetingId: params.meetingId,
+      cancellerName: params.cancellerName,
+      meetingTitle: params.meetingTitle,
+      meetingDate,
+      meetingTime,
+      reason: params.reason,
+      conversationId: params.conversationId,
+    },
+    sendEmailNotification: true,
+  });
+}
