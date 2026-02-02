@@ -43,7 +43,7 @@ Google Cloud Storage manages user-uploaded files, authenticated via the Replit s
 - **Notification System:** Comprehensive in-app and email notifications for major events.
 - **AI Assistant:** Provides role-specific assistance for guests, buyers, sellers, and admins, with knowledge of platform features and workflows. Accessible to all visitors.
 - **Mobile Messaging:** Consistent mobile-responsive messaging experience across all roles with auto-scroll and quick reply template access.
-- **Video Meeting System:** Twilio Video integration for buyer-seller consultations. Meetings can be proposed/confirmed/cancelled through conversations. Features include video/audio controls, screen sharing, and 15-minute early join window.
+- **Video Meeting System:** Twilio Video integration for buyer-seller consultations. Meetings can be proposed/confirmed/cancelled through conversations. Features include video/audio controls, screen sharing, and 15-minute early join window. Meeting events trigger in-app notifications, email alerts (with join links for confirmed meetings), and conversation messages for a complete audit trail.
 
 ## External Dependencies
 
