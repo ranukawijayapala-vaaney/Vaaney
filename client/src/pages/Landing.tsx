@@ -3,7 +3,7 @@ import {
   Globe, Sparkles, TrendingUp, CheckCircle2, 
   Printer, Code, Megaphone, PenTool, Video, FileText,
   Music, BarChart3, Leaf, Clock, Target, Award, Menu, X, ChevronLeft, ChevronRight,
-  Search, Package, Filter
+  Search, Package, Filter, Store
 } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -73,6 +73,11 @@ export default function Landing() {
       if (!response.ok) return [];
       return response.json();
     },
+  });
+
+  // Fetch public shops for carousel
+  const { data: publicShops = [] } = useQuery<Array<{ id: string; shopName: string | null; shopLogo: string | null }>>({
+    queryKey: ["/api/public/shops"],
   });
 
   // Fetch all products (always fetch for marketplace section)
@@ -466,6 +471,47 @@ export default function Landing() {
             </div>
           )}
         </section>
+
+        {/* Shop Profiles Carousel */}
+        {publicShops.length > 0 && (
+          <section className="py-12 bg-background" data-testid="section-shop-carousel">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-bold font-display">Our Sellers</h2>
+                  <p className="text-muted-foreground mt-1">Browse shops from verified Sri Lankan sellers</p>
+                </div>
+              </div>
+              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-muted">
+                {publicShops.map((shop) => (
+                  <a
+                    key={shop.id}
+                    href={`/seller/${shop.id}`}
+                    className="flex-shrink-0 hover-elevate active-elevate-2 rounded-lg transition-all"
+                    data-testid={`link-shop-${shop.id}`}
+                  >
+                    <Card className="w-40 sm:w-48 overflow-hidden">
+                      <CardContent className="p-4 flex flex-col items-center text-center space-y-3">
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden border">
+                          {shop.shopLogo ? (
+                            <img
+                              src={shop.shopLogo}
+                              alt={shop.shopName || "Shop"}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Store className="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground" />
+                          )}
+                        </div>
+                        <p className="font-medium text-sm line-clamp-2">{shop.shopName || "Shop"}</p>
+                      </CardContent>
+                    </Card>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Marketplace Section */}
         <section className="py-16 bg-muted/30">

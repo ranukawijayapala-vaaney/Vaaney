@@ -1154,6 +1154,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public shops listing - accessible by everyone including guests
+  app.get("/api/public/shops", async (req: Request, res: Response) => {
+    try {
+      const shops = await storage.getPublicShops();
+      res.json(shops);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Seller profile update - seller only
   app.put("/api/seller/profile", isAuthenticated, requireRole(["seller"]), async (req: AuthRequest, res: Response) => {
     try {

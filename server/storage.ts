@@ -101,7 +101,7 @@ import {
   type InsertSellerGalleryImage,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql, lt, gte, inArray, notInArray, or, isNull } from "drizzle-orm";
+import { eq, and, desc, sql, lt, gte, inArray, notInArray, or, isNull, isNotNull } from "drizzle-orm";
 
 /**
  * Currency/Decimal Conversion Utilities
@@ -393,6 +393,13 @@ export interface IStorage {
   cancelMeeting(id: string, userId: string, reason?: string): Promise<Meeting>;
   completeMeeting(id: string): Promise<Meeting>;
   setMeetingRoom(id: string, roomName: string): Promise<Meeting>;
+  
+  // Public shops listing
+  getPublicShops(): Promise<Array<{
+    id: string;
+    shopName: string | null;
+    shopLogo: string | null;
+  }>>;
   
   // Seller profile management
   getSellerProfile(sellerId: string): Promise<{
@@ -3692,6 +3699,25 @@ export class DatabaseStorage implements IStorage {
     }
     
     return meeting;
+  }
+
+  // Public shops listing
+  async getPublicShops(): Promise<Array<{
+    id: string;
+    shopName: string | null;
+    shopLogo: string | null;
+  }>> {
+    const sellers = await db.select({
+      id: users.id,
+      shopName: users.shopName,
+      shopLogo: users.shopLogo,
+    })
+    .from(users)
+    .where(and(
+      eq(users.role, "seller"),
+      isNotNull(users.shopName)
+    ));
+    return sellers;
   }
 
   // Seller profile management
