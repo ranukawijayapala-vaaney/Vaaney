@@ -310,7 +310,7 @@ export default function SellerProfile() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {products.map((product) => (
-                  <Link key={product.id} href={`/products/${product.id}`}>
+                  <Link key={product.id} href={`/product/${product.id}`}>
                     <Card className="hover-elevate cursor-pointer h-full" data-testid={`card-product-${product.id}`}>
                       <div className="aspect-square overflow-hidden rounded-t-lg bg-muted">
                         {product.images && product.images[0] ? (
