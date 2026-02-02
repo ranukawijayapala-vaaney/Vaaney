@@ -351,7 +351,7 @@ export default function SellerProfile() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {services.map((service) => (
-                  <Link key={service.id} href={`/services/${service.id}`}>
+                  <Link key={service.id} href={`/book-service/${service.id}`}>
                     <Card className="hover-elevate cursor-pointer h-full" data-testid={`card-service-${service.id}`}>
                       <div className="aspect-video overflow-hidden rounded-t-lg bg-muted">
                         {service.images && service.images[0] ? (
