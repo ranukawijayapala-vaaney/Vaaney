@@ -56,16 +56,27 @@ export default function MeetingRoom() {
   const screenTrackRef = useRef<LocalVideoTrack | null>(null);
   const screenStreamRef = useRef<MediaStream | null>(null);
 
-  const attachTrack = useCallback((track: any, container: HTMLDivElement) => {
-    // Clear any existing video elements first
-    const existingElements = container.querySelectorAll('video, audio');
-    existingElements.forEach(el => el.remove());
-    
+  const attachTrack = useCallback((track: any, container: HTMLDivElement | null) => {
     const element = track.attach();
-    element.style.width = "100%";
-    element.style.height = "100%";
-    element.style.objectFit = "cover";
-    container.appendChild(element);
+    
+    if (track.kind === "audio") {
+      // For audio tracks, attach to document body for reliable mobile playback
+      element.id = `audio-${track.sid}`;
+      element.setAttribute("autoplay", "true");
+      element.setAttribute("playsinline", "true");
+      // Remove any existing audio element with same ID
+      const existingAudio = document.getElementById(`audio-${track.sid}`);
+      if (existingAudio) existingAudio.remove();
+      document.body.appendChild(element);
+    } else if (container) {
+      // For video tracks, attach to the container
+      const existingElements = container.querySelectorAll('video');
+      existingElements.forEach(el => el.remove());
+      element.style.width = "100%";
+      element.style.height = "100%";
+      element.style.objectFit = "cover";
+      container.appendChild(element);
+    }
   }, []);
 
   const detachTrack = useCallback((track: any) => {
@@ -78,7 +89,8 @@ export default function MeetingRoom() {
     participant.tracks.forEach(publication => {
       if (publication.isSubscribed && publication.track) {
         const container = document.getElementById(`participant-${participant.sid}`) as HTMLDivElement | null;
-        if (container) {
+        // Audio tracks don't need a container - they attach to document body
+        if (publication.track.kind === "audio" || container) {
           attachTrack(publication.track, container);
         }
       }
@@ -86,7 +98,8 @@ export default function MeetingRoom() {
 
     participant.on("trackSubscribed", track => {
       const container = document.getElementById(`participant-${participant.sid}`) as HTMLDivElement | null;
-      if (container) {
+      // Audio tracks don't need a container - they attach to document body
+      if (track.kind === "audio" || container) {
         attachTrack(track, container);
       }
     });
