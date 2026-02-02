@@ -803,6 +803,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("[UPLOAD URL] Request received:", req.body);
       const { fileName, contentType } = req.body;
+      
+      // Validate content type - only allow image uploads
+      const allowedContentTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+        "image/svg+xml"
+      ];
+      
+      if (!contentType || !allowedContentTypes.includes(contentType)) {
+        return res.status(400).json({ 
+          message: `Invalid file type. Allowed types: ${allowedContentTypes.join(", ")}` 
+        });
+      }
+      
       const result = await objectStorageService.getObjectEntityUploadURL();
       console.log("[UPLOAD URL] Returning result:", result);
       res.json(result);

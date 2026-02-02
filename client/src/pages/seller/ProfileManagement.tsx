@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { 
   Building2, MapPin, Award, Wrench, Clock, Plus, Trash2, Edit, 
-  Image as ImageIcon, Save, ExternalLink, Upload
+  Image as ImageIcon, Save, ExternalLink, Upload, Loader2
 } from "lucide-react";
+import { ImageUploader } from "@/components/ImageUploader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,118 @@ import { Link } from "wouter";
 import type { User, SellerProject, SellerGalleryImage } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
 
+function GalleryImageUploader({ 
+  onUploadComplete, 
+  isLoading,
+  resetTrigger
+}: { 
+  onUploadComplete: (imageUrl: string) => void; 
+  isLoading: boolean;
+  resetTrigger?: number;
+}) {
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    setUploadedUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, [resetTrigger]);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Invalid file", description: "Please select an image file", variant: "destructive" });
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Maximum file size is 10MB", variant: "destructive" });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const result = await apiRequest(
+        "POST",
+        "/api/object-storage/upload-url",
+        { fileName: file.name, contentType: file.type }
+      ) as { uploadUrl: string; objectPath: string };
+
+      const uploadResponse = await fetch(result.uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+
+      if (!uploadResponse.ok) throw new Error("Upload failed");
+
+      await apiRequest("POST", "/api/object-storage/finalize-upload", {
+        objectPath: result.objectPath,
+        visibility: "public",
+      });
+
+      const normalizedPath = result.objectPath.startsWith("/")
+        ? `/objects${result.objectPath.split(".private")[1] || result.objectPath}`
+        : result.objectPath;
+      
+      setUploadedUrl(normalizedPath);
+      onUploadComplete(normalizedPath);
+    } catch (error) {
+      toast({ 
+        title: "Upload failed", 
+        description: error instanceof Error ? error.message : "An error occurred", 
+        variant: "destructive" 
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {uploadedUrl ? (
+        <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
+          <img src={uploadedUrl} alt="Uploaded" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+            <span className="text-white text-sm">Image uploaded successfully</span>
+          </div>
+        </div>
+      ) : (
+        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover-elevate bg-muted/50">
+          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+            {isUploading ? (
+              <>
+                <Loader2 className="w-8 h-8 mb-2 text-muted-foreground animate-spin" />
+                <p className="text-sm text-muted-foreground">Uploading...</p>
+              </>
+            ) : (
+              <>
+                <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Click to upload an image</p>
+              </>
+            )}
+          </div>
+          <input 
+            ref={fileInputRef}
+            type="file" 
+            className="hidden" 
+            accept="image/*" 
+            onChange={handleFileSelect}
+            disabled={isUploading || isLoading}
+            data-testid="input-gallery-upload"
+          />
+        </label>
+      )}
+    </div>
+  );
+}
+
 const profileFormSchema = z.object({
   shopName: z.string().min(1, "Shop name is required").max(255),
   location: z.string().max(255).optional(),
@@ -52,7 +165,6 @@ const projectFormSchema = z.object({
   title: z.string().min(1, "Title is required").max(255),
   description: z.string().optional(),
   year: z.coerce.number().min(1900).max(new Date().getFullYear()).optional(),
-  images: z.string().optional(),
 });
 
 type ProjectFormValues = z.infer<typeof projectFormSchema>;
@@ -62,9 +174,13 @@ export default function ProfileManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
+  const [isGalleryDialogOpen, setIsGalleryDialogOpen] = useState(false);
+  const [galleryResetTrigger, setGalleryResetTrigger] = useState(0);
   const [editingProject, setEditingProject] = useState<SellerProject | null>(null);
   const [newExpertise, setNewExpertise] = useState("");
   const [expertiseList, setExpertiseList] = useState<string[]>([]);
+  const [projectImages, setProjectImages] = useState<string[]>([]);
+  const [galleryCaption, setGalleryCaption] = useState("");
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery<SellerProject[]>({
     queryKey: ["/api/seller/projects"],
@@ -98,7 +214,6 @@ export default function ProfileManagement() {
       title: "",
       description: "",
       year: new Date().getFullYear(),
-      images: "",
     },
   });
 
@@ -121,17 +236,14 @@ export default function ProfileManagement() {
   });
 
   const createProjectMutation = useMutation({
-    mutationFn: async (data: ProjectFormValues) => {
-      const payload = {
-        ...data,
-        images: data.images ? data.images.split(",").map(s => s.trim()).filter(Boolean) : [],
-      };
-      return apiRequest("POST", "/api/seller/projects", payload);
+    mutationFn: async (data: { title: string; description?: string; year?: number; images: string[] }) => {
+      return apiRequest("POST", "/api/seller/projects", data);
     },
     onSuccess: () => {
       toast({ title: "Project added successfully" });
       queryClient.invalidateQueries({ queryKey: ["/api/seller/projects"] });
       setIsProjectDialogOpen(false);
+      setProjectImages([]);
       projectForm.reset();
     },
     onError: (error: any) => {
@@ -140,12 +252,8 @@ export default function ProfileManagement() {
   });
 
   const updateProjectMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: ProjectFormValues }) => {
-      const payload = {
-        ...data,
-        images: data.images ? data.images.split(",").map(s => s.trim()).filter(Boolean) : [],
-      };
-      return apiRequest("PUT", `/api/seller/projects/${id}`, payload);
+    mutationFn: async ({ id, data }: { id: string; data: { title: string; description?: string; year?: number; images: string[] } }) => {
+      return apiRequest("PUT", `/api/seller/projects/${id}`, data);
     },
     onSuccess: () => {
       toast({ title: "Project updated successfully" });
@@ -172,6 +280,35 @@ export default function ProfileManagement() {
     },
   });
 
+  const addGalleryImageMutation = useMutation({
+    mutationFn: async (data: { imageUrl: string; caption?: string }) => {
+      return apiRequest("POST", "/api/seller/gallery", data);
+    },
+    onSuccess: () => {
+      toast({ title: "Image added to gallery" });
+      queryClient.invalidateQueries({ queryKey: ["/api/seller/gallery"] });
+      setGalleryCaption("");
+      setIsGalleryDialogOpen(false);
+      setGalleryResetTrigger(prev => prev + 1);
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to add image", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteGalleryImageMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("DELETE", `/api/seller/gallery/${id}`);
+    },
+    onSuccess: () => {
+      toast({ title: "Image removed from gallery" });
+      queryClient.invalidateQueries({ queryKey: ["/api/seller/gallery"] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to remove image", description: error.message, variant: "destructive" });
+    },
+  });
+
   const handleAddExpertise = () => {
     if (newExpertise.trim() && !expertiseList.includes(newExpertise.trim())) {
       setExpertiseList([...expertiseList, newExpertise.trim()]);
@@ -189,16 +326,22 @@ export default function ProfileManagement() {
       title: project.title,
       description: project.description || "",
       year: project.year || new Date().getFullYear(),
-      images: project.images?.join(", ") || "",
     });
+    setProjectImages(project.images || []);
     setIsProjectDialogOpen(true);
   };
 
   const handleProjectSubmit = (data: ProjectFormValues) => {
+    const payload = {
+      title: data.title,
+      description: data.description,
+      year: data.year,
+      images: projectImages,
+    };
     if (editingProject) {
-      updateProjectMutation.mutate({ id: editingProject.id, data });
+      updateProjectMutation.mutate({ id: editingProject.id, data: payload });
     } else {
-      createProjectMutation.mutate(data);
+      createProjectMutation.mutate(payload);
     }
   };
 
@@ -389,6 +532,7 @@ export default function ProfileManagement() {
                   if (!open) {
                     setEditingProject(null);
                     projectForm.reset();
+                    setProjectImages([]);
                   }
                 }}>
                   <DialogTrigger asChild>
@@ -453,23 +597,15 @@ export default function ProfileManagement() {
                           )}
                         />
 
-                        <FormField
-                          control={projectForm.control}
-                          name="images"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Image URLs (comma-separated)</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                                  {...field}
-                                  data-testid="input-project-images"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        <div className="space-y-2">
+                          <Label>Project Images</Label>
+                          <ImageUploader
+                            images={projectImages}
+                            onImagesChange={setProjectImages}
+                            maxImages={10}
+                            disabled={createProjectMutation.isPending || updateProjectMutation.isPending}
+                          />
+                        </div>
 
                         <DialogFooter>
                           <Button 
@@ -557,13 +693,61 @@ export default function ProfileManagement() {
         <TabsContent value="gallery">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ImageIcon className="w-5 h-5" />
-                Gallery
-              </CardTitle>
-              <CardDescription>
-                Upload images of your facilities, team, and work
-              </CardDescription>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <ImageIcon className="w-5 h-5" />
+                    Gallery
+                  </CardTitle>
+                  <CardDescription>
+                    Upload images of your facilities, team, and work
+                  </CardDescription>
+                </div>
+                <Dialog open={isGalleryDialogOpen} onOpenChange={(open) => {
+                  setIsGalleryDialogOpen(open);
+                  if (!open) {
+                    setGalleryCaption("");
+                    setGalleryResetTrigger(prev => prev + 1);
+                  }
+                }}>
+                  <DialogTrigger asChild>
+                    <Button data-testid="button-add-gallery-image">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Image
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Add Gallery Image</DialogTitle>
+                      <DialogDescription>
+                        Upload an image to your gallery
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <GalleryImageUploader
+                        onUploadComplete={(imageUrl) => {
+                          addGalleryImageMutation.mutate({ 
+                            imageUrl, 
+                            caption: galleryCaption || undefined 
+                          });
+                        }}
+                        isLoading={addGalleryImageMutation.isPending}
+                        resetTrigger={galleryResetTrigger}
+                      />
+                      <div className="space-y-2">
+                        <Label htmlFor="gallery-caption">Caption (optional)</Label>
+                        <Input
+                          id="gallery-caption"
+                          placeholder="Describe this image..."
+                          value={galleryCaption}
+                          onChange={(e) => setGalleryCaption(e.target.value)}
+                          data-testid="input-gallery-caption"
+                        />
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardHeader>
             <CardContent>
               {galleryLoading ? (
@@ -571,15 +755,25 @@ export default function ProfileManagement() {
               ) : gallery.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <ImageIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>No gallery images yet. Gallery images can be added via the API.</p>
+                  <p>No gallery images yet. Click "Add Image" to upload your first image.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {gallery.map((img) => (
-                    <div key={img.id} className="aspect-square rounded-lg overflow-hidden bg-muted relative group">
-                      <img src={img.imageUrl} alt={img.caption || "Gallery"} className="w-full h-full object-cover" />
+                    <div key={img.id} className="aspect-square rounded-lg overflow-visible bg-muted relative group" data-testid={`gallery-image-${img.id}`}>
+                      <img src={img.imageUrl} alt={img.caption || "Gallery"} className="w-full h-full object-cover rounded-lg" />
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => deleteGalleryImageMutation.mutate(img.id)}
+                        disabled={deleteGalleryImageMutation.isPending}
+                        data-testid={`button-delete-gallery-${img.id}`}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                       {img.caption && (
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-2 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
                           {img.caption}
                         </div>
                       )}
