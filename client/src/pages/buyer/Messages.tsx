@@ -8,7 +8,7 @@ import { MessageThread } from "@/components/messaging/MessageThread";
 import { MessageInput } from "@/components/messaging/MessageInput";
 import { WorkflowPanel } from "@/components/messaging/WorkflowPanel";
 import { MeetingScheduler } from "@/components/messaging/MeetingScheduler";
-import { MessageCircle, Plus, CheckCircle, ArrowLeft, HeadphonesIcon, Package } from "lucide-react";
+import { MessageCircle, Plus, ArrowLeft, HeadphonesIcon, Package } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useConversationContext } from "@/hooks/use-conversation-context";
@@ -135,23 +135,6 @@ export default function BuyerMessages() {
     },
   });
 
-  const resolveConversationMutation = useMutation({
-    mutationFn: async (conversationId: string) => {
-      return await apiRequest("PUT", `/api/conversations/${conversationId}/status`, { status: "resolved" });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
-      refetchConversation();
-      toast({ title: "Conversation marked as resolved" });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Failed to resolve conversation",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
 
   const handleSendMessage = async (content: string, files: File[]) => {
     await sendMessageMutation.mutateAsync({ content, files });
@@ -304,36 +287,8 @@ export default function BuyerMessages() {
                        "Conversation"}
                     </h3>
                   </div>
-                  {conversationData?.conversation?.status !== "resolved" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => resolveConversationMutation.mutate(selectedConversationId)}
-                      disabled={resolveConversationMutation.isPending}
-                      data-testid="button-mark-resolved-mobile"
-                      className="min-h-11"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Resolve
-                    </Button>
-                  )}
                 </div>
 
-                {/* Desktop resolve button */}
-                {conversationData?.conversation?.status !== "resolved" && (
-                  <div className="hidden xl:flex border-b p-3 bg-muted/50 justify-end">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => resolveConversationMutation.mutate(selectedConversationId)}
-                      disabled={resolveConversationMutation.isPending}
-                      data-testid="button-mark-resolved"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Mark as Resolved
-                    </Button>
-                  </div>
-                )}
                 
                 <div className="flex-1 overflow-y-auto">
                   <MessageThread
