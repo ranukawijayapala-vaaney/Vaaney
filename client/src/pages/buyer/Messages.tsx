@@ -12,6 +12,7 @@ import { MessageCircle, Plus, ArrowLeft, HeadphonesIcon, Package } from "lucide-
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useConversationContext } from "@/hooks/use-conversation-context";
+import { useConversationWebSocket } from "@/hooks/use-websocket";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,6 +45,8 @@ export default function BuyerMessages() {
 
   // Get conversation context for quote/design requirements
   const { data: conversationContext } = useConversationContext(selectedConversationId);
+
+  useConversationWebSocket(selectedConversationId);
 
   const { data: conversationData, refetch: refetchConversation } = useQuery<{
     conversation: Conversation;

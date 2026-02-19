@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { setupAuth } from "./localAuth";
 import { setupGoogleAuth } from "./googleAuth";
 import { initializeDatabase } from "./initDb";
+import { setupWebSocket } from "./websocket";
 
 const app = express();
 
@@ -60,6 +61,7 @@ app.use((req, res, next) => {
   await setupAuth(app);
   setupGoogleAuth(app);
   const server = await registerRoutes(app);
+  setupWebSocket(server);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import crypto from "crypto";
 import { storage } from "./storage";
 import { db } from "./db";
+import { broadcastToConversation } from "./websocket";
 import { eq, and, or, inArray, isNull, isNotNull, not, desc } from "drizzle-orm";
 import { isAuthenticated } from "./localAuth";
 import { ObjectStorageService, ObjectNotFoundError, parseObjectPath, objectStorageClient } from "./objectStorage";
@@ -5804,6 +5805,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      broadcastToConversation(req.params.id, {
+        type: "new_message",
+        conversationId: req.params.id,
+        message,
+      });
+
       // Send notification to recipient (in-app only, no email spam)
       const recipientId = userId === conversation.buyerId ? conversation.sellerId : conversation.buyerId;
       if (recipientId) {

@@ -12,6 +12,7 @@ import { MessageCircle, Plus, HeadphonesIcon, Store, ArrowLeft } from "lucide-re
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useConversationContext } from "@/hooks/use-conversation-context";
+import { useConversationWebSocket } from "@/hooks/use-websocket";
 import { useDesignState } from "@/hooks/use-design-state";
 import { useQuoteState } from "@/hooks/use-quote-state";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -46,6 +47,8 @@ export default function SellerMessages() {
 
   // Get conversation context for quote/design requirements
   const { data: conversationContext } = useConversationContext(selectedConversationId);
+
+  useConversationWebSocket(selectedConversationId);
 
   // Fetch workflow data for WorkflowPanel
   const {

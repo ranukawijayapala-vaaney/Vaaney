@@ -25,7 +25,7 @@ Google Cloud Storage manages user-uploaded files, authenticated via the Replit s
 
 ### Key Features
 - **Authentication:** Email/password (bcrypt, email verification) and Google OAuth 2.0 (for buyers).
-- **Messaging System:** 3-way communication (Buyer, Seller, Admin) with attachments and read statuses.
+- **Messaging System:** 3-way communication (Buyer, Seller, Admin) with attachments, read statuses, and real-time WebSocket updates. WebSocket server at /ws path with session-based authentication and conversation membership validation. Frontend uses useConversationWebSocket hook with auto-reconnect and deferred join for CONNECTING state.
 - **Booking Workflow:** 6-step process prioritizing seller confirmation.
 - **Payment System:** Supports IPG (mock) and manual Bank Transfer with admin verification.
 - **Seller Promotion:** Functionality for sellers to purchase promotional packages.

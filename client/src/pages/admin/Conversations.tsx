@@ -8,6 +8,7 @@ import { MessageInput } from "@/components/messaging/MessageInput";
 import { MessageCircle, Settings, CheckCircle, Archive, ArrowLeft } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useConversationWebSocket } from "@/hooks/use-websocket";
 import {
   Select,
   SelectContent,
@@ -42,6 +43,8 @@ export default function AdminConversations() {
   const { data: conversations = [] } = useQuery<Conversation[]>({
     queryKey: ["/api/conversations"],
   });
+
+  useConversationWebSocket(selectedConversationId);
 
   const { data: conversationData, refetch: refetchConversation } = useQuery<{
     conversation: Conversation;
