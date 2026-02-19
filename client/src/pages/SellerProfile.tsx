@@ -1,9 +1,10 @@
+import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { 
   MapPin, Clock, Star, Award, Wrench, Building2, 
   ArrowLeft, ShoppingBag, Briefcase, Image as ImageIcon,
-  Calendar, ExternalLink
+  Calendar, ExternalLink, ChevronLeft, ChevronRight, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,143 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { User, Product, Service, SellerProject, SellerGalleryImage } from "@shared/schema";
+
+function ImageCarousel({ images, altPrefix, onImageClick }: { images: string[]; altPrefix: string; onImageClick?: (index: number) => void }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  if (images.length === 0) return null;
+
+  return (
+    <div
+      className="relative aspect-video rounded-md overflow-hidden bg-muted group/carousel"
+      onClick={() => onImageClick?.(currentIndex)}
+    >
+      <img
+        src={images[currentIndex]}
+        alt={`${altPrefix} ${currentIndex + 1}`}
+        className="w-full h-full object-cover cursor-pointer"
+      />
+      {images.length > 1 && (
+        <>
+          <Button
+            size="icon"
+            variant="secondary"
+            className="absolute left-1 top-1/2 -translate-y-1/2 rounded-full opacity-0 group-hover/carousel:opacity-100 transition-opacity"
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+            }}
+            data-testid="button-carousel-prev"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="secondary"
+            className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full opacity-0 group-hover/carousel:opacity-100 transition-opacity"
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+            }}
+            data-testid="button-carousel-next"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+            {images.map((_, idx) => (
+              <div
+                key={idx}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  idx === currentIndex ? "bg-white" : "bg-white/50"
+                }`}
+                data-testid={`carousel-dot-${idx}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ImageLightbox({
+  images,
+  initialIndex,
+  onClose,
+}: {
+  images: string[];
+  initialIndex: number;
+  onClose: () => void;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
+  const handlePrev = useCallback(() => {
+    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  }, [images.length]);
+
+  const handleNext = useCallback(() => {
+    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  }, [images.length]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90"
+      onClick={onClose}
+      data-testid="lightbox-overlay"
+    >
+      <Button
+        size="icon"
+        variant="ghost"
+        className="absolute top-4 right-4 text-white z-[101]"
+        onClick={onClose}
+        data-testid="button-lightbox-close"
+      >
+        <X className="w-6 h-6" />
+      </Button>
+
+      <div
+        className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img
+          src={images[currentIndex]}
+          alt={`Image ${currentIndex + 1}`}
+          className="max-w-full max-h-[85vh] object-contain rounded-md"
+          data-testid="img-lightbox"
+        />
+
+        {images.length > 1 && (
+          <>
+            <Button
+              size="icon"
+              variant="secondary"
+              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full"
+              onClick={handlePrev}
+              data-testid="button-lightbox-prev"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+            <Button
+              size="icon"
+              variant="secondary"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full"
+              onClick={handleNext}
+              data-testid="button-lightbox-next"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+          </>
+        )}
+      </div>
+
+      {images.length > 1 && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/70 text-sm">
+          {currentIndex + 1} / {images.length}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface SellerProfileData {
   seller: User;
@@ -31,6 +169,17 @@ interface SellerProfileData {
 
 export default function SellerProfile() {
   const { sellerId } = useParams<{ sellerId: string }>();
+  const [lightboxImages, setLightboxImages] = useState<string[] | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  const openLightbox = useCallback((images: string[], index: number) => {
+    setLightboxImages(images);
+    setLightboxIndex(index);
+  }, []);
+
+  const closeLightbox = useCallback(() => {
+    setLightboxImages(null);
+  }, []);
 
   const { data: profile, isLoading, error } = useQuery<SellerProfileData>({
     queryKey: ["/api/sellers", sellerId, "profile"],
@@ -225,7 +374,12 @@ export default function SellerProfile() {
                       {seller.facilityImages && seller.facilityImages.length > 0 && (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                           {seller.facilityImages.map((img, idx) => (
-                            <div key={idx} className="aspect-video rounded-md overflow-hidden bg-muted">
+                            <div
+                              key={idx}
+                              className="aspect-video rounded-md overflow-hidden bg-muted cursor-pointer"
+                              onClick={() => openLightbox(seller.facilityImages!, idx)}
+                              data-testid={`img-facility-${idx}`}
+                            >
                               <img 
                                 src={img} 
                                 alt={`Facility ${idx + 1}`} 
@@ -249,8 +403,13 @@ export default function SellerProfile() {
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        {gallery.map((img) => (
-                          <div key={img.id} className="aspect-square rounded-md overflow-hidden bg-muted group relative">
+                        {gallery.map((img, idx) => (
+                          <div
+                            key={img.id}
+                            className="aspect-square rounded-md overflow-hidden bg-muted group relative cursor-pointer"
+                            onClick={() => openLightbox(gallery.map((g) => g.imageUrl), idx)}
+                            data-testid={`img-gallery-${img.id}`}
+                          >
                             <img 
                               src={img.imageUrl} 
                               alt={img.caption || "Gallery image"} 
@@ -434,16 +593,12 @@ export default function SellerProfile() {
                         <p className="text-muted-foreground mb-4">{project.description}</p>
                       )}
                       {project.images && project.images.length > 0 && (
-                        <div className="grid grid-cols-3 gap-2">
-                          {project.images.slice(0, 3).map((img, idx) => (
-                            <div key={idx} className="aspect-video rounded-md overflow-hidden bg-muted">
-                              <img 
-                                src={img} 
-                                alt={`${project.title} ${idx + 1}`} 
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          ))}
+                        <div data-testid={`img-project-carousel-${project.id}`}>
+                          <ImageCarousel
+                            images={project.images}
+                            altPrefix={project.title}
+                            onImageClick={(idx) => openLightbox(project.images!, idx)}
+                          />
                         </div>
                       )}
                     </CardContent>
@@ -516,6 +671,14 @@ export default function SellerProfile() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {lightboxImages && (
+        <ImageLightbox
+          images={lightboxImages}
+          initialIndex={lightboxIndex}
+          onClose={closeLightbox}
+        />
+      )}
     </div>
   );
 }
