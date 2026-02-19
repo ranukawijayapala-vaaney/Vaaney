@@ -46,11 +46,18 @@ interface MeetingSchedulerProps {
   conversationId: string;
   userRole: "buyer" | "seller";
   userId: string;
+  externalDialogOpen?: boolean;
+  onExternalDialogOpenChange?: (open: boolean) => void;
 }
 
-export function MeetingScheduler({ conversationId, userRole, userId }: MeetingSchedulerProps) {
+export function MeetingScheduler({ conversationId, userRole, userId, externalDialogOpen, onExternalDialogOpenChange }: MeetingSchedulerProps) {
   const { toast } = useToast();
-  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [internalDialogOpen, setInternalDialogOpen] = useState(false);
+  const showScheduleDialog = externalDialogOpen !== undefined ? externalDialogOpen : internalDialogOpen;
+  const setShowScheduleDialog = (open: boolean) => {
+    if (onExternalDialogOpenChange) onExternalDialogOpenChange(open);
+    setInternalDialogOpen(open);
+  };
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
   const [duration, setDuration] = useState("30");

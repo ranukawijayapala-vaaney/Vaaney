@@ -34,6 +34,7 @@ export default function SellerMessages() {
   const [conversationType, setConversationType] = useState<string>("general_inquiry");
   const [subject, setSubject] = useState("");
   const [initialMessage, setInitialMessage] = useState("");
+  const [isMeetingDialogOpen, setIsMeetingDialogOpen] = useState(false);
 
   const { data: user } = useQuery<User>({
     queryKey: ["/api/user"],
@@ -312,6 +313,7 @@ export default function SellerMessages() {
                     onSendMessage={handleSendMessage}
                     disabled={sendMessageMutation.isPending}
                     placeholder="Type your response..."
+                    onScheduleMeeting={() => setIsMeetingDialogOpen(true)}
                   />
                 )}
               </div>
@@ -343,6 +345,8 @@ export default function SellerMessages() {
                 conversationId={selectedConversationId}
                 userRole="seller"
                 userId={user.id}
+                externalDialogOpen={isMeetingDialogOpen}
+                onExternalDialogOpenChange={setIsMeetingDialogOpen}
               />
             )}
           </div>

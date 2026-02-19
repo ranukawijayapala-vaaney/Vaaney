@@ -1,19 +1,21 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Paperclip, X } from "lucide-react";
+import { Send, Paperclip, X, Video } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 interface MessageInputProps {
   onSendMessage: (content: string, files: File[]) => Promise<void>;
   placeholder?: string;
   disabled?: boolean;
+  onScheduleMeeting?: () => void;
 }
 
 export function MessageInput({
   onSendMessage,
   placeholder = "Type your message...",
   disabled = false,
+  onScheduleMeeting,
 }: MessageInputProps) {
   const [message, setMessage] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -64,7 +66,6 @@ export function MessageInput({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-5 w-5 p-0 hover:bg-destructive/20"
                   onClick={() => removeFile(index)}
                   data-testid={`button-remove-file-${index}`}
                 >
@@ -92,8 +93,8 @@ export function MessageInput({
           />
         </div>
 
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <input
               type="file"
               id="file-upload"
@@ -113,6 +114,19 @@ export function MessageInput({
               <Paperclip className="h-4 w-4 mr-2" />
               Attach Files
             </Button>
+            {onScheduleMeeting && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onScheduleMeeting}
+                disabled={disabled || isSending}
+                data-testid="button-schedule-meeting-inline"
+              >
+                <Video className="h-4 w-4 mr-2" />
+                Schedule Meeting
+              </Button>
+            )}
           </div>
 
           <Button
