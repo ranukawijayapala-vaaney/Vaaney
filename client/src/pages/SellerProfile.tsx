@@ -402,27 +402,11 @@ export default function SellerProfile() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        {gallery.map((img, idx) => (
-                          <div
-                            key={img.id}
-                            className="aspect-square rounded-md overflow-hidden bg-muted group relative cursor-pointer"
-                            onClick={() => openLightbox(gallery.map((g) => g.imageUrl), idx)}
-                            data-testid={`img-gallery-${img.id}`}
-                          >
-                            <img 
-                              src={img.imageUrl} 
-                              alt={img.caption || "Gallery image"} 
-                              className="w-full h-full object-cover"
-                            />
-                            {img.caption && (
-                              <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                {img.caption}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+                      <ImageCarousel
+                        images={gallery.map((g) => g.imageUrl)}
+                        altPrefix="Gallery"
+                        onImageClick={(idx) => openLightbox(gallery.map((g) => g.imageUrl), idx)}
+                      />
                     </CardContent>
                   </Card>
                 )}
