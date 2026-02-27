@@ -1,11 +1,12 @@
 import type { Express, Request, Response } from "express";
 import { storage } from "./storage";
 import { db } from "./db";
-import { shippingAddresses, productVariants, servicePackages } from "@shared/schema";
+import { shippingAddresses, productVariants, servicePackages, orders, bookings } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { isAuthenticated } from "./localAuth";
 import { insertQuoteSchema, insertDesignApprovalSchema } from "@shared/schema";
 import type { QuoteStatus, DesignApprovalStatus } from "@shared/schema";
+import { createCheckoutSession as createMpgsSession } from "./mpgs";
 import { addDays } from "date-fns";
 import {
   notifyQuoteReceived,
@@ -804,27 +805,39 @@ export function setupQuoteApprovalRoutes(app: Express) {
         });
       }
 
-      // If payment method is IPG, create payment session and redirect URL
       if (paymentMethod === "ipg") {
-        const baseUrl = process.env.REPLIT_DOMAINS?.split(",")[0] 
-          ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`
-          : "http://localhost:5000";
-        const ipgUrl = new URL("/mock-ipg", baseUrl);
-        const referenceId = quote.productId ? result.id : result.id; // Use order/booking ID as reference
-        
-        // Set parameters expected by Mock IPG
-        ipgUrl.searchParams.set("transactionRef", referenceId);
-        ipgUrl.searchParams.set("amount", totalAmount.toFixed(2));
-        ipgUrl.searchParams.set("merchantId", "VAANEY_MERCHANT");
-        ipgUrl.searchParams.set("returnUrl", `${baseUrl}/orders`);
-        ipgUrl.searchParams.set("transactionType", quote.productId ? "order" : "booking");
-        
-        return res.json({
-          ...result,
-          type: quote.productId ? "order" : "booking",
-          ipgRedirectUrl: ipgUrl.toString(),
-          shippingCost: shippingCost.toFixed(2),
-        });
+        try {
+          const baseUrl = process.env.REPLIT_DOMAINS?.split(",")[0]
+            ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`
+            : "http://localhost:5000";
+          const referenceId = result.id;
+          const txType = quote.productId ? "order" : "booking";
+          const prefix = quote.productId ? "QOD" : "QBK";
+          const mpgsOrderId = `${prefix}-${referenceId.substring(0, 8)}-${Date.now()}`;
+          const returnUrl = `${baseUrl}/payment-return?type=${txType}&ref=${referenceId}`;
+          const mpgsSession = await createMpgsSession(
+            mpgsOrderId,
+            totalAmount.toFixed(2),
+            "USD",
+            `Vaaney ${quote.productId ? "Order" : "Booking"} from Quote`,
+            returnUrl
+          );
+          const updateTable = quote.productId ? orders : bookings;
+          await db.update(updateTable).set({
+            mpgsOrderId,
+            successIndicator: mpgsSession.successIndicator,
+          }).where(eq(updateTable.id, referenceId));
+          return res.json({
+            ...result,
+            type: txType,
+            mpgsSessionId: mpgsSession.sessionId,
+            paymentMethod: "ipg",
+            shippingCost: shippingCost.toFixed(2),
+          });
+        } catch (mpgsError: any) {
+          console.error("[MPGS] Failed to create quote payment session:", mpgsError);
+          return res.status(500).json({ message: "Payment gateway error. Please try again or use bank transfer." });
+        }
       }
       
       res.json({

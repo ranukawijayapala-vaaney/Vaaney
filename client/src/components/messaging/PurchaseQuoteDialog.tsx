@@ -83,15 +83,16 @@ export function PurchaseQuoteDialog({
         title: "Order created successfully!",
         description: paymentMethod === "bank_transfer" 
           ? "Please upload your payment slip to complete the order."
-          : "Redirecting to payment gateway..."
+          : "Opening payment gateway..."
       });
       onOpenChange(false);
-      
-      // Redirect for IPG payment if needed
-      if (paymentMethod === "ipg" && data.ipgRedirectUrl) {
-        setTimeout(() => {
-          window.location.href = data.ipgRedirectUrl;
-        }, 1000); // Small delay to show success message
+
+      if (paymentMethod === "ipg" && data.mpgsSessionId) {
+        import("@/lib/mpgs").then(({ launchMpgsCheckout }) => {
+          launchMpgsCheckout(data.mpgsSessionId).catch(() => {
+            toast({ title: "Payment gateway error", description: "Please try again.", variant: "destructive" });
+          });
+        });
       }
     },
     onError: (error: Error) => {

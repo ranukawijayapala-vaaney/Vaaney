@@ -370,6 +370,8 @@ export const bookings = pgTable("bookings", {
   quoteId: varchar("quote_id").references(() => quotes.id, { onDelete: "set null" }), // For quote-based bookings
   designApprovalId: varchar("design_approval_id").references(() => designApprovals.id, { onDelete: "set null" }), // For bookings with design approval
   quantity: integer("quantity").notNull().default(1), // For quote-based bookings
+  mpgsOrderId: varchar("mpgs_order_id", { length: 255 }),
+  successIndicator: varchar("success_indicator", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -841,6 +843,8 @@ export const checkoutSessions = pgTable("checkout_sessions", {
   status: varchar("status", { length: 30 }).notNull().default("pending_payment"),
   ipgRedirectUrl: text("ipg_redirect_url"),
   transferSlipObjectPath: text("transfer_slip_object_path"),
+  mpgsOrderId: varchar("mpgs_order_id", { length: 255 }),
+  successIndicator: varchar("success_indicator", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -886,6 +890,8 @@ export const orders = pgTable("orders", {
   aramexTrackingUrl: text("aramex_tracking_url"), // Tracking page URL
   // Return request tracking
   returnAttemptCount: integer("return_attempt_count").notNull().default(0), // Tracks number of return requests submitted for this order
+  mpgsOrderId: varchar("mpgs_order_id", { length: 255 }),
+  successIndicator: varchar("success_indicator", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1288,6 +1294,8 @@ export const boostPurchases = pgTable("boost_purchases", {
   paymentSlipUrl: text("payment_slip_url"), // URL to uploaded payment slip image
   paymentDetails: jsonb("payment_details"), // Store IPG response data
   boostedItemId: varchar("boosted_item_id").references(() => boostedItems.id), // Link to created boost
+  mpgsOrderId: varchar("mpgs_order_id", { length: 255 }),
+  successIndicator: varchar("success_indicator", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow(),
   paidAt: timestamp("paid_at"),
 });

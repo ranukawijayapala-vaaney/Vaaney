@@ -22,7 +22,7 @@ import RejectedVerification from "@/pages/RejectedVerification";
 import BuyerGuidelines from "@/pages/BuyerGuidelines";
 import SellerGuidelines from "@/pages/SellerGuidelines";
 import AboutUs from "@/pages/AboutUs";
-import MockIPG from "@/pages/MockIPG";
+import PaymentReturn from "@/pages/buyer/PaymentReturn";
 import AdminSetup from "@/pages/AdminSetup";
 
 import { BuyerLayout } from "@/components/BuyerLayout";
@@ -96,7 +96,7 @@ function Router() {
         <Route path="/buyer-guidelines" component={BuyerGuidelines} />
         <Route path="/seller-guidelines" component={SellerGuidelines} />
         <Route path="/about" component={AboutUs} />
-        <Route path="/mock-ipg" component={MockIPG} />
+        <Route path="/payment-return" component={PaymentReturn} />
         <Route path="/admin-setup" component={AdminSetup} />
         <Route path="/meeting/:meetingId" component={MeetingRoom} />
         <Route path="/marketplace">
@@ -213,7 +213,7 @@ function Router() {
           </Route>
           <Route path="/seller/:sellerId" component={SellerProfile} />
           <Route path="/meeting/:meetingId" component={MeetingRoom} />
-          <Route path="/mock-ipg" component={MockIPG} />
+          <Route path="/payment-return" component={PaymentReturn} />
           <Route component={NotFound} />
         </Switch>
       </BuyerLayout>
@@ -248,7 +248,7 @@ function Router() {
           </Route>
           <Route path="/seller/:sellerId" component={SellerProfile} />
           <Route path="/meeting/:meetingId" component={MeetingRoom} />
-          <Route path="/mock-ipg" component={MockIPG} />
+          <Route path="/payment-return" component={PaymentReturn} />
           <Route component={NotFound} />
         </Switch>
       </SellerLayout>
@@ -276,7 +276,7 @@ function Router() {
           <Route path="/notifications" component={Notifications} />
           <Route path="/profile" component={Profile} />
           <Route path="/seller/:sellerId" component={SellerProfile} />
-          <Route path="/mock-ipg" component={MockIPG} />
+          <Route path="/payment-return" component={PaymentReturn} />
           <Route component={NotFound} />
         </Switch>
       </AdminLayout>

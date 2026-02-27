@@ -57,6 +57,7 @@ import {
   designApprovals,
   bankAccounts,
 } from "@shared/schema";
+import { createCheckoutSession as createMpgsSession, retrieveOrder as retrieveMpgsOrder, getMpgsCheckoutJsUrl } from "./mpgs";
 import * as aramex from "./aramex";
 import { trackShipments, isShipmentDelivered } from "./aramex";
 import { setupShippingRoutes } from "./shippingRoutes";
@@ -227,202 +228,160 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // IPG Payment Webhook - handles automatic payment confirmations from payment gateway
-  app.post("/api/webhooks/ipg-payment", async (req: Request, res: Response) => {
+  app.get("/api/payments/mpgs-config", (_req: Request, res: Response) => {
+    res.json({ checkoutJsUrl: getMpgsCheckoutJsUrl() });
+  });
+
+  app.post("/api/payments/verify", async (req: Request, res: Response) => {
     try {
-      const { transactionRef, status, amount } = req.body;
-      
-      if (!transactionRef || !status) {
-        return res.status(400).json({ message: "Missing required webhook parameters" });
+      const { transactionRef, resultIndicator, transactionType } = req.body;
+
+      if (!transactionRef || !resultIndicator) {
+        return res.status(400).json({ message: "Missing required parameters" });
       }
-      
-      // Verify webhook authentication using header
-      // In production, this would verify HMAC signature or OAuth token
-      const webhookSecret = req.headers['x-webhook-secret'];
-      const expectedSecret = process.env.WEBHOOK_SECRET || "mock_webhook_secret_for_development";
-      
-      if (webhookSecret !== expectedSecret) {
-        console.log(`IPG webhook authentication failed for ${transactionRef}`);
-        return res.status(401).json({ message: "Unauthorized webhook request" });
+
+      let storedIndicator: string | null = null;
+      let mpgsOrdId: string | null = null;
+
+      if (transactionType === "checkout") {
+        const cs = await db.query.checkoutSessions.findFirst({
+          where: eq(checkoutSessions.id, transactionRef),
+        });
+        if (cs) {
+          storedIndicator = cs.successIndicator;
+          mpgsOrdId = cs.mpgsOrderId;
+        }
+      } else if (transactionType === "order") {
+        const o = await db.query.orders.findFirst({
+          where: eq(orders.id, transactionRef),
+        });
+        if (o) {
+          storedIndicator = o.successIndicator;
+          mpgsOrdId = o.mpgsOrderId;
+        }
+      } else if (transactionType === "booking") {
+        const b = await db.query.bookings.findFirst({
+          where: eq(bookings.id, transactionRef),
+        });
+        if (b) {
+          storedIndicator = b.successIndicator;
+          mpgsOrdId = b.mpgsOrderId;
+        }
+      } else if (transactionType === "boost") {
+        const bp = await db.query.boostPurchases.findFirst({
+          where: eq(boostPurchases.id, transactionRef),
+        });
+        if (bp) {
+          storedIndicator = bp.successIndicator;
+          mpgsOrdId = bp.mpgsOrderId;
+        }
       }
-      
-      if (status !== "SUCCESS") {
-        console.log(`IPG payment failed for ${transactionRef}`);
-        return res.json({ received: true, status: "ignored" });
+
+      if (!storedIndicator) {
+        return res.status(404).json({ message: "Transaction not found or missing payment data" });
       }
-      
-      // Check if transactionRef is a checkout session
-      const checkoutSession = await db.query.checkoutSessions.findFirst({
-        where: eq(checkoutSessions.id, transactionRef),
-      });
-      
-      if (checkoutSession) {
+
+      if (resultIndicator !== storedIndicator) {
+        console.log(`[MPGS] Payment verification failed for ${transactionRef}: indicator mismatch`);
+        return res.json({ success: false, message: "Payment verification failed" });
+      }
+
+      if (mpgsOrdId) {
+        try {
+          const mpgsOrder = await retrieveMpgsOrder(mpgsOrdId);
+          if (mpgsOrder.result !== "SUCCESS") {
+            console.log(`[MPGS] Retrieve order verification failed for ${mpgsOrdId}: ${mpgsOrder.result}`);
+            return res.json({ success: false, message: "Payment not confirmed by gateway" });
+          }
+        } catch (err) {
+          console.error("[MPGS] Error verifying with retrieve order API:", err);
+          return res.json({ success: false, message: "Unable to confirm payment with the gateway. Please try again or contact support." });
+        }
+      }
+
+      if (transactionType === "checkout") {
         const paymentRef = generatePaymentReference(transactionRef);
-        
-        // Update checkout session status
-        await db.update(checkoutSessions).set({
-          status: "paid",
-        }).where(eq(checkoutSessions.id, transactionRef));
-        
-        // Update all orders in this checkout session to paid
-        await db.update(orders).set({
-          status: "paid",
-          paymentReference: paymentRef
-        }).where(eq(orders.checkoutSessionId, transactionRef));
-        
-        // Update all transactions for these orders to escrow
+        await db.update(checkoutSessions).set({ status: "paid" }).where(eq(checkoutSessions.id, transactionRef));
+        await db.update(orders).set({ status: "paid", paymentReference: paymentRef }).where(eq(orders.checkoutSessionId, transactionRef));
+
         const ordersInSession = await db.query.orders.findMany({
           where: eq(orders.checkoutSessionId, transactionRef),
         });
-        
+
         for (const order of ordersInSession) {
-          await db.update(transactions).set({
-            status: "escrow",
-            paymentReference: paymentRef
-          }).where(eq(transactions.orderId, order.id));
-          
-          // Send notifications for paid order
+          await db.update(transactions).set({ status: "escrow", paymentReference: paymentRef }).where(eq(transactions.orderId, order.id));
           const [product] = await db.select().from(products).where(eq(products.id, order.productId));
           if (product) {
-            await notifyOrderPaid({
-              buyerId: order.buyerId,
-              sellerId: order.sellerId,
-              orderId: order.id,
-              productName: product.name,
-            });
+            await notifyOrderPaid({ buyerId: order.buyerId, sellerId: order.sellerId, orderId: order.id, productName: product.name });
           }
         }
-        
-        console.log(`Checkout session ${transactionRef} paid via IPG with reference ${paymentRef}`);
-        return res.json({ received: true, status: "processed", type: "checkout", ordersCount: ordersInSession.length });
+
+        console.log(`[MPGS] Checkout session ${transactionRef} paid with reference ${paymentRef}`);
+        return res.json({ success: true, type: "checkout", ordersCount: ordersInSession.length });
       }
-      
-      // Check individual orders (legacy support)
-      const order = await db.query.orders.findFirst({
-        where: eq(orders.id, transactionRef),
-      });
-      
-      if (order) {
+
+      if (transactionType === "order") {
         const paymentRef = generatePaymentReference(transactionRef);
-        
-        // Update order status to paid
-        await db.update(orders).set({ 
-          status: "paid",
-          paymentReference: paymentRef
-        }).where(eq(orders.id, transactionRef));
-        
-        // Update all related transactions to escrow status
-        await db.update(transactions).set({ 
-          status: "escrow",
-          paymentReference: paymentRef
-        }).where(eq(transactions.orderId, transactionRef));
-        
-        // Send notifications for paid order
-        const [product] = await db.select().from(products).where(eq(products.id, order.productId));
-        if (product) {
-          await notifyOrderPaid({
-            buyerId: order.buyerId,
-            sellerId: order.sellerId,
-            orderId: order.id,
-            productName: product.name,
-          });
+        await db.update(orders).set({ status: "paid", paymentReference: paymentRef }).where(eq(orders.id, transactionRef));
+        await db.update(transactions).set({ status: "escrow", paymentReference: paymentRef }).where(eq(transactions.orderId, transactionRef));
+
+        const order = await db.query.orders.findFirst({ where: eq(orders.id, transactionRef) });
+        if (order) {
+          const [product] = await db.select().from(products).where(eq(products.id, order.productId));
+          if (product) {
+            await notifyOrderPaid({ buyerId: order.buyerId, sellerId: order.sellerId, orderId: order.id, productName: product.name });
+          }
         }
-        
-        console.log(`Order ${transactionRef} paid via IPG with reference ${paymentRef}`);
-        return res.json({ received: true, status: "processed", type: "order" });
+
+        console.log(`[MPGS] Order ${transactionRef} paid with reference ${paymentRef}`);
+        return res.json({ success: true, type: "order" });
       }
-      
-      // Check bookings
-      const booking = await db.query.bookings.findFirst({
-        where: eq(bookings.id, transactionRef),
-      });
-      
-      if (booking) {
+
+      if (transactionType === "booking") {
         const paymentRef = generatePaymentReference(transactionRef);
-        
-        // Update booking status to paid
-        await db.update(bookings).set({ 
-          status: "paid",
-          paymentReference: paymentRef
-        }).where(eq(bookings.id, transactionRef));
-        
-        // Update transaction to escrow status
-        await db.update(transactions).set({ 
-          status: "escrow",
-          paymentReference: paymentRef
-        }).where(eq(transactions.bookingId, transactionRef));
-        
-        // Send notifications for paid booking
-        const [service] = await db.select().from(users).where(eq(users.id, booking.sellerId));
-        const serviceData = await storage.getService(booking.serviceId);
-        if (serviceData) {
-          await notifyBookingPaid({
-            buyerId: booking.buyerId,
-            sellerId: booking.sellerId,
-            bookingId: booking.id,
-            serviceName: serviceData.name,
-          });
+        await db.update(bookings).set({ status: "paid", paymentReference: paymentRef }).where(eq(bookings.id, transactionRef));
+        await db.update(transactions).set({ status: "escrow", paymentReference: paymentRef }).where(eq(transactions.bookingId, transactionRef));
+
+        const booking = await db.query.bookings.findFirst({ where: eq(bookings.id, transactionRef) });
+        if (booking) {
+          const serviceData = await storage.getService(booking.serviceId);
+          if (serviceData) {
+            await notifyBookingPaid({ buyerId: booking.buyerId, sellerId: booking.sellerId, bookingId: booking.id, serviceName: serviceData.name });
+          }
         }
-        
-        console.log(`Booking ${transactionRef} paid via IPG with reference ${paymentRef}`);
-        return res.json({ received: true, status: "processed", type: "booking" });
+
+        console.log(`[MPGS] Booking ${transactionRef} paid with reference ${paymentRef}`);
+        return res.json({ success: true, type: "booking" });
       }
-      
-      // Check boost purchases
-      const boostPurchase = await db.query.boostPurchases.findFirst({
-        where: eq(boostPurchases.id, transactionRef),
-      });
-      
-      if (boostPurchase) {
+
+      if (transactionType === "boost") {
         const paymentRef = generatePaymentReference(transactionRef);
-        
-        // Get the boost package to calculate end date
-        const boostPackage = await db.query.boostPackages.findFirst({
-          where: eq(boostPackages.id, boostPurchase.packageId),
-        });
-        
+        const boostPurchase = await db.query.boostPurchases.findFirst({ where: eq(boostPurchases.id, transactionRef) });
+        if (!boostPurchase) {
+          return res.status(404).json({ message: "Boost purchase not found" });
+        }
+
+        const boostPackage = await db.query.boostPackages.findFirst({ where: eq(boostPackages.id, boostPurchase.packageId) });
         if (!boostPackage) {
-          console.error(`Boost package ${boostPurchase.packageId} not found`);
           return res.status(404).json({ message: "Boost package not found" });
         }
-        
-        // Activate the boost
+
         await db.transaction(async (tx) => {
           const now = new Date();
           const endDate = new Date(now);
           endDate.setDate(endDate.getDate() + boostPackage.durationDays);
-          
-          // Update purchase status to paid
-          await tx.update(boostPurchases).set({ 
-            status: "paid",
-            paymentReference: paymentRef,
-            paidAt: now
-          }).where(eq(boostPurchases.id, transactionRef));
-          
-          // Update transaction to paid status (boosts don't use escrow)
-          await tx.update(transactions).set({ 
-            status: "paid",
-            paymentReference: paymentRef
-          }).where(eq(transactions.boostPurchaseId, transactionRef));
-          
-          // Activate the boost by creating boosted_items record
-          await tx.insert(boostedItems).values({
-            itemType: boostPurchase.itemType,
-            itemId: boostPurchase.itemId,
-            packageId: boostPurchase.packageId,
-            startDate: now,
-            endDate: endDate,
-            isActive: true,
-          });
+          await tx.update(boostPurchases).set({ status: "paid", paymentReference: paymentRef, paidAt: now }).where(eq(boostPurchases.id, transactionRef));
+          await tx.update(transactions).set({ status: "paid", paymentReference: paymentRef }).where(eq(transactions.boostPurchaseId, transactionRef));
+          await tx.insert(boostedItems).values({ itemType: boostPurchase.itemType, itemId: boostPurchase.itemId, packageId: boostPurchase.packageId, startDate: now, endDate, isActive: true });
         });
-        
-        console.log(`Boost purchase ${transactionRef} paid and activated via IPG with reference ${paymentRef}`);
-        return res.json({ received: true, status: "processed", type: "boost" });
+
+        console.log(`[MPGS] Boost purchase ${transactionRef} paid and activated with reference ${paymentRef}`);
+        return res.json({ success: true, type: "boost" });
       }
-      
-      return res.status(404).json({ message: "Transaction not found" });
+
+      return res.status(400).json({ message: "Unknown transaction type" });
     } catch (error: any) {
-      console.error("IPG webhook error:", error);
+      console.error("[MPGS] Payment verification error:", error);
       return res.status(500).json({ message: error.message });
     }
   });
@@ -2040,21 +1999,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Error sending admin order notification:", notifError);
         }
         
-        // Handle IPG payment redirect if applicable
         if (checkoutData.paymentMethod === "ipg") {
-          const ipgUrl = new URL(`${req.protocol}://${req.get('host')}/mock-ipg`);
-          ipgUrl.searchParams.set("transactionRef", result.checkoutSession.id);
-          ipgUrl.searchParams.set("amount", (orderTotal + shippingCostTotal).toFixed(2));
-          ipgUrl.searchParams.set("merchantId", "VAANEY_MERCHANT");
-          ipgUrl.searchParams.set("transactionType", "checkout");
-          ipgUrl.searchParams.set("returnUrl", `${req.protocol}://${req.get('host')}/orders`);
-          
-          return res.json({
-            success: true,
-            checkoutSessionId: result.checkoutSession.id,
-            orders: result.orders,
-            redirectUrl: ipgUrl.toString(),
-          });
+          try {
+            const baseUrl = process.env.REPLIT_DOMAINS?.split(",")[0]
+              ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`
+              : `${req.protocol}://${req.get('host')}`;
+            const mpgsOrderId = `CHK-${result.checkoutSession.id.substring(0, 8)}-${Date.now()}`;
+            const returnUrl = `${baseUrl}/payment-return?type=checkout&ref=${result.checkoutSession.id}`;
+            const mpgsSession = await createMpgsSession(
+              mpgsOrderId,
+              (orderTotal + shippingCostTotal).toFixed(2),
+              "USD",
+              `Vaaney Order ${result.checkoutSession.id.substring(0, 8)}`,
+              returnUrl
+            );
+            await db.update(checkoutSessions).set({
+              mpgsOrderId,
+              successIndicator: mpgsSession.successIndicator,
+            }).where(eq(checkoutSessions.id, result.checkoutSession.id));
+            return res.json({
+              success: true,
+              checkoutSessionId: result.checkoutSession.id,
+              orders: result.orders,
+              mpgsSessionId: mpgsSession.sessionId,
+              paymentMethod: "ipg",
+            });
+          } catch (mpgsError: any) {
+            console.error("[MPGS] Failed to create checkout session:", mpgsError);
+            return res.status(500).json({ message: "Payment gateway error. Please try again or use bank transfer." });
+          }
         }
         
         return res.json({
@@ -2306,21 +2279,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // If IPG payment, return redirect URL to payment gateway
       if (checkoutData.paymentMethod === "ipg") {
-        const ipgUrl = new URL(`${req.protocol}://${req.get('host')}/mock-ipg`);
-        ipgUrl.searchParams.set("transactionRef", result.checkoutSession.id);
-        ipgUrl.searchParams.set("amount", result.checkoutSession.totalAmount);
-        ipgUrl.searchParams.set("merchantId", "VAANEY_MERCHANT");
-        ipgUrl.searchParams.set("transactionType", "checkout");
-        ipgUrl.searchParams.set("returnUrl", `${req.protocol}://${req.get('host')}/orders`);
-        
-        return res.json({ 
-          checkoutSession: result.checkoutSession,
-          orders: result.orders,
-          redirectUrl: ipgUrl.toString(),
-          paymentMethod: "ipg" 
-        });
+        try {
+          const baseUrl = process.env.REPLIT_DOMAINS?.split(",")[0]
+            ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`
+            : `${req.protocol}://${req.get('host')}`;
+          const mpgsOrderId = `CHK-${result.checkoutSession.id.substring(0, 8)}-${Date.now()}`;
+          const returnUrl = `${baseUrl}/payment-return?type=checkout&ref=${result.checkoutSession.id}`;
+          const mpgsSession = await createMpgsSession(
+            mpgsOrderId,
+            result.checkoutSession.totalAmount,
+            "USD",
+            `Vaaney Order ${result.checkoutSession.id.substring(0, 8)}`,
+            returnUrl
+          );
+          await db.update(checkoutSessions).set({
+            mpgsOrderId,
+            successIndicator: mpgsSession.successIndicator,
+          }).where(eq(checkoutSessions.id, result.checkoutSession.id));
+          return res.json({
+            checkoutSession: result.checkoutSession,
+            orders: result.orders,
+            mpgsSessionId: mpgsSession.sessionId,
+            paymentMethod: "ipg",
+          });
+        } catch (mpgsError: any) {
+          console.error("[MPGS] Failed to create checkout session:", mpgsError);
+          return res.status(500).json({ message: "Payment gateway error. Please try again or use bank transfer." });
+        }
       }
       
       res.json({ checkoutSession: result.checkoutSession, orders: result.orders });
@@ -2556,21 +2542,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // If IPG payment, return redirect URL to payment gateway
-      // Use authoritativeAmount (from quote or package) for payment
       if (parsedData.paymentMethod === "ipg") {
-        const ipgUrl = new URL(`${req.protocol}://${req.get('host')}/mock-ipg`);
-        ipgUrl.searchParams.set("transactionRef", booking.id);
-        ipgUrl.searchParams.set("amount", authoritativeAmount.toFixed(2));
-        ipgUrl.searchParams.set("merchantId", "VAANEY_MERCHANT");
-        ipgUrl.searchParams.set("transactionType", "booking");
-        ipgUrl.searchParams.set("returnUrl", `${req.protocol}://${req.get('host')}/bookings`);
-        
-        return res.json({ 
-          booking, 
-          redirectUrl: ipgUrl.toString(),
-          paymentMethod: "ipg" 
-        });
+        try {
+          const baseUrl = process.env.REPLIT_DOMAINS?.split(",")[0]
+            ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`
+            : `${req.protocol}://${req.get('host')}`;
+          const mpgsOrderId = `BKG-${booking.id.substring(0, 8)}-${Date.now()}`;
+          const returnUrl = `${baseUrl}/payment-return?type=booking&ref=${booking.id}`;
+          const mpgsSession = await createMpgsSession(
+            mpgsOrderId,
+            authoritativeAmount.toFixed(2),
+            "USD",
+            `Vaaney Booking ${booking.id.substring(0, 8)}`,
+            returnUrl
+          );
+          await db.update(bookings).set({
+            mpgsOrderId,
+            successIndicator: mpgsSession.successIndicator,
+          }).where(eq(bookings.id, booking.id));
+          return res.json({
+            booking,
+            mpgsSessionId: mpgsSession.sessionId,
+            paymentMethod: "ipg",
+          });
+        } catch (mpgsError: any) {
+          console.error("[MPGS] Failed to create booking payment session:", mpgsError);
+          return res.status(500).json({ message: "Payment gateway error. Please try again or use bank transfer." });
+        }
       }
       
       res.json(booking);
@@ -6247,21 +6245,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If IPG payment, return redirect URL to payment gateway
       if (paymentMethod === "ipg") {
-        const amount = parseFloat(boostPackage.price);
-        
-        const ipgUrl = new URL(`${req.protocol}://${req.get('host')}/mock-ipg`);
-        ipgUrl.searchParams.set("transactionRef", result.id);
-        ipgUrl.searchParams.set("amount", amount.toFixed(2));
-        ipgUrl.searchParams.set("merchantId", "VAANEY_MERCHANT");
-        ipgUrl.searchParams.set("transactionType", "boost");
-        ipgUrl.searchParams.set("returnUrl", `${req.protocol}://${req.get('host')}/seller/boost`);
-        
-        return res.json({ 
-          purchase: result,
-          redirectUrl: ipgUrl.toString(),
-          paymentMethod: "ipg",
-          message: "Redirecting to payment gateway..." 
-        });
+        try {
+          const baseUrl = process.env.REPLIT_DOMAINS?.split(",")[0]
+            ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`
+            : `${req.protocol}://${req.get('host')}`;
+          const amount = parseFloat(boostPackage.price);
+          const mpgsOrderId = `BST-${result.id.substring(0, 8)}-${Date.now()}`;
+          const returnUrl = `${baseUrl}/payment-return?type=boost&ref=${result.id}`;
+          const mpgsSession = await createMpgsSession(
+            mpgsOrderId,
+            amount.toFixed(2),
+            "USD",
+            `Vaaney Boost - ${boostPackage.name}`,
+            returnUrl
+          );
+          await db.update(boostPurchases).set({
+            mpgsOrderId,
+            successIndicator: mpgsSession.successIndicator,
+          }).where(eq(boostPurchases.id, result.id));
+          return res.json({
+            purchase: result,
+            mpgsSessionId: mpgsSession.sessionId,
+            paymentMethod: "ipg",
+            message: "Redirecting to payment gateway...",
+          });
+        } catch (mpgsError: any) {
+          console.error("[MPGS] Failed to create boost payment session:", mpgsError);
+          return res.status(500).json({ message: "Payment gateway error. Please try again or use bank transfer." });
+        }
       }
 
       res.json({ 

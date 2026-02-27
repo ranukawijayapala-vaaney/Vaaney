@@ -434,13 +434,17 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
     },
     onSuccess: (response: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/buyer/bookings"] });
-      
-      if (response.redirectUrl) {
-        toast({ title: "Redirecting to payment gateway..." });
-        window.location.href = response.redirectUrl;
+
+      if (response.mpgsSessionId) {
+        toast({ title: "Opening payment gateway..." });
+        import("@/lib/mpgs").then(({ launchMpgsCheckout }) => {
+          launchMpgsCheckout(response.mpgsSessionId).catch(() => {
+            toast({ title: "Payment gateway error", description: "Please try again.", variant: "destructive" });
+          });
+        });
         return;
       }
-      
+
       toast({ title: "Booking request submitted!", description: "Waiting for seller to confirm availability." });
       navigate("/bookings");
     },

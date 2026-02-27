@@ -19,6 +19,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import type { BankAccount } from "@shared/schema";
+import { launchMpgsCheckout } from "@/lib/mpgs";
 
 const checkoutSchema = z.object({
   notes: z.string().optional(),
@@ -172,18 +173,16 @@ export default function Checkout() {
     onSuccess: (response: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
       queryClient.invalidateQueries({ queryKey: ["/api/buyer/orders"] });
-      
-      // If IPG payment, redirect to payment gateway
-      if (response.redirectUrl) {
-        const ordersCount = response.orders?.length || 0;
-        toast({ 
-          title: "Redirecting to payment gateway...",
-          description: ordersCount > 1 ? `Processing ${ordersCount} orders (one per product variant)` : undefined
+
+      if (response.mpgsSessionId) {
+        toast({ title: "Opening payment gateway..." });
+        launchMpgsCheckout(response.mpgsSessionId).catch(() => {
+          toast({ title: "Payment gateway error", description: "Please try again or use bank transfer.", variant: "destructive" });
+          setIsProcessing(false);
         });
-        window.location.href = response.redirectUrl;
         return;
       }
-      
+
       const ordersCount = response.orders?.length || 0;
       toast({ 
         title: `${ordersCount} ${ordersCount === 1 ? 'Order' : 'Orders'} placed successfully!`,

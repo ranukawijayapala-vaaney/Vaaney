@@ -104,13 +104,13 @@ export default function Boost() {
       setSelectedPackage(null);
       setSelectedItemId("");
       
-      // If IPG payment, redirect to payment gateway
-      if (response.redirectUrl) {
-        toast({ 
-          title: "Redirecting to payment gateway...", 
-          description: response.message 
+      if (response.mpgsSessionId) {
+        toast({ title: "Opening payment gateway...", description: response.message });
+        import("@/lib/mpgs").then(({ launchMpgsCheckout }) => {
+          launchMpgsCheckout(response.mpgsSessionId).catch(() => {
+            toast({ title: "Payment gateway error", description: "Please try again.", variant: "destructive" });
+          });
         });
-        window.location.href = response.redirectUrl;
         return;
       }
       
