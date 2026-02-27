@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingCart, Trash2, Minus, Plus } from "lucide-react";
+import { ShoppingCart, Trash2, Minus, Plus, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
 
@@ -92,7 +93,19 @@ export default function Cart() {
     return sum + (parseFloat(unitPrice) * item.quantity);
   }, 0);
 
+  const itemsWithInvalidQuotes = cartDetails.filter(
+    (item) => item.quoteId && (!item.quote || item.quote.status !== "accepted")
+  );
+
   const handleCheckout = () => {
+    if (itemsWithInvalidQuotes.length > 0) {
+      toast({
+        title: "Cannot proceed to checkout",
+        description: `Some items have quotes that are not accepted yet. Please resolve them or remove them from your cart.`,
+        variant: "destructive",
+      });
+      return;
+    }
     navigate("/checkout");
   };
 
@@ -243,10 +256,26 @@ export default function Cart() {
                 Platform commission is deducted from seller payouts
               </p>
             </CardContent>
+            {itemsWithInvalidQuotes.length > 0 && (
+              <CardContent className="pt-0">
+                <Alert variant="destructive" data-testid="alert-invalid-quotes">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    {itemsWithInvalidQuotes.map((item) => (
+                      <span key={item.id} className="block text-sm">
+                        {item.variant.product.name} - {item.variant.name}: quote is {item.quote ? item.quote.status : "unavailable"}
+                      </span>
+                    ))}
+                    <span className="block text-xs mt-1">Accept the quotes or remove these items to proceed.</span>
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            )}
             <CardFooter>
               <Button
                 className="w-full"
                 onClick={handleCheckout}
+                disabled={itemsWithInvalidQuotes.length > 0}
                 data-testid="button-checkout"
               >
                 Proceed to Checkout

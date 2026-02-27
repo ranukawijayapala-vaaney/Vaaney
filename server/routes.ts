@@ -2103,24 +2103,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Verify quote status
           if (quoteData.status !== "accepted") {
-            return res.status(400).json({ message: `Quote ${cartItem.quoteId} is not accepted (status: ${quoteData.status})` });
+            return res.status(400).json({ message: `The quote for "${product.name}" is not accepted yet (status: ${quoteData.status}). Please accept the quote or remove this item from your cart.` });
           }
           
           // Verify quote matches cart item variant
           if (quoteData.productVariantId !== cartItem.productVariantId) {
-            return res.status(400).json({ message: `Quote ${cartItem.quoteId} does not match cart item variant` });
+            return res.status(400).json({ message: `The quote for "${product.name}" does not match the selected variant. Please remove this item and try again.` });
           }
           
           // Verify quote quantity matches or cart quantity is within quote quantity
           if (cartItem.quantity !== quoteData.quantity) {
             return res.status(400).json({ 
-              message: `Cart quantity (${cartItem.quantity}) does not match quote quantity (${quoteData.quantity}). Please adjust your cart.` 
+              message: `The quantity for "${product.name}" (${cartItem.quantity}) does not match the quoted quantity (${quoteData.quantity}). Please adjust your cart.` 
             });
           }
           
           // Check expiration (handle nullable expiresAt)
           if (quoteData.expiresAt && new Date() > new Date(quoteData.expiresAt)) {
-            return res.status(400).json({ message: `Quote ${cartItem.quoteId} has expired` });
+            return res.status(400).json({ message: `The quote for "${product.name}" has expired. Please request a new quote from the seller.` });
           }
           
           // Use quoted price instead of variant price
