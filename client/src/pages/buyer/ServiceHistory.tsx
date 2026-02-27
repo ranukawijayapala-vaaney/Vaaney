@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, DollarSign, Clock, AlertCircle, CheckCircle, MessageCircle, Star, Download, FileIcon } from "lucide-react";
+import { Calendar, DollarSign, Clock, AlertCircle, CheckCircle, MessageCircle, Star, Download, FileIcon, CreditCard } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -126,6 +126,7 @@ export default function ServiceHistory() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [submittingPayment, setSubmittingPayment] = useState<string | null>(null);
+  const [retryingPayment, setRetryingPayment] = useState<string | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
   const [subject, setSubject] = useState("");
@@ -222,6 +223,24 @@ export default function ServiceHistory() {
     },
   });
 
+  const retryPaymentMutation = useMutation({
+    mutationFn: async ({ transactionRef, transactionType }: { transactionRef: string; transactionType: string }) => {
+      return await apiRequest("POST", "/api/payments/retry", { transactionRef, transactionType });
+    },
+    onSuccess: (response: any) => {
+      if (response.mpgsSessionId) {
+        toast({ title: "Redirecting to payment gateway..." });
+        window.location.href = `https://cbcmpgs.gateway.mastercard.com/checkout/pay/${response.mpgsSessionId}`;
+      } else {
+        setRetryingPayment(null);
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Payment retry failed", description: error.message, variant: "destructive" });
+      setRetryingPayment(null);
+    },
+  });
+
   const handleContactSeller = (booking: Booking & { service: { name: string }, package: { name: string } }) => {
     setSelectedBooking(booking);
     setSubject(`Question about ${booking.service?.name} Booking`);
@@ -310,7 +329,40 @@ export default function ServiceHistory() {
                   </div>
                 )}
 
-                {booking.status === "pending_payment" && (
+                {booking.status === "pending_payment" && (booking as any).paymentMethod === "ipg" && (
+                  <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-4">
+                    <div className="flex items-start gap-3 mb-3">
+                      <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">Card Payment Incomplete</p>
+                        <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">Your card payment was not completed. You can retry the payment below.</p>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={() => {
+                        setRetryingPayment(booking.id);
+                        retryPaymentMutation.mutate({ transactionRef: booking.id, transactionType: "booking" });
+                      }}
+                      disabled={retryingPayment === booking.id}
+                      className="w-full" 
+                      data-testid={`button-retry-payment-${booking.id}`}
+                    >
+                      {retryingPayment === booking.id ? (
+                        <>Processing...</>
+                      ) : (
+                        <>
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          Retry Payment
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      Amount: ${booking.amount} USD
+                    </p>
+                  </div>
+                )}
+
+                {booking.status === "pending_payment" && (booking as any).paymentMethod !== "ipg" && (
                   <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-4">
                     <div className="flex items-start gap-3 mb-3">
                       <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />

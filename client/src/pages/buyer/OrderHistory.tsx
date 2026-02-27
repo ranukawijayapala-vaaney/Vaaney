@@ -1,4 +1,4 @@
-import { Package, Calendar, DollarSign, Check, Truck, Box, CheckCircle, XCircle, Clock, MessageCircle, ExternalLink, RotateCcw, Upload, X, Eye, History, Star, FileText } from "lucide-react";
+import { Package, Calendar, DollarSign, Check, Truck, Box, CheckCircle, XCircle, Clock, MessageCircle, ExternalLink, RotateCcw, Upload, X, Eye, History, Star, FileText, CreditCard } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -98,6 +98,25 @@ export default function OrderHistory() {
   // Rating states
   const [isRatingDialogOpen, setIsRatingDialogOpen] = useState(false);
   const [selectedOrderForRating, setSelectedOrderForRating] = useState<string | null>(null);
+  const [retryingPayment, setRetryingPayment] = useState<string | null>(null);
+
+  const retryPaymentMutation = useMutation({
+    mutationFn: async ({ transactionRef, transactionType }: { transactionRef: string; transactionType: string }) => {
+      return await apiRequest("POST", "/api/payments/retry", { transactionRef, transactionType });
+    },
+    onSuccess: (response: any) => {
+      if (response.mpgsSessionId) {
+        toast({ title: "Redirecting to payment gateway..." });
+        window.location.href = `https://cbcmpgs.gateway.mastercard.com/checkout/pay/${response.mpgsSessionId}`;
+      } else {
+        setRetryingPayment(null);
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Payment retry failed", description: error.message, variant: "destructive" });
+      setRetryingPayment(null);
+    },
+  });
 
   const { data: orders = [], isLoading } = useQuery<Order[]>({
     queryKey: ["/api/buyer/orders"],
@@ -574,6 +593,22 @@ export default function OrderHistory() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    {order.status === "pending_payment" && (order as any).paymentMethod === "ipg" && (
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setRetryingPayment(order.id);
+                          const txType = (order as any).checkoutSessionId ? "checkout" : "order";
+                          const txRef = (order as any).checkoutSessionId || order.id;
+                          retryPaymentMutation.mutate({ transactionRef: txRef, transactionType: txType });
+                        }}
+                        disabled={retryingPayment === order.id}
+                        data-testid={`button-retry-payment-${order.id}`}
+                      >
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        {retryingPayment === order.id ? "Processing..." : "Retry Payment"}
+                      </Button>
+                    )}
                     {canRateOrder(order) && (
                       <Button
                         variant="default"

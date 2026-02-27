@@ -386,6 +386,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/payments/retry", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = (req.user as any)?.id;
+      const { transactionRef, transactionType } = req.body;
+
+      if (!transactionRef || !transactionType) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+
+      const baseUrl = process.env.REPLIT_DOMAINS?.split(",")[0]
+        ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`
+        : `${req.protocol}://${req.get('host')}`;
+
+      if (transactionType === "checkout") {
+        const cs = await db.query.checkoutSessions.findFirst({
+          where: eq(checkoutSessions.id, transactionRef),
+        });
+        if (!cs) return res.status(404).json({ message: "Checkout session not found" });
+        if (cs.buyerId !== userId) return res.status(403).json({ message: "Access denied" });
+        if (cs.status !== "pending") return res.status(400).json({ message: "This order has already been paid" });
+        if (cs.paymentMethod !== "ipg") return res.status(400).json({ message: "Only card payments can be retried" });
+
+        const mpgsOrderId = `CHK-${transactionRef.substring(0, 8)}-${Date.now()}`;
+        const returnUrl = `${baseUrl}/payment-return?type=checkout&ref=${transactionRef}`;
+        const mpgsSession = await createMpgsSession(
+          mpgsOrderId,
+          cs.totalAmount,
+          "USD",
+          "Vaaney Order Payment Retry",
+          returnUrl
+        );
+        await db.update(checkoutSessions).set({
+          mpgsOrderId,
+          successIndicator: mpgsSession.successIndicator,
+        }).where(eq(checkoutSessions.id, transactionRef));
+
+        return res.json({ mpgsSessionId: mpgsSession.sessionId });
+      }
+
+      if (transactionType === "order") {
+        const order = await db.query.orders.findFirst({
+          where: eq(orders.id, transactionRef),
+        });
+        if (!order) return res.status(404).json({ message: "Order not found" });
+        if (order.buyerId !== userId) return res.status(403).json({ message: "Access denied" });
+        if (order.status !== "pending_payment") return res.status(400).json({ message: "This order has already been paid" });
+        if (order.paymentMethod !== "ipg") return res.status(400).json({ message: "Only card payments can be retried" });
+
+        const totalAmount = ((parseFloat(order.unitPrice) * order.quantity) + parseFloat(order.shippingCost || "0")).toFixed(2);
+        const mpgsOrderId = `QOD-${transactionRef.substring(0, 8)}-${Date.now()}`;
+        const returnUrl = `${baseUrl}/payment-return?type=order&ref=${transactionRef}`;
+        const mpgsSession = await createMpgsSession(
+          mpgsOrderId,
+          totalAmount,
+          "USD",
+          "Vaaney Order Payment Retry",
+          returnUrl
+        );
+        await db.update(orders).set({
+          mpgsOrderId,
+          successIndicator: mpgsSession.successIndicator,
+        }).where(eq(orders.id, transactionRef));
+
+        return res.json({ mpgsSessionId: mpgsSession.sessionId });
+      }
+
+      if (transactionType === "booking") {
+        const booking = await db.query.bookings.findFirst({
+          where: eq(bookings.id, transactionRef),
+        });
+        if (!booking) return res.status(404).json({ message: "Booking not found" });
+        if (booking.buyerId !== userId) return res.status(403).json({ message: "Access denied" });
+        if (booking.status !== "pending_payment") return res.status(400).json({ message: "This booking has already been paid" });
+        if (booking.paymentMethod !== "ipg") return res.status(400).json({ message: "Only card payments can be retried" });
+
+        const mpgsOrderId = `BKG-${transactionRef.substring(0, 8)}-${Date.now()}`;
+        const returnUrl = `${baseUrl}/payment-return?type=booking&ref=${transactionRef}`;
+        const mpgsSession = await createMpgsSession(
+          mpgsOrderId,
+          booking.amount,
+          "USD",
+          "Vaaney Booking Payment Retry",
+          returnUrl
+        );
+        await db.update(bookings).set({
+          mpgsOrderId,
+          successIndicator: mpgsSession.successIndicator,
+        }).where(eq(bookings.id, transactionRef));
+
+        return res.json({ mpgsSessionId: mpgsSession.sessionId });
+      }
+
+      if (transactionType === "boost") {
+        const bp = await db.query.boostPurchases.findFirst({
+          where: eq(boostPurchases.id, transactionRef),
+        });
+        if (!bp) return res.status(404).json({ message: "Boost purchase not found" });
+        if (bp.sellerId !== userId) return res.status(403).json({ message: "Access denied" });
+        if (bp.status !== "pending") return res.status(400).json({ message: "This boost has already been paid" });
+        if (bp.paymentMethod !== "ipg") return res.status(400).json({ message: "Only card payments can be retried" });
+
+        const mpgsOrderId = `BST-${transactionRef.substring(0, 8)}-${Date.now()}`;
+        const returnUrl = `${baseUrl}/payment-return?type=boost&ref=${transactionRef}`;
+        const mpgsSession = await createMpgsSession(
+          mpgsOrderId,
+          bp.amount,
+          "USD",
+          "Vaaney Boost Payment Retry",
+          returnUrl
+        );
+        await db.update(boostPurchases).set({
+          mpgsOrderId,
+          successIndicator: mpgsSession.successIndicator,
+        }).where(eq(boostPurchases.id, transactionRef));
+
+        return res.json({ mpgsSessionId: mpgsSession.sessionId });
+      }
+
+      return res.status(400).json({ message: "Unknown transaction type" });
+    } catch (error: any) {
+      console.error("[MPGS] Payment retry error:", error);
+      return res.status(500).json({ message: "Failed to create payment session. Please try again." });
+    }
+  });
+
   // Current user endpoint
   app.get("/api/user", isAuthenticated, async (req: AuthRequest, res: Response) => {
     const userId = (req.user as any)?.id;
