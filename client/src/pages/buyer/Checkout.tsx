@@ -171,9 +171,6 @@ export default function Checkout() {
       return await apiRequest("POST", "/api/buyer/orders", orderData);
     },
     onSuccess: (response: any) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/buyer/orders"] });
-
       if (response.mpgsSessionId) {
         toast({ title: "Opening payment gateway..." });
         launchMpgsCheckout(response.mpgsSessionId).catch(() => {
@@ -182,6 +179,9 @@ export default function Checkout() {
         });
         return;
       }
+
+      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/buyer/orders"] });
 
       const ordersCount = response.orders?.length || 0;
       toast({ 

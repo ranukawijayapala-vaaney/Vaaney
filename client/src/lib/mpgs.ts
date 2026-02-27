@@ -40,27 +40,15 @@ declare global {
   }
 }
 
-export async function launchMpgsCheckout(sessionId: string, merchantId?: string): Promise<void> {
+export async function launchMpgsCheckout(sessionId: string): Promise<void> {
   await loadMpgsScript();
 
   if (!window.Checkout) {
     throw new Error("MPGS Checkout not available");
   }
 
-  const mid = merchantId || "TESTVAANEYNORUSD";
-
   window.Checkout.configure({
     session: { id: sessionId },
-    merchant: mid,
-    order: { description: "Vaaney Purchase" },
-    interaction: {
-      merchant: { name: "Vaaney" },
-      displayControl: {
-        billingAddress: "HIDE",
-        customerEmail: "HIDE",
-        shipping: "HIDE",
-      },
-    },
   });
 
   window.Checkout.showPaymentPage();
