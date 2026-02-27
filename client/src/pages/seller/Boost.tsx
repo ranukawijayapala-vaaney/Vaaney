@@ -105,12 +105,8 @@ export default function Boost() {
       setSelectedItemId("");
       
       if (response.mpgsSessionId) {
-        toast({ title: "Opening payment gateway...", description: response.message });
-        import("@/lib/mpgs").then(({ launchMpgsCheckout }) => {
-          launchMpgsCheckout(response.mpgsSessionId).catch(() => {
-            toast({ title: "Payment gateway error", description: "Please try again.", variant: "destructive" });
-          });
-        });
+        toast({ title: "Redirecting to payment gateway...", description: response.message });
+        window.location.href = `https://cbcmpgs.gateway.mastercard.com/checkout/pay/${response.mpgsSessionId}`;
         return;
       }
       

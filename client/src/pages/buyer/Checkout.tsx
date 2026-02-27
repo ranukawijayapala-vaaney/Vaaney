@@ -172,11 +172,8 @@ export default function Checkout() {
     },
     onSuccess: (response: any) => {
       if (response.mpgsSessionId) {
-        toast({ title: "Opening payment gateway..." });
-        launchMpgsCheckout(response.mpgsSessionId).catch(() => {
-          toast({ title: "Payment gateway error", description: "Please try again or use bank transfer.", variant: "destructive" });
-          setIsProcessing(false);
-        });
+        toast({ title: "Redirecting to payment gateway..." });
+        launchMpgsCheckout(response.mpgsSessionId);
         return;
       }
 

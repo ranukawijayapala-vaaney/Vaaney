@@ -88,11 +88,7 @@ export function PurchaseQuoteDialog({
       onOpenChange(false);
 
       if (paymentMethod === "ipg" && data.mpgsSessionId) {
-        import("@/lib/mpgs").then(({ launchMpgsCheckout }) => {
-          launchMpgsCheckout(data.mpgsSessionId).catch(() => {
-            toast({ title: "Payment gateway error", description: "Please try again.", variant: "destructive" });
-          });
-        });
+        window.location.href = `https://cbcmpgs.gateway.mastercard.com/checkout/pay/${data.mpgsSessionId}`;
       }
     },
     onError: (error: Error) => {

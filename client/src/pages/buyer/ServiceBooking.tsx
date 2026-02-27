@@ -436,12 +436,8 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
       queryClient.invalidateQueries({ queryKey: ["/api/buyer/bookings"] });
 
       if (response.mpgsSessionId) {
-        toast({ title: "Opening payment gateway..." });
-        import("@/lib/mpgs").then(({ launchMpgsCheckout }) => {
-          launchMpgsCheckout(response.mpgsSessionId).catch(() => {
-            toast({ title: "Payment gateway error", description: "Please try again.", variant: "destructive" });
-          });
-        });
+        toast({ title: "Redirecting to payment gateway..." });
+        window.location.href = `https://cbcmpgs.gateway.mastercard.com/checkout/pay/${response.mpgsSessionId}`;
         return;
       }
 
