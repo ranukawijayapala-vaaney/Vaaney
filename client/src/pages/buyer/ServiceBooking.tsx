@@ -1015,6 +1015,15 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
 
             {/* Package Selection */}
             <TabsContent value="package" className="mt-4">
+              {service?.requiresDesignApproval && !selectedPackageId && !isCustomQuoteSelected && (
+                <Alert className="mb-4" data-testid="alert-design-required">
+                  <Upload className="h-4 w-4" />
+                  <AlertDescription>
+                    <span className="font-medium">Design approval is required for this service.</span>
+                    <span className="block text-sm mt-1">Select a package below to start the design upload process. Your design must be approved by the seller before you can complete your booking.</span>
+                  </AlertDescription>
+                </Alert>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Fixed Price Packages */}
                 {service.packages?.map((pkg) => (
@@ -1473,7 +1482,16 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
               ) : (
                 <div className="text-center py-4">
                   <PackageIcon className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">Select a package to continue</p>
+                  <p className="text-sm text-muted-foreground">
+                    {service?.requiresDesignApproval 
+                      ? "Select a package to start the design approval process"
+                      : "Select a package to continue"}
+                  </p>
+                  {service?.requiresDesignApproval && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Your design must be approved before booking
+                    </p>
+                  )}
                 </div>
               )}
             </CardContent>
