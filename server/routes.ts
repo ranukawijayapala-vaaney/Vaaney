@@ -405,7 +405,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         if (!cs) return res.status(404).json({ message: "Checkout session not found" });
         if (cs.buyerId !== userId) return res.status(403).json({ message: "Access denied" });
-        if (cs.status !== "pending") return res.status(400).json({ message: "This order has already been paid" });
+        if (cs.status !== "pending_payment") return res.status(400).json({ message: "This order has already been paid" });
         if (cs.paymentMethod !== "ipg") return res.status(400).json({ message: "Only card payments can be retried" });
 
         const mpgsOrderId = `CHK-${transactionRef.substring(0, 8)}-${Date.now()}`;
