@@ -4170,9 +4170,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const buyer = firstOrder.buyer;
       
       // Calculate total weight and cost
+      // Note: productWeight already includes quantity (variantWeight * quantity) from order creation
       const totalWeight = ordersToConsolidate.reduce((sum, order) => {
         const weight = parseFloat(order.productWeight || "1.0");
-        return sum + (weight * order.quantity);
+        return sum + weight;
       }, 0);
       
       const totalShippingCost = ordersToConsolidate.reduce((sum, order) => {

@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingCart, CreditCard, Building2, Plus, MapPin, Info, AlertCircle, Upload, FileText, X } from "lucide-react";
+import { ShoppingCart, CreditCard, Building2, Plus, MapPin, Info, AlertCircle, Upload, FileText, X, Weight, Package, Plane } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
@@ -975,6 +975,71 @@ export default function Checkout() {
                   );
                 })}
               </div>
+
+              {selectedAddressId && (
+                <div className="border-t pt-3 space-y-2" data-testid="section-shipping-details">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1">
+                    <Package className="h-3.5 w-3.5" />
+                    <span>Shipping Details</span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Plane className="h-3 w-3" />
+                    <span>Sri Lanka to Maldives</span>
+                  </div>
+
+                  <div className="space-y-1">
+                    {cartDetails.map((item: any) => {
+                      const variantWeight = item.variant.weight ? parseFloat(item.variant.weight) : 1.0;
+                      const itemTotalWeight = variantWeight * item.quantity;
+                      const hasWeight = !!item.variant.weight;
+                      return (
+                        <div key={`weight-${item.id}`} className="flex justify-between text-xs text-muted-foreground" data-testid={`text-item-weight-${item.id}`}>
+                          <span className="flex-1 truncate mr-2">
+                            {item.variant.product.name}
+                            {item.variant.name && ` - ${item.variant.name}`}
+                          </span>
+                          <span className="whitespace-nowrap">
+                            {variantWeight.toFixed(2)} kg {item.quantity > 1 ? `x ${item.quantity} = ${itemTotalWeight.toFixed(2)} kg` : ""}
+                            {!hasWeight && " (est.)"}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {(() => {
+                    const totalWeight = cartDetails.reduce((sum, item) => {
+                      const w = item.variant.weight ? parseFloat(item.variant.weight) : 1.0;
+                      return sum + (w * item.quantity);
+                    }, 0);
+                    const allHaveDimensions = cartDetails.every((item: any) =>
+                      item.variant.length && item.variant.width && item.variant.height
+                    );
+                    return (
+                      <>
+                        <div className="flex justify-between text-xs font-medium" data-testid="text-total-weight">
+                          <span className="flex items-center gap-1">
+                            <Weight className="h-3 w-3" />
+                            Total Weight
+                          </span>
+                          <span>{totalWeight.toFixed(2)} kg</span>
+                        </div>
+                        {allHaveDimensions && (
+                          <div className="flex justify-between text-xs text-muted-foreground" data-testid="text-dimensions">
+                            <span>Package Dimensions</span>
+                            <span>
+                              {Math.max(...cartDetails.map((i: any) => parseFloat(i.variant.length || "0"))).toFixed(0)} x{" "}
+                              {Math.max(...cartDetails.map((i: any) => parseFloat(i.variant.width || "0"))).toFixed(0)} x{" "}
+                              {Math.max(...cartDetails.map((i: any) => parseFloat(i.variant.height || "0"))).toFixed(0)} cm
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
 
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
