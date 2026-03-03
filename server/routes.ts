@@ -553,9 +553,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required parameters" });
       }
 
-      const baseUrl = process.env.REPLIT_DOMAINS?.split(",")[0]
-        ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`
-        : `${req.protocol}://${req.get('host')}`;
+      const baseUrl = `https://${req.get('host')}`;
 
       if (transactionType === "checkout") {
         const cs = await db.query.checkoutSessions.findFirst({
@@ -2288,9 +2286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (checkoutData.paymentMethod === "ipg") {
           try {
-            const baseUrl = process.env.REPLIT_DOMAINS?.split(",")[0]
-              ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`
-              : `${req.protocol}://${req.get('host')}`;
+            const baseUrl = `https://${req.get('host')}`;
             const mpgsOrderId = `CHK-${result.checkoutSession.id.substring(0, 8)}-${Date.now()}`;
             const returnUrl = `${baseUrl}/payment-return?type=checkout&ref=${result.checkoutSession.id}`;
             const mpgsSession = await createMpgsSession(
@@ -2569,9 +2565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (checkoutData.paymentMethod === "ipg") {
         try {
-          const baseUrl = process.env.REPLIT_DOMAINS?.split(",")[0]
-            ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`
-            : `${req.protocol}://${req.get('host')}`;
+          const baseUrl = `https://${req.get('host')}`;
           const mpgsOrderId = `CHK-${result.checkoutSession.id.substring(0, 8)}-${Date.now()}`;
           const returnUrl = `${baseUrl}/payment-return?type=checkout&ref=${result.checkoutSession.id}`;
           const mpgsSession = await createMpgsSession(
@@ -2833,9 +2827,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (parsedData.paymentMethod === "ipg") {
         try {
-          const baseUrl = process.env.REPLIT_DOMAINS?.split(",")[0]
-            ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`
-            : `${req.protocol}://${req.get('host')}`;
+          const baseUrl = `https://${req.get('host')}`;
           const mpgsOrderId = `BKG-${booking.id.substring(0, 8)}-${Date.now()}`;
           const returnUrl = `${baseUrl}/payment-return?type=booking&ref=${booking.id}`;
           const mpgsSession = await createMpgsSession(
@@ -6536,9 +6528,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If IPG payment, return redirect URL to payment gateway
       if (paymentMethod === "ipg") {
         try {
-          const baseUrl = process.env.REPLIT_DOMAINS?.split(",")[0]
-            ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`
-            : `${req.protocol}://${req.get('host')}`;
+          const baseUrl = `https://${req.get('host')}`;
           const amount = parseFloat(boostPackage.price);
           const mpgsOrderId = `BST-${result.id.substring(0, 8)}-${Date.now()}`;
           const returnUrl = `${baseUrl}/payment-return?type=boost&ref=${result.id}`;

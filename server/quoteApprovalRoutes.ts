@@ -807,9 +807,7 @@ export function setupQuoteApprovalRoutes(app: Express) {
 
       if (paymentMethod === "ipg") {
         try {
-          const baseUrl = process.env.REPLIT_DOMAINS?.split(",")[0]
-            ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`
-            : "http://localhost:5000";
+          const baseUrl = `https://${req.get('host')}`;
           const referenceId = result.id;
           const txType = quote.productId ? "order" : "booking";
           const prefix = quote.productId ? "QOD" : "QBK";
