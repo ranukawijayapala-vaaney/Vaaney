@@ -736,7 +736,7 @@ export function setupQuoteApprovalRoutes(app: Express) {
               productDimensions = {
                 length: parseFloat(variant.length),
                 width: parseFloat(variant.width),
-                height: parseFloat(variant.height),
+                height: parseFloat(variant.height) * quote.quantity,
               };
             }
           }
