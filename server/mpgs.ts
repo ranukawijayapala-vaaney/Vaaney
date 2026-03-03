@@ -90,8 +90,28 @@ export async function createCheckoutSession(
 
   console.log(`[MPGS] Checkout session created: ${data.session.id}`);
 
+  const sessionId = data.session.id;
+  const updateUrl = getApiUrl(`/session/${sessionId}`);
+  const updateResponse = await fetch(updateUrl, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: getAuthHeader(),
+    },
+    body: JSON.stringify({
+      order: { description: description },
+    }),
+  });
+
+  if (!updateResponse.ok) {
+    const updateError = await updateResponse.text();
+    console.warn(`[MPGS] Failed to update session with description: ${updateResponse.status} ${updateError}`);
+  } else {
+    console.log(`[MPGS] Session updated with order description`);
+  }
+
   return {
-    sessionId: data.session.id,
+    sessionId,
     successIndicator: data.successIndicator,
   };
 }
