@@ -24,12 +24,11 @@ export default function PaymentReturn() {
 
     async function verifyPayment() {
       try {
-        const response = await apiRequest("POST", "/api/payments/verify", {
+        const data = await apiRequest("POST", "/api/payments/verify", {
           transactionRef,
           resultIndicator,
           transactionType,
         });
-        const data = await response.json();
         if (data.success) {
           setStatus("success");
           setMessage("Your payment has been confirmed successfully.");
