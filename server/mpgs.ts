@@ -18,6 +18,27 @@ export interface MpgsCheckoutSession {
   successIndicator: string;
 }
 
+export interface MpgsSessionConfig {
+  amount: string;
+  currency: string;
+  orderId: string;
+  returnUrl: string;
+  createdAt: number;
+}
+
+const sessionConfigStore = new Map<string, MpgsSessionConfig>();
+
+const SESSION_CONFIG_TTL = 30 * 60 * 1000;
+
+export function storeSessionConfig(sessionId: string, config: MpgsSessionConfig): void {
+  sessionConfigStore.set(sessionId, config);
+  setTimeout(() => sessionConfigStore.delete(sessionId), SESSION_CONFIG_TTL);
+}
+
+export function getSessionConfig(sessionId: string): MpgsSessionConfig | undefined {
+  return sessionConfigStore.get(sessionId);
+}
+
 export async function createCheckoutSession(
   orderId: string,
   amount: string,
@@ -27,26 +48,8 @@ export async function createCheckoutSession(
 ): Promise<MpgsCheckoutSession> {
   const url = getApiUrl("/session");
 
-  const body = {
+  const body: any = {
     apiOperation: "CREATE_CHECKOUT_SESSION",
-    interaction: {
-      merchant: {
-        name: "Vaaney",
-      },
-      operation: "PURCHASE",
-      displayControl: {
-        billingAddress: "HIDE",
-        customerEmail: "HIDE",
-        shipping: "HIDE",
-      },
-      returnUrl,
-    },
-    order: {
-      id: orderId,
-      currency,
-      description,
-      amount,
-    },
   };
 
   console.log(`[MPGS] Creating checkout session for order ${orderId}, amount: ${amount} ${currency}`);

@@ -43,8 +43,24 @@ export default function PaymentProcessing() {
     enabled: !!sessionId,
   });
 
+  const { data: sessionConfig, isError: sessionConfigError } = useQuery<{
+    amount: string;
+    currency: string;
+    orderId: string;
+    returnUrl: string;
+  }>({
+    queryKey: ["/api/payments/mpgs-session-config", sessionId],
+    enabled: !!sessionId,
+  });
+
   useEffect(() => {
-    if (!sessionId || !mpgsConfig || configured) return;
+    if (sessionConfigError) {
+      setError("Payment session expired or invalid. Please try again from your order.");
+    }
+  }, [sessionConfigError]);
+
+  useEffect(() => {
+    if (!sessionId || !mpgsConfig || !sessionConfig || configured) return;
 
     const script = document.createElement("script");
     script.src = mpgsConfig.checkoutJsUrl;
@@ -67,11 +83,17 @@ export default function PaymentProcessing() {
           session: {
             id: sessionId,
           },
+          order: {
+            amount: sessionConfig.amount,
+            currency: sessionConfig.currency,
+            id: sessionConfig.orderId,
+          },
           interaction: {
             merchant: {
               name: "Vaaney",
             },
             operation: "PURCHASE",
+            returnUrl: sessionConfig.returnUrl,
             displayControl: {
               billingAddress: "HIDE",
               customerEmail: "HIDE",
@@ -100,7 +122,7 @@ export default function PaymentProcessing() {
         script.parentNode.removeChild(script);
       }
     };
-  }, [sessionId, mpgsConfig, configured, navigate, fallbackPath]);
+  }, [sessionId, mpgsConfig, sessionConfig, configured, navigate, fallbackPath]);
 
   if (!sessionId) {
     return (

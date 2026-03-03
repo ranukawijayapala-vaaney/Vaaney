@@ -57,7 +57,7 @@ import {
   designApprovals,
   bankAccounts,
 } from "@shared/schema";
-import { createCheckoutSession as createMpgsSession, retrieveOrder as retrieveMpgsOrder, getMpgsCheckoutJsUrl, getMpgsMerchantId } from "./mpgs";
+import { createCheckoutSession as createMpgsSession, retrieveOrder as retrieveMpgsOrder, getMpgsCheckoutJsUrl, getMpgsMerchantId, storeSessionConfig, getSessionConfig } from "./mpgs";
 import * as aramex from "./aramex";
 import { trackShipments, isShipmentDelivered } from "./aramex";
 import { setupShippingRoutes } from "./shippingRoutes";
@@ -230,6 +230,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/payments/mpgs-config", (_req: Request, res: Response) => {
     res.json({ checkoutJsUrl: getMpgsCheckoutJsUrl(), merchantId: getMpgsMerchantId() });
+  });
+
+  app.get("/api/payments/mpgs-session-config/:sessionId", (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    const config = getSessionConfig(req.params.sessionId);
+    if (!config) {
+      return res.status(404).json({ message: "Session config not found or expired" });
+    }
+    res.json(config);
   });
 
   app.post("/api/payments/mpgs-webhook", async (req: Request, res: Response) => {
@@ -568,6 +579,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           mpgsOrderId,
           successIndicator: mpgsSession.successIndicator,
         }).where(eq(checkoutSessions.id, transactionRef));
+        storeSessionConfig(mpgsSession.sessionId, { amount: cs.totalAmount, currency: "USD", orderId: mpgsOrderId, returnUrl, createdAt: Date.now() });
 
         return res.json({ mpgsSessionId: mpgsSession.sessionId });
       }
@@ -595,6 +607,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           mpgsOrderId,
           successIndicator: mpgsSession.successIndicator,
         }).where(eq(orders.id, transactionRef));
+        storeSessionConfig(mpgsSession.sessionId, { amount: totalAmount, currency: "USD", orderId: mpgsOrderId, returnUrl, createdAt: Date.now() });
 
         return res.json({ mpgsSessionId: mpgsSession.sessionId });
       }
@@ -621,6 +634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           mpgsOrderId,
           successIndicator: mpgsSession.successIndicator,
         }).where(eq(bookings.id, transactionRef));
+        storeSessionConfig(mpgsSession.sessionId, { amount: booking.amount, currency: "USD", orderId: mpgsOrderId, returnUrl, createdAt: Date.now() });
 
         return res.json({ mpgsSessionId: mpgsSession.sessionId });
       }
@@ -647,6 +661,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           mpgsOrderId,
           successIndicator: mpgsSession.successIndicator,
         }).where(eq(boostPurchases.id, transactionRef));
+        storeSessionConfig(mpgsSession.sessionId, { amount: bp.amount, currency: "USD", orderId: mpgsOrderId, returnUrl, createdAt: Date.now() });
 
         return res.json({ mpgsSessionId: mpgsSession.sessionId });
       }
@@ -2289,6 +2304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               mpgsOrderId,
               successIndicator: mpgsSession.successIndicator,
             }).where(eq(checkoutSessions.id, result.checkoutSession.id));
+            storeSessionConfig(mpgsSession.sessionId, { amount: (orderTotal + shippingCostTotal).toFixed(2), currency: "USD", orderId: mpgsOrderId, returnUrl, createdAt: Date.now() });
             return res.json({
               success: true,
               checkoutSessionId: result.checkoutSession.id,
@@ -2569,6 +2585,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             mpgsOrderId,
             successIndicator: mpgsSession.successIndicator,
           }).where(eq(checkoutSessions.id, result.checkoutSession.id));
+          storeSessionConfig(mpgsSession.sessionId, { amount: result.checkoutSession.totalAmount, currency: "USD", orderId: mpgsOrderId, returnUrl, createdAt: Date.now() });
           return res.json({
             checkoutSession: result.checkoutSession,
             orders: result.orders,
@@ -2832,6 +2849,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             mpgsOrderId,
             successIndicator: mpgsSession.successIndicator,
           }).where(eq(bookings.id, booking.id));
+          storeSessionConfig(mpgsSession.sessionId, { amount: authoritativeAmount.toFixed(2), currency: "USD", orderId: mpgsOrderId, returnUrl, createdAt: Date.now() });
           return res.json({
             booking,
             mpgsSessionId: mpgsSession.sessionId,
@@ -6535,6 +6553,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             mpgsOrderId,
             successIndicator: mpgsSession.successIndicator,
           }).where(eq(boostPurchases.id, result.id));
+          storeSessionConfig(mpgsSession.sessionId, { amount: amount.toFixed(2), currency: "USD", orderId: mpgsOrderId, returnUrl, createdAt: Date.now() });
           return res.json({
             purchase: result,
             mpgsSessionId: mpgsSession.sessionId,
