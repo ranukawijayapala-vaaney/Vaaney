@@ -3941,6 +3941,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         descriptionOfGoods,
       } = req.body;
       
+      // Extract dimensions from the order (already quantity-adjusted at creation time)
+      const orderDims = order.productDimensions as { length: number; width: number; height: number } | null;
+
       // Create shipment via Aramex API
       const shipmentData = {
         Reference1: order.id,
@@ -3951,6 +3954,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             Unit: 'KG' as const,
             Value: parseFloat(weight || '1'),
           },
+          ...(orderDims && orderDims.length > 0 && orderDims.width > 0 && orderDims.height > 0 ? {
+            Dimensions: {
+              Unit: 'CM' as const,
+              Length: orderDims.length,
+              Width: orderDims.width,
+              Height: orderDims.height,
+            },
+          } : {}),
           NumberOfPieces: parseInt(numberOfPieces),
           ProductGroup: productType,
           ProductType: productType,
