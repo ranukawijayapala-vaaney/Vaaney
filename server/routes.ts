@@ -232,6 +232,153 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ checkoutJsUrl: getMpgsCheckoutJsUrl() });
   });
 
+  app.post("/api/payments/mpgs-webhook", async (req: Request, res: Response) => {
+    try {
+      const webhookSecret = process.env.MPGS_WEBHOOK_SECRET;
+      if (!webhookSecret) {
+        console.error("[MPGS Webhook] MPGS_WEBHOOK_SECRET not configured — rejecting request");
+        return res.status(503).json({ message: "Webhook not configured" });
+      }
+
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        console.warn("[MPGS Webhook] Missing Authorization header");
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const expectedAuth = `Basic ${Buffer.from(`merchant.${process.env.MPGS_MERCHANT_ID}:${webhookSecret}`).toString("base64")}`;
+      const { timingSafeEqual } = await import("crypto");
+      const authBuffer = Buffer.from(authHeader);
+      const expectedBuffer = Buffer.from(expectedAuth);
+      if (authBuffer.length !== expectedBuffer.length || !timingSafeEqual(authBuffer, expectedBuffer)) {
+        console.warn("[MPGS Webhook] Invalid Authorization header");
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const payload = req.body;
+      console.log("[MPGS Webhook] Received notification:", JSON.stringify(payload, null, 2));
+
+      const mpgsOrderId = payload?.order?.id;
+      const orderStatus = payload?.order?.status;
+      const result = payload?.result;
+
+      if (!mpgsOrderId) {
+        console.warn("[MPGS Webhook] No order ID in payload");
+        return res.status(200).send("OK");
+      }
+
+      const isSuccessful = result === "SUCCESS" && (orderStatus === "CAPTURED" || orderStatus === "PURCHASED");
+
+      if (!isSuccessful) {
+        console.log(`[MPGS Webhook] Non-successful notification for ${mpgsOrderId}: result=${result}, status=${orderStatus}`);
+        return res.status(200).send("OK");
+      }
+
+      try {
+        const mpgsOrder = await retrieveMpgsOrder(mpgsOrderId);
+        if (mpgsOrder.result !== "SUCCESS") {
+          console.warn(`[MPGS Webhook] Gateway verification failed for ${mpgsOrderId}: ${mpgsOrder.result}`);
+          return res.status(200).send("OK");
+        }
+      } catch (verifyErr) {
+        console.error(`[MPGS Webhook] Failed to verify order ${mpgsOrderId} with gateway:`, verifyErr);
+        return res.status(500).json({ message: "Gateway verification failed" });
+      }
+
+      console.log(`[MPGS Webhook] Processing verified payment for MPGS order: ${mpgsOrderId}`);
+
+      const cs = await db.query.checkoutSessions.findFirst({
+        where: eq(checkoutSessions.mpgsOrderId, mpgsOrderId),
+      });
+      if (cs) {
+        if (cs.status === "paid") {
+          console.log(`[MPGS Webhook] Checkout session ${cs.id} already paid — skipping`);
+          return res.status(200).send("OK");
+        }
+        const paymentRef = generatePaymentReference(cs.id);
+        await db.update(checkoutSessions).set({ status: "paid" }).where(eq(checkoutSessions.id, cs.id));
+        await db.update(orders).set({ status: "paid", paymentReference: paymentRef }).where(eq(orders.checkoutSessionId, cs.id));
+        const ordersInSession = await db.query.orders.findMany({ where: eq(orders.checkoutSessionId, cs.id) });
+        for (const order of ordersInSession) {
+          await db.update(transactions).set({ status: "escrow", paymentReference: paymentRef }).where(eq(transactions.orderId, order.id));
+          const [product] = await db.select().from(products).where(eq(products.id, order.productId));
+          if (product) {
+            await notifyOrderPaid({ buyerId: order.buyerId, sellerId: order.sellerId, orderId: order.id, productName: product.name });
+          }
+        }
+        console.log(`[MPGS Webhook] Checkout session ${cs.id} marked paid via webhook`);
+        return res.status(200).send("OK");
+      }
+
+      const order = await db.query.orders.findFirst({
+        where: eq(orders.mpgsOrderId, mpgsOrderId),
+      });
+      if (order) {
+        if (order.status === "paid") {
+          console.log(`[MPGS Webhook] Order ${order.id} already paid — skipping`);
+          return res.status(200).send("OK");
+        }
+        const paymentRef = generatePaymentReference(order.id);
+        await db.update(orders).set({ status: "paid", paymentReference: paymentRef }).where(eq(orders.id, order.id));
+        await db.update(transactions).set({ status: "escrow", paymentReference: paymentRef }).where(eq(transactions.orderId, order.id));
+        const [product] = await db.select().from(products).where(eq(products.id, order.productId));
+        if (product) {
+          await notifyOrderPaid({ buyerId: order.buyerId, sellerId: order.sellerId, orderId: order.id, productName: product.name });
+        }
+        console.log(`[MPGS Webhook] Order ${order.id} marked paid via webhook`);
+        return res.status(200).send("OK");
+      }
+
+      const booking = await db.query.bookings.findFirst({
+        where: eq(bookings.mpgsOrderId, mpgsOrderId),
+      });
+      if (booking) {
+        if (booking.status === "paid") {
+          console.log(`[MPGS Webhook] Booking ${booking.id} already paid — skipping`);
+          return res.status(200).send("OK");
+        }
+        const paymentRef = generatePaymentReference(booking.id);
+        await db.update(bookings).set({ status: "paid", paymentReference: paymentRef }).where(eq(bookings.id, booking.id));
+        await db.update(transactions).set({ status: "escrow", paymentReference: paymentRef }).where(eq(transactions.bookingId, booking.id));
+        const serviceData = await storage.getService(booking.serviceId);
+        if (serviceData) {
+          await notifyBookingPaid({ buyerId: booking.buyerId, sellerId: booking.sellerId, bookingId: booking.id, serviceName: serviceData.name });
+        }
+        console.log(`[MPGS Webhook] Booking ${booking.id} marked paid via webhook`);
+        return res.status(200).send("OK");
+      }
+
+      const bp = await db.query.boostPurchases.findFirst({
+        where: eq(boostPurchases.mpgsOrderId, mpgsOrderId),
+      });
+      if (bp) {
+        if (bp.status === "paid") {
+          console.log(`[MPGS Webhook] Boost purchase ${bp.id} already paid — skipping`);
+          return res.status(200).send("OK");
+        }
+        const paymentRef = generatePaymentReference(bp.id);
+        const boostPackage = await db.query.boostPackages.findFirst({ where: eq(boostPackages.id, bp.packageId) });
+        if (boostPackage) {
+          await db.transaction(async (tx) => {
+            const now = new Date();
+            const endDate = new Date(now);
+            endDate.setDate(endDate.getDate() + boostPackage.durationDays);
+            await tx.update(boostPurchases).set({ status: "paid", paymentReference: paymentRef, paidAt: now }).where(eq(boostPurchases.id, bp.id));
+            await tx.update(transactions).set({ status: "paid", paymentReference: paymentRef }).where(eq(transactions.boostPurchaseId, bp.id));
+            await tx.insert(boostedItems).values({ itemType: bp.itemType, itemId: bp.itemId, packageId: bp.packageId, startDate: now, endDate, isActive: true });
+          });
+        }
+        console.log(`[MPGS Webhook] Boost purchase ${bp.id} marked paid via webhook`);
+        return res.status(200).send("OK");
+      }
+
+      console.warn(`[MPGS Webhook] No matching entity found for MPGS order: ${mpgsOrderId}`);
+      return res.status(200).send("OK");
+    } catch (error: any) {
+      console.error("[MPGS Webhook] Error processing notification:", error);
+      return res.status(200).send("OK");
+    }
+  });
+
   app.post("/api/payments/verify", async (req: Request, res: Response) => {
     try {
       const { transactionRef, resultIndicator, transactionType } = req.body;
