@@ -13,6 +13,7 @@ import type { Booking, BookingStatus } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLocation } from "wouter";
 import { RatingDialog } from "@/components/RatingDialog";
+import { launchMpgsCheckout } from "@/lib/mpgs";
 
 const statusColors: Record<BookingStatus, string> = {
   pending_confirmation: "bg-orange-500",
@@ -230,7 +231,7 @@ export default function ServiceHistory() {
     onSuccess: (response: any) => {
       if (response.mpgsSessionId) {
         toast({ title: "Redirecting to payment gateway..." });
-        window.location.href = `https://cbcmpgs.gateway.mastercard.com/checkout/pay/${response.mpgsSessionId}`;
+        launchMpgsCheckout(response.mpgsSessionId, "booking");
       } else {
         setRetryingPayment(null);
       }

@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { ReturnRequestTimeline } from "@/components/returns/ReturnRequestTimeline";
+import { launchMpgsCheckout } from "@/lib/mpgs";
 import { MAX_RETURN_ATTEMPTS } from "@shared/constants";
 import { RatingDialog } from "@/components/RatingDialog";
 
@@ -107,7 +108,7 @@ export default function OrderHistory() {
     onSuccess: (response: any) => {
       if (response.mpgsSessionId) {
         toast({ title: "Redirecting to payment gateway..." });
-        window.location.href = `https://cbcmpgs.gateway.mastercard.com/checkout/pay/${response.mpgsSessionId}`;
+        launchMpgsCheckout(response.mpgsSessionId, "order");
       } else {
         setRetryingPayment(null);
       }

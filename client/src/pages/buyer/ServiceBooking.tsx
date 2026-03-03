@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { launchMpgsCheckout } from "@/lib/mpgs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { addDays, format } from "date-fns";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -437,7 +438,7 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
 
       if (response.mpgsSessionId) {
         toast({ title: "Redirecting to payment gateway..." });
-        window.location.href = `https://cbcmpgs.gateway.mastercard.com/checkout/pay/${response.mpgsSessionId}`;
+        launchMpgsCheckout(response.mpgsSessionId, "booking");
         return;
       }
 

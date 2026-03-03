@@ -23,6 +23,7 @@ import BuyerGuidelines from "@/pages/BuyerGuidelines";
 import SellerGuidelines from "@/pages/SellerGuidelines";
 import AboutUs from "@/pages/AboutUs";
 import PaymentReturn from "@/pages/buyer/PaymentReturn";
+import PaymentProcessing from "@/pages/buyer/PaymentProcessing";
 import AdminSetup from "@/pages/AdminSetup";
 
 import { BuyerLayout } from "@/components/BuyerLayout";
@@ -97,6 +98,7 @@ function Router() {
         <Route path="/seller-guidelines" component={SellerGuidelines} />
         <Route path="/about" component={AboutUs} />
         <Route path="/payment-return" component={PaymentReturn} />
+        <Route path="/payment-processing" component={PaymentProcessing} />
         <Route path="/admin-setup" component={AdminSetup} />
         <Route path="/meeting/:meetingId" component={MeetingRoom} />
         <Route path="/marketplace">
@@ -214,6 +216,7 @@ function Router() {
           <Route path="/seller/:sellerId" component={SellerProfile} />
           <Route path="/meeting/:meetingId" component={MeetingRoom} />
           <Route path="/payment-return" component={PaymentReturn} />
+          <Route path="/payment-processing" component={PaymentProcessing} />
           <Route component={NotFound} />
         </Switch>
       </BuyerLayout>
@@ -249,6 +252,7 @@ function Router() {
           <Route path="/seller/:sellerId" component={SellerProfile} />
           <Route path="/meeting/:meetingId" component={MeetingRoom} />
           <Route path="/payment-return" component={PaymentReturn} />
+          <Route path="/payment-processing" component={PaymentProcessing} />
           <Route component={NotFound} />
         </Switch>
       </SellerLayout>
@@ -277,6 +281,7 @@ function Router() {
           <Route path="/profile" component={Profile} />
           <Route path="/seller/:sellerId" component={SellerProfile} />
           <Route path="/payment-return" component={PaymentReturn} />
+          <Route path="/payment-processing" component={PaymentProcessing} />
           <Route component={NotFound} />
         </Switch>
       </AdminLayout>

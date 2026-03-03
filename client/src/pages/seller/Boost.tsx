@@ -13,6 +13,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { launchMpgsCheckout } from "@/lib/mpgs";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { format, differenceInDays } from "date-fns";
 import type { BoostPackage, Product, Service, BoostPurchase, BoostedItem } from "@shared/schema";
@@ -106,7 +107,7 @@ export default function Boost() {
       
       if (response.mpgsSessionId) {
         toast({ title: "Redirecting to payment gateway...", description: response.message });
-        window.location.href = `https://cbcmpgs.gateway.mastercard.com/checkout/pay/${response.mpgsSessionId}`;
+        launchMpgsCheckout(response.mpgsSessionId, "boost");
         return;
       }
       

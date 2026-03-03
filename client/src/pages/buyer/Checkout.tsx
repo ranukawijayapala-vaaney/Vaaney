@@ -173,7 +173,7 @@ export default function Checkout() {
     onSuccess: (response: any) => {
       if (response.mpgsSessionId) {
         toast({ title: "Redirecting to payment gateway..." });
-        launchMpgsCheckout(response.mpgsSessionId);
+        launchMpgsCheckout(response.mpgsSessionId, "checkout");
         return;
       }
 

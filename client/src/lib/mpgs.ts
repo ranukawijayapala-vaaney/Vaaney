@@ -1,5 +1,6 @@
-const MPGS_BASE_URL = "https://cbcmpgs.gateway.mastercard.com";
-
-export function launchMpgsCheckout(sessionId: string): void {
-  window.location.href = `${MPGS_BASE_URL}/checkout/pay/${sessionId}`;
+export function launchMpgsCheckout(sessionId: string, type?: string, ref?: string): void {
+  const params = new URLSearchParams({ sessionId });
+  if (type) params.set("type", type);
+  if (ref) params.set("ref", ref);
+  window.location.href = `/payment-processing?${params.toString()}`;
 }

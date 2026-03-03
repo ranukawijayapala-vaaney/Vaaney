@@ -11,6 +11,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ShippingAddress } from "@shared/schema";
+import { launchMpgsCheckout } from "@/lib/mpgs";
 
 interface PurchaseQuoteDialogProps {
   open: boolean;
@@ -88,7 +89,7 @@ export function PurchaseQuoteDialog({
       onOpenChange(false);
 
       if (paymentMethod === "ipg" && data.mpgsSessionId) {
-        window.location.href = `https://cbcmpgs.gateway.mastercard.com/checkout/pay/${data.mpgsSessionId}`;
+        launchMpgsCheckout(data.mpgsSessionId, "quote");
       }
     },
     onError: (error: Error) => {

@@ -28,10 +28,10 @@ export async function createCheckoutSession(
   const url = getApiUrl("/session");
 
   const body = {
-    apiOperation: "INITIATE_CHECKOUT",
+    apiOperation: "CREATE_CHECKOUT_SESSION",
     interaction: {
       merchant: {
-        name: MPGS_MERCHANT_ID,
+        name: "Vaaney",
       },
       operation: "PURCHASE",
       displayControl: {
@@ -127,5 +127,9 @@ export async function retrieveOrder(orderId: string): Promise<MpgsOrderDetails> 
 }
 
 export function getMpgsCheckoutJsUrl(): string {
-  return `${MPGS_BASE_URL}/static/checkout/checkout.min.js`;
+  return `${MPGS_BASE_URL}/checkout/version/${MPGS_API_VERSION}/checkout.js`;
+}
+
+export function getMpgsMerchantId(): string {
+  return MPGS_MERCHANT_ID;
 }

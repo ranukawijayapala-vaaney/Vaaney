@@ -57,7 +57,7 @@ import {
   designApprovals,
   bankAccounts,
 } from "@shared/schema";
-import { createCheckoutSession as createMpgsSession, retrieveOrder as retrieveMpgsOrder, getMpgsCheckoutJsUrl } from "./mpgs";
+import { createCheckoutSession as createMpgsSession, retrieveOrder as retrieveMpgsOrder, getMpgsCheckoutJsUrl, getMpgsMerchantId } from "./mpgs";
 import * as aramex from "./aramex";
 import { trackShipments, isShipmentDelivered } from "./aramex";
 import { setupShippingRoutes } from "./shippingRoutes";
@@ -229,7 +229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/payments/mpgs-config", (_req: Request, res: Response) => {
-    res.json({ checkoutJsUrl: getMpgsCheckoutJsUrl() });
+    res.json({ checkoutJsUrl: getMpgsCheckoutJsUrl(), merchantId: getMpgsMerchantId() });
   });
 
   app.post("/api/payments/mpgs-webhook", async (req: Request, res: Response) => {
