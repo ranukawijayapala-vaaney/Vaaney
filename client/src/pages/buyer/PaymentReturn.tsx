@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function PaymentReturn() {
-  const [, setLocation] = useLocation();
   const [status, setStatus] = useState<"verifying" | "success" | "failed">("verifying");
   const [message, setMessage] = useState("");
 
@@ -82,7 +80,7 @@ export default function PaymentReturn() {
           </p>
           {status !== "verifying" && (
             <Button
-              onClick={() => setLocation(getRedirectPath())}
+              onClick={() => { window.location.href = getRedirectPath(); }}
               className="w-full"
               data-testid="button-continue"
             >
