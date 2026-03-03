@@ -4842,6 +4842,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/admin/users/create-admin", isAuthenticated, requireRole(["admin"]), async (req: Request, res: Response) => {
+    try {
+      const { email, password, firstName, lastName } = req.body;
+
+      if (!email || !password || !firstName || !lastName) {
+        return res.status(400).json({ message: "All fields are required: email, password, firstName, lastName" });
+      }
+
+      const trimmedEmail = email.trim().toLowerCase();
+      const trimmedFirstName = firstName.trim();
+      const trimmedLastName = lastName.trim();
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(trimmedEmail)) {
+        return res.status(400).json({ message: "Please enter a valid email address" });
+      }
+
+      if (password.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters" });
+      }
+
+      const hasUpperCase = /[A-Z]/.test(password);
+      const hasLowerCase = /[a-z]/.test(password);
+      const hasNumber = /[0-9]/.test(password);
+      const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+      if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecial) {
+        return res.status(400).json({ message: "Password must include uppercase, lowercase, number, and special character" });
+      }
+
+      const existingUser = await db.query.users.findFirst({
+        where: eq(users.email, trimmedEmail),
+      });
+      if (existingUser) {
+        return res.status(400).json({ message: "A user with this email already exists" });
+      }
+
+      const bcrypt = await import("bcrypt");
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const [adminUser] = await db.insert(users).values({
+        email: trimmedEmail,
+        password: hashedPassword,
+        firstName: trimmedFirstName,
+        lastName: trimmedLastName,
+        role: "admin",
+        emailVerified: true,
+        verificationStatus: "approved",
+      }).returning();
+
+      const { password: _, ...userWithoutPassword } = adminUser;
+      res.json(userWithoutPassword);
+    } catch (error: any) {
+      console.error("[Admin] Failed to create admin user:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.put("/api/admin/users/:id/commission", isAuthenticated, requireRole(["admin"]), async (req: Request, res: Response) => {
     const { commissionRate } = req.body;
     try {

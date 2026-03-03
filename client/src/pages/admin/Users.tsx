@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Search, UserCheck, Users as UsersIcon, DollarSign, Edit2, FileSpreadsheet, Mail, Phone, MapPin, Building2, Calendar, FileText, Eye, MailCheck } from "lucide-react";
+import { Search, UserCheck, Users as UsersIcon, DollarSign, Edit2, FileSpreadsheet, Mail, Phone, MapPin, Building2, Calendar, FileText, Eye, MailCheck, UserPlus } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,11 @@ export default function Users() {
   const [commissionRate, setCommissionRate] = useState("");
   const [documentPreviewOpen, setDocumentPreviewOpen] = useState(false);
   const [documents, setDocuments] = useState<DocumentData[]>([]);
+  const [createAdminOpen, setCreateAdminOpen] = useState(false);
+  const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [newAdminPassword, setNewAdminPassword] = useState("");
+  const [newAdminFirstName, setNewAdminFirstName] = useState("");
+  const [newAdminLastName, setNewAdminLastName] = useState("");
 
   const { data: users = [], isLoading } = useQuery<User[]>({
     queryKey: ["/api/admin/users", roleFilter, statusFilter],
@@ -97,6 +102,41 @@ export default function Users() {
       });
     },
   });
+
+  const createAdminMutation = useMutation({
+    mutationFn: async (data: { email: string; password: string; firstName: string; lastName: string }) => {
+      return await apiRequest("POST", "/api/admin/users/create-admin", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ predicate: (query) => (query.queryKey[0] as string)?.startsWith("/api/admin/users") });
+      toast({ title: "Admin account created successfully!" });
+      setCreateAdminOpen(false);
+      setNewAdminEmail("");
+      setNewAdminPassword("");
+      setNewAdminFirstName("");
+      setNewAdminLastName("");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to create admin", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleCreateAdmin = () => {
+    if (!newAdminEmail || !newAdminPassword || !newAdminFirstName || !newAdminLastName) {
+      toast({ title: "All fields are required", variant: "destructive" });
+      return;
+    }
+    if (newAdminPassword.length < 8) {
+      toast({ title: "Password must be at least 8 characters", variant: "destructive" });
+      return;
+    }
+    createAdminMutation.mutate({
+      email: newAdminEmail,
+      password: newAdminPassword,
+      firstName: newAdminFirstName,
+      lastName: newAdminLastName,
+    });
+  };
 
   const handleViewProfile = (user: User) => {
     setSelectedUser(user);
@@ -246,9 +286,15 @@ export default function Users() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2" data-testid="text-page-title">User Management</h1>
-        <p className="text-muted-foreground">Manage users, roles, and commission rates</p>
+      <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold mb-2" data-testid="text-page-title">User Management</h1>
+          <p className="text-muted-foreground">Manage users, roles, and commission rates</p>
+        </div>
+        <Button onClick={() => setCreateAdminOpen(true)} data-testid="button-create-admin">
+          <UserPlus className="mr-2 h-4 w-4" />
+          Create Admin
+        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-4 mb-8">
@@ -803,6 +849,73 @@ export default function Users() {
         description={`Verification documents for ${selectedUser?.firstName} ${selectedUser?.lastName}`}
         testIdPrefix="user-document"
       />
+
+      <Dialog open={createAdminOpen} onOpenChange={setCreateAdminOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Admin Account</DialogTitle>
+            <DialogDescription>
+              Create a new administrator account. The account will be immediately active.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="admin-first-name">First Name</Label>
+              <Input
+                id="admin-first-name"
+                value={newAdminFirstName}
+                onChange={(e) => setNewAdminFirstName(e.target.value)}
+                placeholder="Enter first name"
+                data-testid="input-admin-first-name"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="admin-last-name">Last Name</Label>
+              <Input
+                id="admin-last-name"
+                value={newAdminLastName}
+                onChange={(e) => setNewAdminLastName(e.target.value)}
+                placeholder="Enter last name"
+                data-testid="input-admin-last-name"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="admin-email">Email</Label>
+              <Input
+                id="admin-email"
+                type="email"
+                value={newAdminEmail}
+                onChange={(e) => setNewAdminEmail(e.target.value)}
+                placeholder="Enter email address"
+                data-testid="input-admin-email"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="admin-password">Password</Label>
+              <Input
+                id="admin-password"
+                type="password"
+                value={newAdminPassword}
+                onChange={(e) => setNewAdminPassword(e.target.value)}
+                placeholder="Minimum 8 characters"
+                data-testid="input-admin-password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateAdminOpen(false)} data-testid="button-cancel-create-admin">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateAdmin}
+              disabled={createAdminMutation.isPending}
+              data-testid="button-submit-create-admin"
+            >
+              {createAdminMutation.isPending ? "Creating..." : "Create Admin"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
