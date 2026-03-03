@@ -1,5 +1,5 @@
 const MPGS_BASE_URL = process.env.MPGS_BASE_URL || "https://cbcmpgs.gateway.mastercard.com";
-const MPGS_API_VERSION = process.env.MPGS_API_VERSION || "100";
+const MPGS_API_VERSION = process.env.MPGS_API_VERSION || "61";
 const MPGS_MERCHANT_ID = process.env.MPGS_MERCHANT_ID || "";
 const MPGS_API_PASSWORD = process.env.MPGS_API_PASSWORD || "";
 
@@ -50,6 +50,18 @@ export async function createCheckoutSession(
 
   const body: any = {
     apiOperation: "CREATE_CHECKOUT_SESSION",
+    order: {
+      id: orderId,
+      amount: amount,
+      currency: currency,
+    },
+    interaction: {
+      operation: "PURCHASE",
+      returnUrl: returnUrl,
+      merchant: {
+        name: "Vaaney",
+      },
+    },
   };
 
   console.log(`[MPGS] Creating checkout session for order ${orderId}, amount: ${amount} ${currency}`);

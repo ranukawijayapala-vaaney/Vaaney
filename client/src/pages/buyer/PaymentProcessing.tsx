@@ -36,45 +36,31 @@ export default function PaymentProcessing() {
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const sessionId = params.get("sessionId");
   const returnType = params.get("type");
+  const urlError = params.get("error");
   const fallbackPath = getFallbackPath(returnType);
 
   const { data: mpgsConfig } = useQuery<{ checkoutJsUrl: string; merchantId: string }>({
     queryKey: ["/api/payments/mpgs-config"],
-    enabled: !!sessionId,
-  });
-
-  const { data: sessionConfig, isError: sessionConfigError } = useQuery<{
-    amount: string;
-    currency: string;
-    orderId: string;
-    returnUrl: string;
-  }>({
-    queryKey: ["/api/payments/mpgs-session-config", sessionId],
-    enabled: !!sessionId,
+    enabled: !!sessionId && !urlError,
   });
 
   useEffect(() => {
-    if (sessionConfigError) {
-      setError("Payment session expired or invalid. Please try again from your order.");
+    if (urlError) {
+      setError("Payment could not be completed. Please try again.");
     }
-  }, [sessionConfigError]);
+  }, [urlError]);
 
   useEffect(() => {
-    if (!sessionId || !mpgsConfig || !sessionConfig || configured) return;
+    if (!sessionId || !mpgsConfig || configured || urlError) return;
 
     const script = document.createElement("script");
     script.src = mpgsConfig.checkoutJsUrl;
-    script.setAttribute("data-error", "mpgsErrorCallback");
-    script.setAttribute("data-cancel", "mpgsCancelCallback");
 
-    (window as any).mpgsErrorCallback = (err: any) => {
-      console.error("[MPGS] Checkout error:", err);
-      setError("Payment could not be completed. Please try again.");
-    };
-
-    (window as any).mpgsCancelCallback = () => {
-      navigate(fallbackPath);
-    };
+    const currentUrl = window.location.origin;
+    const errorUrl = `${currentUrl}/payment-processing?error=true&type=${returnType || "checkout"}`;
+    const cancelUrl = `${currentUrl}${fallbackPath}`;
+    script.setAttribute("data-error", errorUrl);
+    script.setAttribute("data-cancel", cancelUrl);
 
     script.onload = () => {
       try {
@@ -82,23 +68,6 @@ export default function PaymentProcessing() {
           merchant: mpgsConfig.merchantId,
           session: {
             id: sessionId,
-          },
-          order: {
-            amount: sessionConfig.amount,
-            currency: sessionConfig.currency,
-            id: sessionConfig.orderId,
-          },
-          interaction: {
-            merchant: {
-              name: "Vaaney",
-            },
-            operation: "PURCHASE",
-            returnUrl: sessionConfig.returnUrl,
-            displayControl: {
-              billingAddress: "HIDE",
-              customerEmail: "HIDE",
-              shipping: "HIDE",
-            },
           },
         });
         setConfigured(true);
@@ -116,13 +85,11 @@ export default function PaymentProcessing() {
     document.head.appendChild(script);
 
     return () => {
-      delete (window as any).mpgsErrorCallback;
-      delete (window as any).mpgsCancelCallback;
       if (script.parentNode) {
         script.parentNode.removeChild(script);
       }
     };
-  }, [sessionId, mpgsConfig, sessionConfig, configured, navigate, fallbackPath]);
+  }, [sessionId, mpgsConfig, configured, urlError, returnType, fallbackPath]);
 
   if (!sessionId) {
     return (
