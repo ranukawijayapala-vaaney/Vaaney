@@ -130,7 +130,7 @@ export async function retrieveOrder(orderId: string): Promise<MpgsOrderDetails> 
 }
 
 export function getMpgsCheckoutJsUrl(): string {
-  return `${MPGS_BASE_URL}/static/checkout/checkout.min.js`;
+  return `${MPGS_BASE_URL}/checkout/version/61/checkout.js`;
 }
 
 export function getMpgsMerchantId(): string {
