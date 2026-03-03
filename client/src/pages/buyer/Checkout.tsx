@@ -308,15 +308,14 @@ export default function Checkout() {
         numberOfPieces: totalQuantity,
       };
       
-      // If all items have dimensions, use the largest dimensions for package calculation
       if (allHaveDimensions) {
-        const maxDimensions = cartDetails.reduce((max, item) => ({
-          length: Math.max(max.length, parseFloat(item.variant.length || "0")),
-          width: Math.max(max.width, parseFloat(item.variant.width || "0")),
-          height: Math.max(max.height, parseFloat(item.variant.height || "0")),
+        const packageDimensions = cartDetails.reduce((acc, item) => ({
+          length: Math.max(acc.length, parseFloat(item.variant.length || "0")),
+          width: Math.max(acc.width, parseFloat(item.variant.width || "0")),
+          height: acc.height + (parseFloat(item.variant.height || "0") * item.quantity),
         }), { length: 0, width: 0, height: 0 });
         
-        requestPayload.dimensions = maxDimensions;
+        requestPayload.dimensions = packageDimensions;
       }
       
       const response = await apiRequest("POST", "/api/buyer/calculate-shipping-rate", requestPayload);
@@ -1021,16 +1020,28 @@ export default function Checkout() {
                           </span>
                           <span>{totalWeight.toFixed(2)} kg</span>
                         </div>
-                        {allHaveDimensions && (
-                          <div className="flex justify-between text-xs text-muted-foreground" data-testid="text-dimensions">
-                            <span>Package Dimensions</span>
-                            <span>
-                              {Math.max(...cartDetails.map((i: any) => parseFloat(i.variant.length || "0"))).toFixed(0)} x{" "}
-                              {Math.max(...cartDetails.map((i: any) => parseFloat(i.variant.width || "0"))).toFixed(0)} x{" "}
-                              {Math.max(...cartDetails.map((i: any) => parseFloat(i.variant.height || "0"))).toFixed(0)} cm
-                            </span>
-                          </div>
-                        )}
+                        {allHaveDimensions && (() => {
+                          const dims = cartDetails.reduce((acc: any, i: any) => ({
+                            length: Math.max(acc.length, parseFloat(i.variant.length || "0")),
+                            width: Math.max(acc.width, parseFloat(i.variant.width || "0")),
+                            height: acc.height + (parseFloat(i.variant.height || "0") * i.quantity),
+                          }), { length: 0, width: 0, height: 0 });
+                          const volWeight = (dims.length * dims.width * dims.height) / 5000;
+                          return (
+                            <>
+                              <div className="flex justify-between text-xs text-muted-foreground" data-testid="text-dimensions">
+                                <span>Package Dimensions</span>
+                                <span>{dims.length.toFixed(0)} x {dims.width.toFixed(0)} x {dims.height.toFixed(0)} cm</span>
+                              </div>
+                              {volWeight > totalWeight && (
+                                <div className="flex justify-between text-xs text-muted-foreground" data-testid="text-volumetric-weight">
+                                  <span>Volumetric Weight</span>
+                                  <span>{volWeight.toFixed(2)} kg</span>
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
                       </>
                     );
                   })()}

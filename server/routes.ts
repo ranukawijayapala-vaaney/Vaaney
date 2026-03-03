@@ -2458,11 +2458,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               ? shippingCostTotal 
               : (itemWeight / totalWeight) * shippingCostTotal;
             
-            // Prepare dimensions if available
             const productDimensions = (variant.length && variant.width && variant.height) ? {
               length: parseFloat(variant.length),
               width: parseFloat(variant.width),
-              height: parseFloat(variant.height),
+              height: parseFloat(variant.height) * cartItem.quantity,
             } : null;
             
             // Create order for this variant (using effectivePrice which is either variant.price or quote.quotedPrice)
@@ -4449,8 +4448,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const firstOrder = ordersToConsolidate[0];
       const buyer = firstOrder.buyer;
       
-      // Calculate total weight and cost
-      // Note: productWeight already includes quantity (variantWeight * quantity) from order creation
       const totalWeight = ordersToConsolidate.reduce((sum, order) => {
         const weight = parseFloat(order.productWeight || "1.0");
         return sum + weight;
@@ -4459,6 +4456,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const totalShippingCost = ordersToConsolidate.reduce((sum, order) => {
         return sum + parseFloat(order.shippingCost || "0");
       }, 0);
+
+      const { overrideDimensions } = req.body;
+      let packageDimensions: { length: number; width: number; height: number } | null = null;
+      let dimensionWarning: string | null = null;
+
+      if (overrideDimensions && overrideDimensions.length && overrideDimensions.width && overrideDimensions.height) {
+        const oL = parseFloat(overrideDimensions.length);
+        const oW = parseFloat(overrideDimensions.width);
+        const oH = parseFloat(overrideDimensions.height);
+        if (isNaN(oL) || isNaN(oW) || isNaN(oH) || oL <= 0 || oW <= 0 || oH <= 0) {
+          return res.status(400).json({ message: "Override dimensions must be positive numbers" });
+        }
+        packageDimensions = { length: oL, width: oW, height: oH };
+      } else {
+        let maxLength = 0, maxWidth = 0, totalHeight = 0;
+        let ordersWithDims = 0;
+        for (const order of ordersToConsolidate) {
+          const dims = order.productDimensions as any;
+          if (dims && dims.length && dims.width && dims.height) {
+            ordersWithDims++;
+            maxLength = Math.max(maxLength, dims.length);
+            maxWidth = Math.max(maxWidth, dims.width);
+            totalHeight += dims.height;
+          }
+        }
+        if (ordersWithDims > 0) {
+          packageDimensions = { length: maxLength, width: maxWidth, height: totalHeight };
+          if (ordersWithDims < ordersToConsolidate.length) {
+            dimensionWarning = `Only ${ordersWithDims} of ${ordersToConsolidate.length} orders have dimensions — package size may be underestimated`;
+          }
+        }
+      }
+
+      const volumetricWeight = packageDimensions
+        ? (packageDimensions.length * packageDimensions.width * packageDimensions.height) / 5000
+        : null;
       
       // Create Aramex shipment before database transaction
       let aramexResult: any = null;
@@ -4475,6 +4508,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               Unit: 'KG' as const,
               Value: totalWeight,
             },
+            ...(packageDimensions && {
+              Dimensions: {
+                Unit: 'CM' as const,
+                Length: packageDimensions.length,
+                Width: packageDimensions.width,
+                Height: packageDimensions.height,
+              },
+            }),
             NumberOfPieces: ordersToConsolidate.length,
             ProductGroup: 'EXP',
             ProductType: 'PPX',
@@ -4544,6 +4585,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           buyerId: firstOrder.buyerId,
           numberOfOrders: ordersToConsolidate.length,
           totalWeight: totalWeight.toFixed(2),
+          packageLength: packageDimensions ? packageDimensions.length.toFixed(2) : null,
+          packageWidth: packageDimensions ? packageDimensions.width.toFixed(2) : null,
+          packageHeight: packageDimensions ? packageDimensions.height.toFixed(2) : null,
+          volumetricWeight: volumetricWeight ? volumetricWeight.toFixed(2) : null,
           totalShippingCost: totalShippingCost.toFixed(2),
           actualAramexCost: actualAramexCost ? actualAramexCost.toFixed(2) : null,
           awbNumber: processedShipment?.ID || null,
@@ -4590,7 +4635,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         collectedFromBuyers: totalShippingCost,
         actualAramexCost: actualAramexCost,
         shippingProfitLoss: actualAramexCost ? (totalShippingCost - actualAramexCost).toFixed(2) : null,
+        packageDimensions: packageDimensions,
+        actualWeight: totalWeight,
+        volumetricWeight: volumetricWeight,
+        chargeableWeight: volumetricWeight ? Math.max(totalWeight, volumetricWeight) : totalWeight,
         warning: aramexWarning,
+        dimensionWarning: dimensionWarning,
       });
     } catch (error: any) {
       console.error("Error consolidating shipment:", error);

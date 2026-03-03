@@ -1421,6 +1421,10 @@ export const consolidatedShipments = pgTable("consolidated_shipments", {
   // Consolidation details
   numberOfOrders: integer("number_of_orders").notNull().default(1), // How many orders combined
   totalWeight: decimal("total_weight", { precision: 10, scale: 2 }), // Combined weight in KG
+  packageLength: decimal("package_length", { precision: 10, scale: 2 }),
+  packageWidth: decimal("package_width", { precision: 10, scale: 2 }),
+  packageHeight: decimal("package_height", { precision: 10, scale: 2 }),
+  volumetricWeight: decimal("volumetric_weight", { precision: 10, scale: 2 }),
   totalShippingCost: decimal("total_shipping_cost", { precision: 10, scale: 2 }), // What buyers paid for shipping
   actualAramexCost: decimal("actual_aramex_cost", { precision: 10, scale: 2 }), // What Aramex actually charged
   
