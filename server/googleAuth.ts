@@ -17,15 +17,15 @@ async function upsertGoogleUser(profile: any): Promise<{ user: any; isNewUser: b
     throw new Error("Email not provided by Google");
   }
 
-  // Check if user exists by Google ID
-  const [existingUser] = await db
+  // Check if user exists by Google ID first
+  const [existingByGoogleId] = await db
     .select()
     .from(users)
     .where(eq(users.googleId, googleId))
     .limit(1);
 
-  if (existingUser) {
-    // Update existing user
+  if (existingByGoogleId) {
+    // Update existing user's profile details
     const [updatedUser] = await db
       .update(users)
       .set({
@@ -40,8 +40,31 @@ async function upsertGoogleUser(profile: any): Promise<{ user: any; isNewUser: b
     return { user: updatedUser, isNewUser: false };
   }
 
+  // Fallback: check by email (handles pre-created accounts e.g. admin accounts)
+  const [existingByEmail] = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+
+  if (existingByEmail) {
+    // Link the Google ID to the existing account and update profile
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        googleId,
+        firstName: existingByEmail.firstName || firstName,
+        lastName: existingByEmail.lastName || lastName,
+        profileImageUrl: profileImageUrl || existingByEmail.profileImageUrl,
+        emailVerified: true,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.email, email))
+      .returning();
+    return { user: updatedUser, isNewUser: false };
+  }
+
   // Create new buyer account via Google Auth
-  // Google Auth users are auto-verified and buyers only
   const [newUser] = await db
     .insert(users)
     .values({
@@ -51,9 +74,9 @@ async function upsertGoogleUser(profile: any): Promise<{ user: any; isNewUser: b
       lastName,
       profileImageUrl,
       role: "buyer",
-      verificationStatus: "approved", // Buyers don't need document verification
-      emailVerified: true, // Google emails are already verified
-      password: null, // No password for Google Auth users
+      verificationStatus: "approved",
+      emailVerified: true,
+      password: null,
     })
     .returning();
 
