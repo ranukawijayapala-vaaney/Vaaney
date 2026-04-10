@@ -1069,7 +1069,7 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
                           {deliveryDateStr}
                         </p>
                         <p className="text-xs text-muted-foreground" data-testid="text-transit-days">
-                          {shippingEstimate.isFallback ? "3–5 business days" : `${shippingEstimate.transitDays} day${shippingEstimate.transitDays !== 1 ? "s" : ""}`} transit
+                          {shippingEstimate.transitFallbackUsed ? "3–5 business days" : `${shippingEstimate.transitDays} day${shippingEstimate.transitDays !== 1 ? "s" : ""}`} transit
                           {shippingEstimate.productionDays > 0 && ` + ${shippingEstimate.productionDays} day${shippingEstimate.productionDays !== 1 ? "s" : ""} production`}
                         </p>
                       </div>

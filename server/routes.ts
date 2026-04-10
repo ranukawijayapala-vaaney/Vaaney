@@ -59,7 +59,7 @@ import {
 } from "@shared/schema";
 import { createCheckoutSession as createMpgsSession, retrieveOrder as retrieveMpgsOrder, getMpgsCheckoutJsUrl, getMpgsMerchantId, storeSessionConfig, getSessionConfig } from "./mpgs";
 import * as aramex from "./aramex";
-import { trackShipments, isShipmentDelivered } from "./aramex";
+import { trackShipments, isShipmentDelivered, CalculateRateResponse } from "./aramex";
 import { setupShippingRoutes } from "./shippingRoutes";
 import { setupQuoteApprovalRoutes } from "./quoteApprovalRoutes";
 import notificationRoutes from "./notificationRoutes";
@@ -1988,11 +1988,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      let rateResult;
+      let rateResult: CalculateRateResponse;
       try {
         // Wrap Aramex call with timeout to prevent hanging
         const timeoutMs = 15000; // 15 seconds
-        const timeoutPromise = new Promise((_, reject) => 
+        const timeoutPromise = new Promise<never>((_, reject) => 
           setTimeout(() => reject(new Error('Shipping rate calculation timeout')), timeoutMs)
         );
         
@@ -2010,7 +2010,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           numberOfPieces: numberOfPieces ? parseInt(numberOfPieces, 10) : 1,
         });
         
-        rateResult = await Promise.race([aramexPromise, timeoutPromise]) as any;
+        rateResult = await Promise.race([aramexPromise, timeoutPromise]);
       } catch (aramexError: any) {
         console.error('Aramex API error:', aramexError);
         console.log('Aramex API failed, returning fallback shipping rate');
@@ -2093,11 +2093,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let shippingCost: number;
       let transitDays: number;
       let isFallback = false;
+      let transitFallbackUsed = false;
 
       if (!hasAramexCredentials) {
         shippingCost = Math.max(30, baseFee + weightKg * perKgRate);
         transitDays = FALLBACK_TRANSIT_DAYS;
         isFallback = true;
+        transitFallbackUsed = true;
       } else {
         try {
           const timeoutPromise = new Promise<never>((_, reject) =>
@@ -2112,20 +2114,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
             dimensions: dims,
             numberOfPieces: 1,
           });
-          const result = await Promise.race([ratePromise, timeoutPromise]) as any;
+          const result = await Promise.race([ratePromise, timeoutPromise]);
 
           if (result.HasErrors) {
             shippingCost = Math.max(30, baseFee + weightKg * perKgRate);
             transitDays = FALLBACK_TRANSIT_DAYS;
             isFallback = true;
+            transitFallbackUsed = true;
           } else {
             shippingCost = result.TotalAmount?.Value ?? Math.max(30, baseFee + weightKg * perKgRate);
-            transitDays = result.TransitDays ?? FALLBACK_TRANSIT_DAYS;
+            if (result.TransitDays != null) {
+              transitDays = result.TransitDays;
+            } else {
+              transitDays = FALLBACK_TRANSIT_DAYS;
+              transitFallbackUsed = true;
+            }
           }
         } catch {
           shippingCost = Math.max(30, baseFee + weightKg * perKgRate);
           transitDays = FALLBACK_TRANSIT_DAYS;
           isFallback = true;
+          transitFallbackUsed = true;
         }
       }
 
@@ -2133,6 +2142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         shippingCost,
         currency: "USD",
         transitDays,
+        transitFallbackUsed,
         packagingType: variant.packagingType || "standard_box",
         productionDays: variant.productionDays ?? null,
         isFallback,

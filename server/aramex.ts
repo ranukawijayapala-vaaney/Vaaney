@@ -477,7 +477,7 @@ interface RateCalculatorCharge {
   Amount: number;
 }
 
-interface CalculateRateResponse {
+export interface CalculateRateResponse {
   HasErrors: boolean;
   Notifications?: Array<{ Code: string; Message: string }>;
   TotalAmount?: {
