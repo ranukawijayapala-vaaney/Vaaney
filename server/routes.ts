@@ -4,7 +4,7 @@ import crypto from "crypto";
 import { storage } from "./storage";
 import { db } from "./db";
 import { broadcastToConversation } from "./websocket";
-import { eq, and, or, inArray, isNull, isNotNull, not, desc } from "drizzle-orm";
+import { eq, and, or, inArray, isNull, isNotNull, not, desc, sql } from "drizzle-orm";
 import { isAuthenticated } from "./localAuth";
 import { ObjectStorageService, ObjectNotFoundError, parseObjectPath, objectStorageClient } from "./objectStorage";
 import { ObjectAclPolicy, ObjectPermission, setObjectAclPolicy, canAccessObject, getObjectAclPolicy } from "./objectAcl";
@@ -7401,6 +7401,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error(`[ADMIN INIT] FAILED - Internal error at ${timestamp} from IP ${clientIp}:`, error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // TEMPORARY one-time launch cleanup endpoint — will be removed after use
+  app.post("/api/internal/launch-cleanup", async (req: Request, res: Response) => {
+    const { secret } = req.body;
+    if (secret !== "VAANEY_LAUNCH_9K2M7_2025") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    try {
+      await db.execute(sql`
+        TRUNCATE TABLE 
+          booking_deliverables, booking_ratings, order_ratings, order_items,
+          return_requests, message_attachments, design_approvals, password_reset_tokens,
+          chat_sessions, transactions, meetings, messages, conversations,
+          aramex_shipments, consolidated_shipments, boosted_items, boost_purchases,
+          notifications, quotes, orders, bookings, cart_items, checkout_sessions,
+          product_variants, products, service_packages, services, seller_gallery,
+          seller_projects, shipping_addresses, sessions
+        CASCADE
+      `);
+      await db.execute(sql`DELETE FROM users WHERE email != 'ranuka.wijayapala@gmail.com'`);
+      await db.execute(sql`UPDATE users SET role = 'admin' WHERE email = 'ranuka.wijayapala@gmail.com'`);
+      const remaining = await db.select({ email: users.email, role: users.role }).from(users);
+      res.json({ message: "Production data wiped successfully", remaining });
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
