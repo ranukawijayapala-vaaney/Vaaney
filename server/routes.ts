@@ -1983,6 +1983,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           shippingCost: mockRate,
           currency: 'USD',
           breakdown: [],
+          transitDays: 4,
           dev_mode: true,
         });
       }
@@ -2024,6 +2025,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           shippingCost: fallbackRate,
           currency: 'USD',
           breakdown: [],
+          transitDays: 4,
           fallback: true,
         });
       }
@@ -2052,14 +2054,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Defaults to Malé, Maldives as the destination
   app.get("/api/products/:productId/variants/:variantId/shipping-estimate", async (req: Request, res: Response) => {
     try {
-      const { variantId } = req.params;
-      const destinationCity = (req.query.city as string) || "Male";
-      const destinationCountry = (req.query.country as string) || "MV";
+      const { productId, variantId } = req.params;
+      const destinationCity = (req.query.destinationCity as string) || "Male";
+      const destinationCountry = (req.query.destinationCountryCode as string) || "MV";
 
-      const [variant] = await db.select().from(productVariants).where(eq(productVariants.id, variantId));
-      if (!variant) {
+      // Verify the variant belongs to the given product
+      const [variantCheck] = await db.select({ productId: productVariants.productId })
+        .from(productVariants)
+        .where(eq(productVariants.id, variantId));
+      if (!variantCheck) {
         return res.status(404).json({ message: "Variant not found" });
       }
+      if (variantCheck.productId !== productId) {
+        return res.status(404).json({ message: "Variant does not belong to this product" });
+      }
+
+      const [variant] = await db.select().from(productVariants).where(eq(productVariants.id, variantId));
 
       const weightKg = variant.weight ? parseFloat(variant.weight) : 1;
       const dims = (variant.length && variant.width && variant.height)

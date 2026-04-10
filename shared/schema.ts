@@ -279,6 +279,8 @@ export const insertProductVariantSchema = createInsertSchema(productVariants, {
   length: z.union([z.number(), z.string(), z.null()]).transform(val => val === null || val === '' ? null : (typeof val === 'string' ? parseFloat(val) : val)).optional(),
   width: z.union([z.number(), z.string(), z.null()]).transform(val => val === null || val === '' ? null : (typeof val === 'string' ? parseFloat(val) : val)).optional(),
   height: z.union([z.number(), z.string(), z.null()]).transform(val => val === null || val === '' ? null : (typeof val === 'string' ? parseFloat(val) : val)).optional(),
+  packagingType: z.enum(["standard_box", "mailing_tube"]).default("standard_box").optional(),
+  productionDays: z.union([z.number(), z.string(), z.null()]).transform(val => val === null || val === '' ? null : (typeof val === 'string' ? parseInt(val, 10) : val)).optional(),
 }).omit({ id: true, createdAt: true, updatedAt: true });
 
 export type ProductVariant = typeof productVariants.$inferSelect;

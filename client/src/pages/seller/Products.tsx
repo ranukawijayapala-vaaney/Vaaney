@@ -386,8 +386,8 @@ export default function Products() {
         length: variant.length?.toString() || "",
         width: variant.width?.toString() || "",
         height: variant.height?.toString() || "",
-        packagingType: (variant as any).packagingType || "standard_box",
-        productionDays: (variant as any).productionDays?.toString() || "",
+        packagingType: variant.packagingType || "standard_box",
+        productionDays: variant.productionDays?.toString() || "",
       });
     } else {
       setIsEditingVariant(false);

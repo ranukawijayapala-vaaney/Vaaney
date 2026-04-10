@@ -1036,54 +1036,87 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
                 <Skeleton className="h-4 w-32" />
               </div>
             ) : shippingEstimate ? (
-              <>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Estimated shipping to Malé</p>
-                    <p className="font-semibold text-base" data-testid="text-shipping-cost">
-                      ${shippingEstimate.shippingCost.toFixed(2)} USD
-                    </p>
-                    {shippingEstimate.isFallback && (
-                      <p className="text-xs text-muted-foreground">Estimated rate</p>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Transit time</p>
-                    <p className="font-semibold" data-testid="text-transit-days">
-                      {shippingEstimate.transitDays} business days
-                    </p>
-                  </div>
-                </div>
+              (() => {
+                // Compute estimated delivery date: today + productionDays + transitDays (business days)
+                const totalDays = (shippingEstimate.productionDays || 0) + (shippingEstimate.transitDays || 4);
+                const deliveryDate = new Date();
+                let added = 0;
+                while (added < totalDays) {
+                  deliveryDate.setDate(deliveryDate.getDate() + 1);
+                  const day = deliveryDate.getDay();
+                  if (day !== 0 && day !== 6) added++; // skip weekends
+                }
+                const deliveryDateStr = deliveryDate.toLocaleDateString("en-US", {
+                  weekday: "short", month: "short", day: "numeric"
+                });
+                const isTube = shippingEstimate.packagingType === "mailing_tube";
 
-                {shippingEstimate.productionDays > 0 && (
-                  <div className="flex items-start gap-2 text-sm bg-muted/50 rounded-md p-3">
-                    <Clock className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                    <div>
-                      <p className="font-medium">Production time</p>
-                      <p className="text-muted-foreground">
-                        This item requires {shippingEstimate.productionDays} business day{shippingEstimate.productionDays !== 1 ? "s" : ""} to produce before shipping.
-                      </p>
+                return (
+                  <>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Estimated shipping to Malé</p>
+                        <p className="font-semibold text-base" data-testid="text-shipping-cost">
+                          ${shippingEstimate.shippingCost.toFixed(2)} USD
+                        </p>
+                        {shippingEstimate.isFallback && (
+                          <p className="text-xs text-muted-foreground">Estimated rate</p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Estimated delivery by</p>
+                        <p className="font-semibold" data-testid="text-delivery-date">
+                          {deliveryDateStr}
+                        </p>
+                        <p className="text-xs text-muted-foreground" data-testid="text-transit-days">
+                          {shippingEstimate.transitDays} day{shippingEstimate.transitDays !== 1 ? "s" : ""} transit
+                          {shippingEstimate.productionDays > 0 && ` + ${shippingEstimate.productionDays} day${shippingEstimate.productionDays !== 1 ? "s" : ""} production`}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
 
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant="secondary" className="text-xs" data-testid="badge-packaging-type">
-                    <Package className="h-3 w-3 mr-1" />
-                    {shippingEstimate.packagingType === "mailing_tube" ? "Mailing Tube" : "Standard Box"}
-                  </Badge>
-                  {shippingEstimate.dimensions && (
-                    <span className="text-xs text-muted-foreground">
-                      {shippingEstimate.dimensions.length} x {shippingEstimate.dimensions.width} x {shippingEstimate.dimensions.height} cm · {shippingEstimate.weight} kg
-                    </span>
-                  )}
-                </div>
+                    {isTube && (
+                      <div className="flex items-start gap-2 text-sm bg-muted/50 rounded-md p-3">
+                        <Package className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                        <p className="text-muted-foreground">Ships in a protective mailing tube to keep your item safe during transit.</p>
+                      </div>
+                    )}
 
-                <p className="text-xs text-muted-foreground">
-                  Shipped from Sri Lanka via Aramex. Final shipping cost calculated at checkout based on your address.
-                </p>
-              </>
-            ) : null}
+                    {shippingEstimate.productionDays > 0 && (
+                      <div className="flex items-start gap-2 text-sm bg-muted/50 rounded-md p-3">
+                        <Clock className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                        <div>
+                          <p className="font-medium">Production time included</p>
+                          <p className="text-muted-foreground">
+                            This item takes {shippingEstimate.productionDays} business day{shippingEstimate.productionDays !== 1 ? "s" : ""} to produce before it ships.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="secondary" className="text-xs" data-testid="badge-packaging-type">
+                        <Package className="h-3 w-3 mr-1" />
+                        {isTube ? "Mailing Tube" : "Standard Box"}
+                      </Badge>
+                      {shippingEstimate.dimensions && (
+                        <span className="text-xs text-muted-foreground">
+                          {shippingEstimate.dimensions.length} × {shippingEstimate.dimensions.width} × {shippingEstimate.dimensions.height} cm · {shippingEstimate.weight} kg
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      Shipped from Sri Lanka via Aramex. Final shipping cost calculated at checkout based on your address.
+                    </p>
+                  </>
+                );
+              })()
+            ) : (
+              <p className="text-sm text-muted-foreground" data-testid="text-shipping-fallback">
+                Shipping cost will be calculated at checkout based on your delivery address.
+              </p>
+            )}
           </CardContent>
         </Card>
       )}

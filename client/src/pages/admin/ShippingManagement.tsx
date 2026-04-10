@@ -232,6 +232,7 @@ export default function AdminShippingManagement() {
     let totalWeight = 0;
     let maxLength = 0, maxWidth = 0, totalHeight = 0;
     let hasDimensions = false;
+    const packagingTypes = new Set<string>();
     for (const order of selectedOrdersList) {
       totalWeight += parseFloat(order.productWeight || "1.0");
       const dims = order.productDimensions;
@@ -241,10 +242,12 @@ export default function AdminShippingManagement() {
         maxWidth = Math.max(maxWidth, dims.width);
         totalHeight += dims.height;
       }
+      packagingTypes.add(order.variant?.packagingType || "standard_box");
     }
     const packageDims = hasDimensions ? { length: maxLength, width: maxWidth, height: totalHeight } : null;
     const volWeight = packageDims ? (packageDims.length * packageDims.width * packageDims.height) / 5000 : null;
-    return { totalWeight, packageDims, volWeight, orders: selectedOrdersList };
+    const hasMixedPackaging = packagingTypes.size > 1;
+    return { totalWeight, packageDims, volWeight, orders: selectedOrdersList, hasMixedPackaging };
   };
 
   const handleConsolidateSelected = () => {
@@ -539,6 +542,18 @@ export default function AdminShippingManagement() {
                     </>
                   )}
                 </div>
+
+                {info.hasMixedPackaging && (
+                  <div className="flex items-start gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20 text-sm" data-testid="alert-mixed-packaging">
+                    <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-destructive">Mixed packaging types detected</p>
+                      <p className="text-muted-foreground mt-0.5">
+                        This selection contains both standard boxes and mailing tubes. These items may require separate Aramex shipments to avoid damage. Consider consolidating only items with the same packaging type.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="border-t pt-4">
                   <Label className="text-sm font-medium">Override Package Dimensions (optional)</Label>
