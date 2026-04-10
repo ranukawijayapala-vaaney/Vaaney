@@ -256,6 +256,9 @@ export const productVariants = pgTable("product_variants", {
   length: decimal("length", { precision: 10, scale: 2 }), // Length in CM
   width: decimal("width", { precision: 10, scale: 2 }), // Width in CM
   height: decimal("height", { precision: 10, scale: 2 }), // Height in CM
+  // Packaging and production
+  packagingType: varchar("packaging_type", { length: 50 }).default("standard_box"), // standard_box | mailing_tube
+  productionDays: integer("production_days"), // Business days to produce before shipping
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

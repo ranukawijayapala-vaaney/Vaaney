@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
-import { Star, Package, ShoppingCart, Plus, Minus, MessageCircle, Shield, FileText, Upload, CheckCircle, Lock } from "lucide-react";
+import { Star, Package, ShoppingCart, Plus, Minus, MessageCircle, Shield, FileText, Upload, CheckCircle, Lock, Truck, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -125,6 +125,17 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
       }
     },
     enabled: !!product?.id && product?.requiresDesignApproval === true,
+  });
+
+  // Shipping estimate for the selected variant (no auth required)
+  const { data: shippingEstimate, isLoading: shippingEstimateLoading } = useQuery<any>({
+    queryKey: ["/api/products", id, "variants", selectedVariantId, "shipping-estimate"],
+    queryFn: async () => {
+      if (!id || !selectedVariantId || selectedVariantId === "custom") return null;
+      return await apiRequest("GET", `/api/products/${id}/variants/${selectedVariantId}/shipping-estimate`);
+    },
+    enabled: !!id && !!selectedVariantId && selectedVariantId !== "custom",
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   const averageRating = sellerRatings.length > 0
@@ -1008,6 +1019,74 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
           )}
         </div>
       </div>
+
+      {/* Shipping & Delivery estimate — shown when a variant is selected */}
+      {selectedVariantId && selectedVariantId !== "custom" && (
+        <Card data-testid="card-shipping-estimate">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Truck className="h-4 w-4" />
+              Shipping & Delivery
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {shippingEstimateLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            ) : shippingEstimate ? (
+              <>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Estimated shipping to Malé</p>
+                    <p className="font-semibold text-base" data-testid="text-shipping-cost">
+                      ${shippingEstimate.shippingCost.toFixed(2)} USD
+                    </p>
+                    {shippingEstimate.isFallback && (
+                      <p className="text-xs text-muted-foreground">Estimated rate</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Transit time</p>
+                    <p className="font-semibold" data-testid="text-transit-days">
+                      {shippingEstimate.transitDays} business days
+                    </p>
+                  </div>
+                </div>
+
+                {shippingEstimate.productionDays > 0 && (
+                  <div className="flex items-start gap-2 text-sm bg-muted/50 rounded-md p-3">
+                    <Clock className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                    <div>
+                      <p className="font-medium">Production time</p>
+                      <p className="text-muted-foreground">
+                        This item requires {shippingEstimate.productionDays} business day{shippingEstimate.productionDays !== 1 ? "s" : ""} to produce before shipping.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="secondary" className="text-xs" data-testid="badge-packaging-type">
+                    <Package className="h-3 w-3 mr-1" />
+                    {shippingEstimate.packagingType === "mailing_tube" ? "Mailing Tube" : "Standard Box"}
+                  </Badge>
+                  {shippingEstimate.dimensions && (
+                    <span className="text-xs text-muted-foreground">
+                      {shippingEstimate.dimensions.length} x {shippingEstimate.dimensions.width} x {shippingEstimate.dimensions.height} cm · {shippingEstimate.weight} kg
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  Shipped from Sri Lanka via Aramex. Final shipping cost calculated at checkout based on your address.
+                </p>
+              </>
+            ) : null}
+          </CardContent>
+        </Card>
+      )}
 
       <Separator />
 

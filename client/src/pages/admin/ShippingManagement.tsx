@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Package, Truck, User, Calendar, MapPin, Phone, AlertTriangle, Ruler, Weight } from "lucide-react";
+import { Package, Truck, User, Calendar, MapPin, Phone, AlertTriangle, Ruler, Weight, ScrollText } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ShippingAddress } from "@shared/schema";
 
@@ -57,6 +57,7 @@ interface Order {
   variant: {
     id: string;
     name: string | null;
+    packagingType: string | null;
   };
   shippingAddressRef: ShippingAddress | null;
 }
@@ -72,6 +73,7 @@ interface OrderGroup {
   totalShippingCost: number;
   packageDimensions: { length: number; width: number; height: number } | null;
   volumetricWeight: number | null;
+  hasMixedPackaging: boolean;
 }
 
 export default function AdminShippingManagement() {
@@ -101,6 +103,7 @@ export default function AdminShippingManagement() {
           totalShippingCost: 0,
           packageDimensions: null,
           volumetricWeight: null,
+          hasMixedPackaging: false,
         };
       }
       acc[key].orders.push(order);
@@ -115,6 +118,7 @@ export default function AdminShippingManagement() {
   for (const group of orderGroups) {
     let maxLength = 0, maxWidth = 0, totalHeight = 0;
     let hasDimensions = false;
+    const packagingTypes = new Set<string>();
     for (const order of group.orders) {
       const dims = order.productDimensions;
       if (dims && dims.length && dims.width && dims.height) {
@@ -123,11 +127,14 @@ export default function AdminShippingManagement() {
         maxWidth = Math.max(maxWidth, dims.width);
         totalHeight += dims.height;
       }
+      const pt = order.variant?.packagingType || "standard_box";
+      packagingTypes.add(pt);
     }
     if (hasDimensions) {
       group.packageDimensions = { length: maxLength, width: maxWidth, height: totalHeight };
       group.volumetricWeight = (maxLength * maxWidth * totalHeight) / 5000;
     }
+    group.hasMixedPackaging = packagingTypes.size > 1;
   }
 
   const createConsolidatedShipmentMutation = useMutation({
@@ -409,6 +416,12 @@ export default function AdminShippingManagement() {
                           {group.packageDimensions.length.toFixed(0)} x {group.packageDimensions.width.toFixed(0)} x {group.packageDimensions.height.toFixed(0)} cm
                         </div>
                       )}
+                      {group.hasMixedPackaging && (
+                        <Badge variant="destructive" className="text-xs mt-1" data-testid={`badge-mixed-packaging-${group.buyerId}`}>
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          Mixed Packaging
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
@@ -431,12 +444,25 @@ export default function AdminShippingManagement() {
                             {order.variant.name && (
                               <div className="text-xs text-muted-foreground">{order.variant.name}</div>
                             )}
-                            {order.checkoutSessionIncomplete && (
-                              <Badge variant="destructive" className="mt-1 text-xs">
-                                <AlertTriangle className="h-3 w-3 mr-1" />
-                                Incomplete Checkout Session
-                              </Badge>
-                            )}
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {order.checkoutSessionIncomplete && (
+                                <Badge variant="destructive" className="text-xs">
+                                  <AlertTriangle className="h-3 w-3 mr-1" />
+                                  Incomplete Session
+                                </Badge>
+                              )}
+                              {order.variant.packagingType === "mailing_tube" ? (
+                                <Badge variant="secondary" className="text-xs" data-testid={`badge-packaging-${order.id}`}>
+                                  <ScrollText className="h-3 w-3 mr-1" />
+                                  Mailing Tube
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-xs" data-testid={`badge-packaging-${order.id}`}>
+                                  <Package className="h-3 w-3 mr-1" />
+                                  Standard Box
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                           <div className="text-sm">
                             <div className="text-muted-foreground">Seller</div>

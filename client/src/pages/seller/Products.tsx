@@ -47,6 +47,8 @@ const variantFormSchema = z.object({
   length: z.string().optional().transform(val => val === "" || val === undefined ? undefined : val),
   width: z.string().optional().transform(val => val === "" || val === undefined ? undefined : val),
   height: z.string().optional().transform(val => val === "" || val === undefined ? undefined : val),
+  packagingType: z.string().optional().default("standard_box"),
+  productionDays: z.string().optional().transform(val => val === "" || val === undefined ? undefined : val),
 });
 
 type ProductForm = z.infer<typeof productFormSchema>;
@@ -62,13 +64,15 @@ type ProductApiPayload = Omit<ProductForm, 'price' | 'stock' | 'weight' | 'lengt
   height?: number;
 };
 
-type VariantApiPayload = Omit<VariantForm, 'price' | 'inventory' | 'weight' | 'length' | 'width' | 'height'> & {
+type VariantApiPayload = Omit<VariantForm, 'price' | 'inventory' | 'weight' | 'length' | 'width' | 'height' | 'productionDays'> & {
   price: number;
   inventory: number;
   weight?: number;
   length?: number;
   width?: number;
   height?: number;
+  packagingType?: string;
+  productionDays?: number;
   productId?: string;
   variantId?: string;
 };
@@ -119,6 +123,8 @@ export default function Products() {
       length: "",
       width: "",
       height: "",
+      packagingType: "standard_box",
+      productionDays: "",
     },
   });
 
@@ -348,6 +354,8 @@ export default function Products() {
       length: data.length ? Number(data.length) : undefined,
       width: data.width ? Number(data.width) : undefined,
       height: data.height ? Number(data.height) : undefined,
+      packagingType: data.packagingType || "standard_box",
+      productionDays: data.productionDays ? Number(data.productionDays) : undefined,
     };
 
     if (isEditingVariant && selectedVariant) {
@@ -378,6 +386,8 @@ export default function Products() {
         length: variant.length?.toString() || "",
         width: variant.width?.toString() || "",
         height: variant.height?.toString() || "",
+        packagingType: (variant as any).packagingType || "standard_box",
+        productionDays: (variant as any).productionDays?.toString() || "",
       });
     } else {
       setIsEditingVariant(false);
@@ -1028,6 +1038,58 @@ export default function Products() {
                 </div>
               </div>
               
+              <div className="space-y-4 border-t pt-4">
+                <h4 className="text-sm font-semibold">Packaging & Production (Optional)</h4>
+                
+                <FormField
+                  control={variantForm.control}
+                  name="packagingType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Packaging Type</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || "standard_box"}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-packaging-type">
+                            <SelectValue placeholder="Select packaging" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="standard_box">Standard Box</SelectItem>
+                          <SelectItem value="mailing_tube">Mailing Tube</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription className="text-xs">
+                        Mailing tubes are used for posters, prints, and rolled documents.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={variantForm.control}
+                  name="productionDays"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Production Time (business days)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="e.g., 3"
+                          {...field}
+                          data-testid="input-production-days"
+                        />
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        How many business days to produce this item before shipping. Leave blank if ships immediately.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <div className="flex gap-2 justify-end">
                 <Button
                   type="button"

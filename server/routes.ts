@@ -2040,10 +2040,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
         shippingCost: rateResult.TotalAmount?.Value || 0,
         currency: rateResult.TotalAmount?.CurrencyCode || 'USD',
         breakdown: rateResult.RateBreakdown || [],
+        transitDays: rateResult.TransitDays ?? null,
       });
     } catch (error: any) {
       console.error('Error calculating shipping rate:', error);
       res.status(500).json({ message: "An unexpected error occurred while calculating shipping rate. Please try again or contact support." });
+    }
+  });
+
+  // Public shipping estimate for a specific product variant (no auth required)
+  // Defaults to Malé, Maldives as the destination
+  app.get("/api/products/:productId/variants/:variantId/shipping-estimate", async (req: Request, res: Response) => {
+    try {
+      const { variantId } = req.params;
+      const destinationCity = (req.query.city as string) || "Male";
+      const destinationCountry = (req.query.country as string) || "MV";
+
+      const [variant] = await db.select().from(productVariants).where(eq(productVariants.id, variantId));
+      if (!variant) {
+        return res.status(404).json({ message: "Variant not found" });
+      }
+
+      const weightKg = variant.weight ? parseFloat(variant.weight) : 1;
+      const dims = (variant.length && variant.width && variant.height)
+        ? {
+            length: parseFloat(variant.length),
+            width: parseFloat(variant.width),
+            height: parseFloat(variant.height),
+          }
+        : undefined;
+
+      const FALLBACK_TRANSIT_DAYS = 4;
+      const baseFee = 20;
+      const perKgRate = 5;
+
+      const hasAramexCredentials = !!(
+        process.env.ARAMEX_USERNAME &&
+        process.env.ARAMEX_PASSWORD &&
+        process.env.ARAMEX_ACCOUNT_NUMBER
+      );
+
+      let shippingCost: number;
+      let transitDays: number;
+      let isFallback = false;
+
+      if (!hasAramexCredentials) {
+        shippingCost = Math.max(30, baseFee + weightKg * perKgRate);
+        transitDays = FALLBACK_TRANSIT_DAYS;
+        isFallback = true;
+      } else {
+        try {
+          const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("timeout")), 12000)
+          );
+          const ratePromise = aramex.calculateShippingRate({
+            originCountryCode: "LK",
+            originCity: "Colombo",
+            destinationCountryCode: destinationCountry,
+            destinationCity,
+            weight: weightKg,
+            dimensions: dims,
+            numberOfPieces: 1,
+          });
+          const result = await Promise.race([ratePromise, timeoutPromise]) as any;
+
+          if (result.HasErrors) {
+            shippingCost = Math.max(30, baseFee + weightKg * perKgRate);
+            transitDays = FALLBACK_TRANSIT_DAYS;
+            isFallback = true;
+          } else {
+            shippingCost = result.TotalAmount?.Value ?? Math.max(30, baseFee + weightKg * perKgRate);
+            transitDays = result.TransitDays ?? FALLBACK_TRANSIT_DAYS;
+          }
+        } catch {
+          shippingCost = Math.max(30, baseFee + weightKg * perKgRate);
+          transitDays = FALLBACK_TRANSIT_DAYS;
+          isFallback = true;
+        }
+      }
+
+      return res.json({
+        shippingCost,
+        currency: "USD",
+        transitDays,
+        packagingType: variant.packagingType || "standard_box",
+        productionDays: variant.productionDays ?? null,
+        isFallback,
+        weight: weightKg,
+        dimensions: dims ?? null,
+      });
+    } catch (error: any) {
+      console.error("Error fetching shipping estimate:", error);
+      res.status(500).json({ message: "Failed to get shipping estimate" });
     }
   });
 

@@ -485,6 +485,7 @@ interface CalculateRateResponse {
     Value: number;
   };
   RateBreakdown?: RateCalculatorCharge[];
+  TransitDays?: number;
 }
 
 // Calculate Shipping Rate using SOAP API
@@ -535,8 +536,18 @@ export async function calculateShippingRate(params: {
     };
 
     const [result] = await client.CalculateRateAsync(request);
-    
-    return result as CalculateRateResponse;
+    const response = result as any;
+
+    // Extract TransitDays from the SOAP response (field name varies by gateway version)
+    const transitDays: number | undefined =
+      response.TransitDays ??
+      response.CalculateRateResult?.TransitDays ??
+      undefined;
+
+    return {
+      ...response,
+      TransitDays: transitDays,
+    } as CalculateRateResponse;
   } catch (error: any) {
     console.error('Aramex calculateShippingRate error:', error.message);
     throw new Error('Failed to calculate shipping rate: ' + error.message);
