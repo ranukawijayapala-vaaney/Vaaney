@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ArrowLeft, ShieldCheck, Target, Users, Globe, Award, Zap, Palette, FileText, Mail, MessageSquare, Bot, Star, Bell, Plane, TrendingUp, RotateCcw } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Target, Users, Globe, Award, Zap, Palette, FileText, Mail, MessageSquare, Bot, Star, Bell, Plane, TrendingUp, RotateCcw, Video, CreditCard } from "lucide-react";
 
 export default function AboutUs() {
   return (
@@ -19,7 +19,7 @@ export default function AboutUs() {
         <div className="mb-12">
           <h1 className="text-4xl font-bold mb-4" data-testid="text-page-title">About Vaaney</h1>
           <p className="text-lg text-muted-foreground">
-            A secure, transparent e-commerce marketplace for the Maldivian market connecting buyers with verified sellers of products and digital services.
+            A secure, cross-border e-commerce marketplace connecting Maldivian buyers with verified Sri Lankan sellers of print products and digital services — backed by escrow payments, real-time video consultations, and Aramex international shipping.
           </p>
         </div>
 
@@ -35,10 +35,10 @@ export default function AboutUs() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-muted-foreground">
-                Vaaney was created to provide a trusted e-commerce platform for the Maldivian market, connecting buyers with verified sellers of print products and digital services. We believe in building economic connections through secure, transparent transactions backed by cutting-edge technology.
+                Vaaney was created to bridge the gap between Maldivian buyers and verified Sri Lankan sellers of print products and professional digital services. We believe commerce across borders should be safe, transparent, and seamless — powered by cutting-edge technology that protects every party involved.
               </p>
               <p className="text-muted-foreground">
-                Our mission is to empower small businesses and entrepreneurs by providing them with the tools and infrastructure needed to succeed online while ensuring buyers have access to quality products and services with complete peace of mind, all powered by AI-assisted support and comprehensive workflow automation.
+                Our mission is to empower Sri Lankan businesses to reach the Maldivian market, while giving Maldivian buyers access to quality print and creative services they can trust — all supported by AI assistance, escrow-protected payments, international shipping, and face-to-face video consultations.
               </p>
             </CardContent>
           </Card>
@@ -58,19 +58,20 @@ export default function AboutUs() {
               </p>
               <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
                 <li><strong>AI Assistant:</strong> Context-aware help available 24/7 on every page for instant support</li>
-                <li><strong>Dual Authentication:</strong> Buyers can use Google sign-in or email/password, while sellers use verified email accounts</li>
+                <li><strong>Dual Authentication:</strong> Buyers can use Google sign-in or email/password; sellers use verified email accounts</li>
                 <li><strong>Seller Verification:</strong> All sellers must complete document verification to ensure legitimacy</li>
-                <li><strong>Escrow Protection:</strong> Payments are held securely until orders are completed and services delivered</li>
-                <li><strong>Design Workflows:</strong> Pre-purchase design approval for print products with reusable design library</li>
+                <li><strong>Escrow Protection:</strong> Payments held securely until orders are completed and services delivered</li>
+                <li><strong>Real Card Payments:</strong> Secure Mastercard/Visa card payments via Commercial Bank of Ceylon's MPGS gateway, plus manual bank transfer</li>
+                <li><strong>Video Meetings:</strong> Sellers can propose Twilio-powered video consultations directly in buyer conversations — with email join links, screen sharing, and a 15-minute early join window</li>
+                <li><strong>Aramex International Shipping:</strong> Cross-border delivery from Sri Lanka to the Maldives with volumetric weight calculation, AWB tracking, and shipment consolidation</li>
+                <li><strong>Design Workflows:</strong> Pre-purchase design approval for print products with a reusable design library</li>
                 <li><strong>Custom Quotes:</strong> Request and accept custom pricing for unique specifications</li>
-                <li><strong>Digital Delivery:</strong> Automated email delivery of service deliverables with secure file storage</li>
-                <li><strong>Ratings & Reviews:</strong> Verified post-transaction ratings to build trust</li>
-                <li><strong>Notifications:</strong> In-app and email notifications for all major events</li>
-                <li><strong>Aramex Shipping:</strong> International shipping with tracking and consolidation</li>
-                <li><strong>Returns & Refunds:</strong> Comprehensive return workflow with admin resolution</li>
-                <li><strong>Seller Boost:</strong> Promotional packages to feature products and services</li>
-                <li><strong>Transparent Pricing:</strong> Clear commission structure starting at 20%, customizable per seller</li>
-                <li><strong>Flexible Payment Options:</strong> Instant online payment gateway (IPG) or manual bank transfer</li>
+                <li><strong>Digital Delivery:</strong> Automated email delivery of service deliverables with secure cloud file storage</li>
+                <li><strong>Ratings & Reviews:</strong> Verified post-transaction ratings with star scores, comments, and photo uploads</li>
+                <li><strong>Notifications:</strong> In-app and email notifications for every major event</li>
+                <li><strong>Returns & Refunds:</strong> Comprehensive return workflow with seller response and admin resolution</li>
+                <li><strong>Seller Boost:</strong> Promotional packages to feature products and services prominently</li>
+                <li><strong>Transparent Pricing:</strong> Clear commission structure starting at 20%, customizable per seller by admin</li>
               </ul>
             </CardContent>
           </Card>
@@ -113,6 +114,10 @@ export default function AboutUs() {
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
                     <span>WhatsApp-style mobile messaging for seller communication</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Video meeting consultations with sellers — join via email link, no app needed</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
@@ -186,6 +191,10 @@ export default function AboutUs() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
+                    <span>Propose video meeting consultations directly from buyer conversations</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
                     <span>Rating management and performance tracking</span>
                   </li>
                   <li className="flex items-start gap-2">
@@ -240,8 +249,8 @@ export default function AboutUs() {
                       <span className="text-sm font-bold text-primary">2</span>
                     </div>
                     <div>
-                      <p className="font-medium">Browse & Message</p>
-                      <p className="text-sm text-muted-foreground">Buyers explore products/services, message sellers for questions, request custom quotes</p>
+                      <p className="font-medium">Browse, Message & Meet</p>
+                      <p className="text-sm text-muted-foreground">Buyers explore products/services, message sellers, request custom quotes, or join a video meeting for a face-to-face consultation</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
@@ -259,7 +268,7 @@ export default function AboutUs() {
                     </div>
                     <div>
                       <p className="font-medium">Purchase & Pay</p>
-                      <p className="text-sm text-muted-foreground">Choose payment method (instant IPG or bank transfer). Funds held in escrow for protection</p>
+                      <p className="text-sm text-muted-foreground">Pay instantly by card (Visa/Mastercard via CBC's MPGS gateway) or via manual bank transfer. All amounts in USD. Funds held in escrow for protection</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
@@ -442,6 +451,74 @@ export default function AboutUs() {
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
                     <span>Admin support when needed</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-start gap-3">
+                  <Video className="h-6 w-6 text-primary mt-1" />
+                  <div>
+                    <CardTitle>Video Meetings</CardTitle>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Face-to-face consultations between buyers and sellers:
+                </p>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Sellers propose meetings directly in conversations</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Join via email link — no app download needed</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Video, audio controls, and screen sharing</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>15-minute early join window</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-start gap-3">
+                  <CreditCard className="h-6 w-6 text-primary mt-1" />
+                  <div>
+                    <CardTitle>Secure Card Payments</CardTitle>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Real card payments powered by CBC's Mastercard gateway:
+                </p>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Visa and Mastercard accepted</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>All payments in USD</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Manual bank transfer also supported</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary">•</span>
+                    <span>Failed payments can be retried without re-ordering</span>
                   </li>
                 </ul>
               </CardContent>

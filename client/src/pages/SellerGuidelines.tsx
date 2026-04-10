@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ArrowLeft, ShieldCheck, DollarSign, Package, FileCheck, TrendingUp, AlertCircle, Palette, FileText, MessageSquare, Mail, Bot, Star, Bell, Zap, Settings } from "lucide-react";
+import { ArrowLeft, ShieldCheck, DollarSign, Package, FileCheck, TrendingUp, AlertCircle, Palette, FileText, MessageSquare, Mail, Bot, Star, Bell, Zap, Settings, Video, Plane, RotateCcw } from "lucide-react";
 
 export default function SellerGuidelines() {
   return (
@@ -367,6 +367,102 @@ export default function SellerGuidelines() {
                   <li>Use messaging to clarify custom requirements</li>
                   <li>Provide updates on order/service progress</li>
                   <li>Maintain professional communication</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <Video className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <CardTitle>Video Meetings with Buyers</CardTitle>
+                  <CardDescription>Consult face-to-face with buyers to clarify requirements</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex gap-2">
+                  <Video className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-blue-900 dark:text-blue-100">Propose Video Consultations</p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                      You can propose a video meeting directly from any buyer conversation — great for complex custom orders, design briefings, or service consultations.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">How to Schedule a Meeting:</h4>
+                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                  <li>Open the conversation with the buyer</li>
+                  <li>Click "Propose Meeting" and choose a date and time</li>
+                  <li>Buyer is notified by in-app alert and email</li>
+                  <li>Once the buyer confirms, both parties receive a join link via email</li>
+                  <li>Join the meeting up to 15 minutes early</li>
+                </ol>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Meeting Features:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>HD video and audio with mute/camera controls</li>
+                  <li>Screen sharing — show proofs, templates, or portfolio samples</li>
+                  <li>Meeting events are automatically posted to the conversation as an audit trail</li>
+                  <li>Cancel any time — the buyer receives a cancellation notification</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <Plane className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <CardTitle>Aramex International Shipping</CardTitle>
+                  <CardDescription>Ship physical products from Sri Lanka to the Maldives</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                <div className="flex gap-2">
+                  <Plane className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-amber-900 dark:text-amber-100">Dimension-Based Shipping Costs</p>
+                    <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                      Set accurate package dimensions and weight on each product variant. Shipping costs at checkout are calculated using the higher of actual weight or volumetric weight (L×W×H ÷ 5,000).
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Setting Package Dimensions on Variants:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>When creating or editing a product variant, enter Length, Width, Height (cm) and Weight (kg)</li>
+                  <li>Choose the packaging type: Standard Box or Mailing Tube</li>
+                  <li>Set production days (used to calculate estimated delivery date shown to buyers)</li>
+                  <li>Accurate dimensions prevent shipping cost surprises for both parties</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Creating a Shipment:</h4>
+                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                  <li>Go to your Orders page and open a paid order</li>
+                  <li>Click "Create Shipment" to generate an Aramex AWB</li>
+                  <li>Enter your pickup address and any custom weight adjustments</li>
+                  <li>Aramex collects the package from your location</li>
+                  <li>The buyer receives tracking information automatically</li>
+                </ol>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Shipment Consolidation (Admin-Managed):</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Multiple orders from the same buyer may be consolidated into one shipment</li>
+                  <li>Admin calculates combined dimensions and volumetric weight</li>
+                  <li>This reduces shipping costs for buyers, improving their experience</li>
                 </ul>
               </div>
             </CardContent>

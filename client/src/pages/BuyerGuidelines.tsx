@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ArrowLeft, ShieldCheck, CreditCard, Package, Clock, FileText, AlertCircle, Upload, MessageSquare, Palette, Mail, Bot, Star, Bell, Plane, TrendingUp } from "lucide-react";
+import { ArrowLeft, ShieldCheck, CreditCard, Package, Clock, FileText, AlertCircle, Upload, MessageSquare, Palette, Mail, Bot, Star, Bell, Plane, TrendingUp, Video, RotateCcw } from "lucide-react";
 
 export default function BuyerGuidelines() {
   return (
@@ -282,10 +282,55 @@ export default function BuyerGuidelines() {
           <Card>
             <CardHeader>
               <div className="flex items-start gap-3">
+                <Video className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <CardTitle>Video Meetings</CardTitle>
+                  <CardDescription>Consult face-to-face with sellers before or during a booking</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex gap-2">
+                  <Video className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-blue-900 dark:text-blue-100">Live Video Consultations</p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                      Sellers can propose video meetings directly in your conversation thread. Once confirmed, join from any device — no software download needed.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">How Video Meetings Work:</h4>
+                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                  <li>Seller proposes a meeting time inside your conversation</li>
+                  <li>You receive an in-app notification and email with details</li>
+                  <li>Confirm or decline the proposed meeting</li>
+                  <li>A join link is emailed to you once confirmed</li>
+                  <li>Join up to 15 minutes before the scheduled time</li>
+                  <li>Video, audio, and screen sharing are all available</li>
+                </ol>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Meeting Controls:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Toggle your camera and microphone on/off</li>
+                  <li>Share your screen to show reference images or designs</li>
+                  <li>Meeting notes are automatically added to the conversation thread</li>
+                  <li>Either party can cancel a meeting (other party is notified)</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-3">
                 <CreditCard className="h-6 w-6 text-primary mt-1" />
                 <div>
                   <CardTitle>Payment Methods & Escrow</CardTitle>
-                  <CardDescription>Flexible and secure payment options</CardDescription>
+                  <CardDescription>Flexible and secure payment options in USD</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -294,9 +339,9 @@ export default function BuyerGuidelines() {
                 <div className="flex gap-2">
                   <ShieldCheck className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
                   <div>
-                    <p className="font-medium text-blue-900 dark:text-blue-100">Buyer Protection</p>
+                    <p className="font-medium text-blue-900 dark:text-blue-100">Buyer Protection via Escrow</p>
                     <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                      Your payment is held in escrow until the order is completed or service is delivered.
+                      Your payment is held securely in escrow until your order is delivered or your service is completed. All prices and payments are in USD.
                     </p>
                   </div>
                 </div>
@@ -304,17 +349,17 @@ export default function BuyerGuidelines() {
               <div>
                 <h4 className="font-medium mb-2">Payment Options:</h4>
                 <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                  <li><strong>Online Payment Gateway (IPG):</strong> Pay instantly with credit/debit card</li>
-                  <li><strong>Manual Bank Transfer:</strong> Transfer to our local bank account</li>
+                  <li><strong>Card Payment (MPGS):</strong> Pay instantly and securely with any Visa or Mastercard — powered by Commercial Bank of Ceylon's payment gateway</li>
+                  <li><strong>Manual Bank Transfer:</strong> Transfer directly to our bank account for manual verification</li>
                 </ul>
               </div>
               <div>
-                <h4 className="font-medium mb-2">IPG Payment Flow (Instant):</h4>
+                <h4 className="font-medium mb-2">Card Payment Flow (Instant):</h4>
                 <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-                  <li>Place order and select "Pay via Payment Gateway"</li>
-                  <li>Redirected to secure payment gateway</li>
-                  <li>Complete payment with your card</li>
-                  <li>Automatic confirmation and escrow protection</li>
+                  <li>Place order and select "Pay with Card"</li>
+                  <li>Redirected to the secure Mastercard payment page</li>
+                  <li>Enter your Visa or Mastercard details</li>
+                  <li>Payment confirmed automatically — escrow activated</li>
                   <li>Seller immediately begins processing your order</li>
                 </ol>
               </div>
@@ -322,19 +367,27 @@ export default function BuyerGuidelines() {
                 <h4 className="font-medium mb-2">Bank Transfer Payment Flow:</h4>
                 <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
                   <li>Place order and select "Manual Bank Transfer"</li>
-                  <li>Receive bank account details</li>
-                  <li>Complete transfer at your bank</li>
+                  <li>Receive our bank account details on screen</li>
+                  <li>Complete the transfer from your bank</li>
                   <li>Click "I Have Made the Payment" in your order</li>
-                  <li>Admin verifies your payment (typically within 24 hours)</li>
+                  <li>Admin verifies your receipt (typically within 24 hours)</li>
                   <li>Payment moved to escrow, seller begins processing</li>
                 </ol>
               </div>
               <div>
+                <h4 className="font-medium mb-2">Retry a Failed Payment:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>If a card payment fails or you close the window accidentally, use "Retry Payment" from your order page</li>
+                  <li>A fresh secure payment session is created automatically</li>
+                  <li>No need to re-place the order — your cart and selections are preserved</li>
+                </ul>
+              </div>
+              <div>
                 <h4 className="font-medium mb-2">Escrow Protection:</h4>
                 <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                  <li>Funds held securely until order completion</li>
-                  <li>Released to seller after delivery confirmation</li>
-                  <li>Protection for both buyers and sellers</li>
+                  <li>Funds held securely until order or service is confirmed complete</li>
+                  <li>Released to seller only after delivery confirmation</li>
+                  <li>Disputes handled by admin with full transaction history</li>
                 </ul>
               </div>
             </CardContent>
@@ -379,6 +432,56 @@ export default function BuyerGuidelines() {
                   <li>Access deliverables in your Service History dashboard</li>
                   <li>Download files directly from your account or email</li>
                   <li>Seller uploads final work (designs, documents, files) when marking service complete</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <Plane className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <CardTitle>International Shipping via Aramex</CardTitle>
+                  <CardDescription>Reliable Sri Lanka to Maldives delivery for physical products</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex gap-2">
+                  <Plane className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-blue-900 dark:text-blue-100">Cross-Border Delivery</p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                      Physical products ship from Sri Lanka to the Maldives via Aramex international courier. Shipping costs are calculated at checkout based on your package dimensions and weight.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Shipping Cost Calculation:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Shipping is charged per kilogram in USD</li>
+                  <li>Chargeable weight is the higher of actual weight or volumetric weight (L×W×H ÷ 5,000)</li>
+                  <li>Minimum charge applies — displayed at checkout before you confirm</li>
+                  <li>Estimated delivery time is shown on each product page</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Tracking Your Shipment:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Once shipped, you receive an Aramex AWB (airway bill) number</li>
+                  <li>Track your package on the Aramex website using the AWB number</li>
+                  <li>Order status updates to "Shipped" and you receive a notification</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Multi-Seller Orders:</h4>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>Orders from the same seller may be consolidated into one shipment</li>
+                  <li>Consolidation saves on shipping costs when buying multiple items</li>
+                  <li>Admin manages consolidation before final dispatch</li>
                 </ul>
               </div>
             </CardContent>
