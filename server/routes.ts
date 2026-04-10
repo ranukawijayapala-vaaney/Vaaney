@@ -1974,11 +1974,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // This prevents hanging when Aramex is not configured
       if (!hasAramexCredentials) {
         console.log('[DEV MODE] Aramex credentials not found, returning mock shipping rate');
-        // Realistic international shipping: $20 base fee + $5 per kg, minimum $30
-        const baseFee = 20;
-        const perKgRate = 5;
-        const weightCost = parseFloat(weight) * perKgRate;
-        const mockRate = Math.max(30, baseFee + weightCost);
+        // Aramex contracted rate: $14 USD/kg LK → MV, minimum 1 kg
+        const perKgRate = 14;
+        const mockRate = Math.max(14, parseFloat(weight) * perKgRate);
         return res.json({
           shippingCost: mockRate,
           currency: 'USD',
@@ -2015,12 +2013,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Aramex API error:', aramexError);
         console.log('Aramex API failed, returning fallback shipping rate');
         
-        // Return fallback rate to ensure checkout can proceed
-        // Realistic international shipping: $20 base fee + $5 per kg, minimum $30
-        const baseFee = 20;
-        const perKgRate = 5;
-        const weightCost = parseFloat(weight) * perKgRate;
-        const fallbackRate = Math.max(30, baseFee + weightCost);
+        // Aramex contracted rate: $14 USD/kg LK → MV, minimum 1 kg
+        const perKgRate = 14;
+        const fallbackRate = Math.max(14, parseFloat(weight) * perKgRate);
         return res.json({
           shippingCost: fallbackRate,
           currency: 'USD',
@@ -2081,8 +2076,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : undefined;
 
       const FALLBACK_TRANSIT_DAYS = 4;
-      const baseFee = 20;
-      const perKgRate = 5;
+      // Aramex contracted rate: $14 USD/kg LK → MV, minimum 1 kg
+      const perKgRate = 14;
 
       const hasAramexCredentials = !!(
         process.env.ARAMEX_USERNAME &&
@@ -2096,7 +2091,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let transitFallbackUsed = false;
 
       if (!hasAramexCredentials) {
-        shippingCost = Math.max(30, baseFee + weightKg * perKgRate);
+        shippingCost = Math.max(14, weightKg * perKgRate);
         transitDays = FALLBACK_TRANSIT_DAYS;
         isFallback = true;
         transitFallbackUsed = true;
@@ -2117,12 +2112,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const result = await Promise.race([ratePromise, timeoutPromise]);
 
           if (result.HasErrors) {
-            shippingCost = Math.max(30, baseFee + weightKg * perKgRate);
+            shippingCost = Math.max(14, weightKg * perKgRate);
             transitDays = FALLBACK_TRANSIT_DAYS;
             isFallback = true;
             transitFallbackUsed = true;
           } else {
-            shippingCost = result.TotalAmount?.Value ?? Math.max(30, baseFee + weightKg * perKgRate);
+            shippingCost = result.TotalAmount?.Value ?? Math.max(14, weightKg * perKgRate);
             if (result.TransitDays != null) {
               transitDays = result.TransitDays;
             } else {
@@ -2131,7 +2126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
         } catch {
-          shippingCost = Math.max(30, baseFee + weightKg * perKgRate);
+          shippingCost = Math.max(14, weightKg * perKgRate);
           transitDays = FALLBACK_TRANSIT_DAYS;
           isFallback = true;
           transitFallbackUsed = true;
