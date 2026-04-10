@@ -1976,7 +1976,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('[DEV MODE] Aramex credentials not found, returning mock shipping rate');
         // Aramex contracted rate: $14 USD/kg LK → MV, minimum 1 kg
         const perKgRate = 14;
-        const mockRate = Math.max(14, parseFloat(weight) * perKgRate);
+        const actualKg = parseFloat(weight);
+        const volKg = dimensions
+          ? (parseFloat(dimensions.length) * parseFloat(dimensions.width) * parseFloat(dimensions.height)) / 5000
+          : 0;
+        const chargeableKg = Math.max(actualKg, volKg);
+        const mockRate = Math.max(14, chargeableKg * perKgRate);
         return res.json({
           shippingCost: mockRate,
           currency: 'USD',
@@ -2013,9 +2018,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Aramex API error:', aramexError);
         console.log('Aramex API failed, returning fallback shipping rate');
         
-        // Aramex contracted rate: $14 USD/kg LK → MV, minimum 1 kg
+        // Aramex contracted rate: $14 USD/kg LK → MV; use higher of actual or volumetric weight
         const perKgRate = 14;
-        const fallbackRate = Math.max(14, parseFloat(weight) * perKgRate);
+        const actualKg = parseFloat(weight);
+        const volKg = dimensions
+          ? (parseFloat(dimensions.length) * parseFloat(dimensions.width) * parseFloat(dimensions.height)) / 5000
+          : 0;
+        const chargeableKg = Math.max(actualKg, volKg);
+        const fallbackRate = Math.max(14, chargeableKg * perKgRate);
         return res.json({
           shippingCost: fallbackRate,
           currency: 'USD',
@@ -2066,7 +2076,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const [variant] = await db.select().from(productVariants).where(eq(productVariants.id, variantId));
 
-      const weightKg = variant.weight ? parseFloat(variant.weight) : 1;
+      const actualWeightKg = variant.weight ? parseFloat(variant.weight) : 1;
       const dims = (variant.length && variant.width && variant.height)
         ? {
             length: parseFloat(variant.length),
@@ -2074,6 +2084,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             height: parseFloat(variant.height),
           }
         : undefined;
+
+      // Use the higher of actual weight or volumetric weight (L×W×H / 5000)
+      const volWeightKg = dims ? (dims.length * dims.width * dims.height) / 5000 : 0;
+      const weightKg = Math.max(actualWeightKg, volWeightKg);
 
       const FALLBACK_TRANSIT_DAYS = 4;
       // Aramex contracted rate: $14 USD/kg LK → MV, minimum 1 kg
