@@ -2042,7 +2042,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         shippingCost: rateResult.TotalAmount?.Value || 0,
         currency: rateResult.TotalAmount?.CurrencyCode || 'USD',
         breakdown: rateResult.RateBreakdown || [],
-        transitDays: rateResult.TransitDays ?? null,
+        transitDays: rateResult.TransitDays ?? 4,
       });
     } catch (error: any) {
       console.error('Error calculating shipping rate:', error);
@@ -4041,6 +4041,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Extract dimensions from the order (already quantity-adjusted at creation time)
       const orderDims = order.productDimensions as { length: number; width: number; height: number } | null;
+
+      // Log volumetric weight for visibility
+      if (orderDims && orderDims.length > 0 && orderDims.width > 0 && orderDims.height > 0) {
+        const volWeight = (orderDims.length * orderDims.width * orderDims.height) / 5000;
+        console.log(`[Shipment] Order ${order.id} — dims: ${orderDims.length}×${orderDims.width}×${orderDims.height} cm, vol weight: ${volWeight.toFixed(2)} kg`);
+      }
 
       // Create shipment via Aramex API
       const shipmentData = {
