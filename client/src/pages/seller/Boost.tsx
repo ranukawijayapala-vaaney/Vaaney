@@ -186,35 +186,45 @@ export default function Boost() {
     return {
       method: "PUT" as const,
       url: data.uploadUrl,
+      objectPath: data.objectPath as string,
     };
   };
 
   const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
-    if (result.successful && result.successful.length > 0) {
-      const uploadUrl = result.successful[0].uploadURL;
-      
-      try {
-        const data = await apiRequest("POST", "/api/object-storage/finalize-upload", {
-          objectPath: uploadUrl,
-        });
-        
-        if (data && data.objectPath) {
-          setPaymentSlipUrl(data.objectPath);
-          toast({
-            title: "Payment slip uploaded",
-            description: "Your payment slip has been uploaded successfully.",
-          });
-        } else {
-          throw new Error("No objectPath in response");
-        }
-      } catch (error) {
-        console.error("Error saving payment slip:", error);
+    if (!result.successful || result.successful.length === 0) return;
+
+    const objectPath = (result.successful[0] as { objectPath?: string }).objectPath;
+    if (!objectPath) {
+      toast({
+        title: "Upload failed",
+        description: "Server did not return an object path. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const data = await apiRequest("POST", "/api/object-storage/finalize-upload", {
+        objectPath,
+        visibility: "private",
+      });
+
+      if (data && data.objectPath) {
+        setPaymentSlipUrl(data.objectPath);
         toast({
-          title: "Upload failed",
-          description: error instanceof Error ? error.message : "Failed to save payment slip.",
-          variant: "destructive",
+          title: "Payment slip uploaded",
+          description: "Your payment slip has been uploaded successfully.",
         });
+      } else {
+        throw new Error("No objectPath in response");
       }
+    } catch (error) {
+      console.error("Error saving payment slip:", error);
+      toast({
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : "Failed to save payment slip.",
+        variant: "destructive",
+      });
     }
   };
 

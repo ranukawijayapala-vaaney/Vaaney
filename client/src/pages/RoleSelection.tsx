@@ -38,41 +38,46 @@ export default function RoleSelection() {
     return {
       method: "PUT" as const,
       url: data.uploadUrl,
+      objectPath: data.objectPath as string,
     };
   };
 
   const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
-    console.log("Upload complete, result:", result);
-    if (result.successful && result.successful.length > 0) {
-      const uploadUrl = result.successful[0].uploadURL;
-      console.log("Upload URL:", uploadUrl);
-      
-      try {
-        const response = await apiRequest("POST", "/api/object-storage/finalize-upload", {
-          objectPath: uploadUrl,
-        });
-        
-        // Parse JSON from Response object
-        const data = await response.json();
-        console.log("Finalize response:", data);
-        
-        if (data && data.objectPath) {
-          setDocumentUrl(data.objectPath);
-          toast({
-            title: "Document uploaded",
-            description: "Your verification document has been uploaded successfully.",
-          });
-        } else {
-          throw new Error("No objectPath in response");
-        }
-      } catch (error) {
-        console.error("Error saving document:", error);
+    if (!result.successful || result.successful.length === 0) return;
+
+    const objectPath = (result.successful[0] as { objectPath?: string }).objectPath;
+    if (!objectPath) {
+      toast({
+        title: "Upload failed",
+        description: "Server did not return an object path. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // apiRequest already returns parsed JSON
+      const data = await apiRequest("POST", "/api/object-storage/finalize-upload", {
+        objectPath,
+        visibility: "private",
+      });
+
+      if (data && data.objectPath) {
+        setDocumentUrl(data.objectPath);
         toast({
-          title: "Upload failed",
-          description: error instanceof Error ? error.message : "Failed to save verification document.",
-          variant: "destructive",
+          title: "Document uploaded",
+          description: "Your verification document has been uploaded successfully.",
         });
+      } else {
+        throw new Error("No objectPath in response");
       }
+    } catch (error) {
+      console.error("Error saving document:", error);
+      toast({
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : "Failed to save verification document.",
+        variant: "destructive",
+      });
     }
   };
 
