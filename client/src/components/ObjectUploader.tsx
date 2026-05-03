@@ -3,13 +3,16 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
+interface UploadParameters {
+  method: "PUT";
+  url: string;
+  objectPath?: string;
+}
+
 interface ObjectUploaderProps {
   maxNumberOfFiles?: number;
   maxFileSize?: number;
-  onGetUploadParameters: (file: File) => Promise<{
-    method: "PUT";
-    url: string;
-  }>;
+  onGetUploadParameters: (file: File) => Promise<UploadParameters>;
   onComplete?: (result: any) => void;
   buttonClassName?: string;
   children: ReactNode;
@@ -27,7 +30,7 @@ export function ObjectUploader({
   children,
   variant = "default",
   size = "default",
-  accept = "image/*,application/pdf",
+  accept = "image/*",
 }: ObjectUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -53,6 +56,7 @@ export function ObjectUploader({
       const params = await onGetUploadParameters(file);
       const url = params?.url;
       const method = params?.method ?? "PUT";
+      const objectPath = params?.objectPath;
 
       if (!url || typeof url !== "string") {
         throw new Error("Could not get upload URL. Please try again.");
@@ -71,7 +75,10 @@ export function ObjectUploader({
       }
 
       onComplete?.({
-        successful: [{ uploadURL: url.split('?')[0] }],
+        successful: [{
+          uploadURL: url.split('?')[0],
+          objectPath,
+        }],
         failed: [],
       });
       

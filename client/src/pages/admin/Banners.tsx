@@ -34,7 +34,6 @@ export default function Banners() {
   const [editingBanner, setEditingBanner] = useState<HomepageBanner | null>(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"all" | BannerType>("all");
-  const [currentObjectPath, setCurrentObjectPath] = useState<string>("");
 
   const { data: banners = [], isLoading } = useQuery<HomepageBanner[]>({
     queryKey: ["/api/admin/homepage-banners"],
@@ -152,7 +151,6 @@ export default function Banners() {
     if (!open) {
       setEditingBanner(null);
       setUploadedImageUrl("");
-      setCurrentObjectPath("");
       form.reset();
     }
   };
@@ -177,23 +175,31 @@ export default function Banners() {
 
     const data = await response.json();
 
-    // Store the objectPath for later use in finalize
-    setCurrentObjectPath(data.objectPath);
-
     return {
       method: "PUT" as const,
       url: data.uploadUrl,
+      objectPath: data.objectPath as string,
     };
   };
 
   const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
     if (result.successful && result.successful.length > 0) {
-      try {
-        // Use the stored objectPath, not the uploadURL
-        const response: any = await apiRequest("POST", "/api/object-storage/finalize-banner-upload", {
-          objectPath: currentObjectPath,
+      // The objectPath comes back from getUploadUrl via ObjectUploader, avoiding stale state.
+      const objectPath = (result.successful[0] as { objectPath?: string }).objectPath;
+      if (!objectPath) {
+        toast({
+          title: "Upload failed",
+          description: "Server did not return an object path. Please try again.",
+          variant: "destructive",
         });
-        
+        return;
+      }
+
+      try {
+        const response: any = await apiRequest("POST", "/api/object-storage/finalize-banner-upload", {
+          objectPath,
+        });
+
         setUploadedImageUrl(response.objectPath);
         form.setValue("imageUrl", response.objectPath);
         toast({
