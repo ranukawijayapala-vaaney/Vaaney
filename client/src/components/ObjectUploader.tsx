@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 interface ObjectUploaderProps {
   maxNumberOfFiles?: number;
   maxFileSize?: number;
-  onGetUploadParameters: () => Promise<{
+  onGetUploadParameters: (file: File) => Promise<{
     method: "PUT";
     url: string;
   }>;
@@ -15,6 +15,7 @@ interface ObjectUploaderProps {
   children: ReactNode;
   variant?: "default" | "outline" | "ghost" | "secondary";
   size?: "default" | "sm" | "lg" | "icon";
+  accept?: string;
 }
 
 export function ObjectUploader({
@@ -26,6 +27,7 @@ export function ObjectUploader({
   children,
   variant = "default",
   size = "default",
+  accept = "image/*,application/pdf",
 }: ObjectUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -48,8 +50,14 @@ export function ObjectUploader({
 
     setIsUploading(true);
     try {
-      const { url, method } = await onGetUploadParameters();
-      
+      const params = await onGetUploadParameters(file);
+      const url = params?.url;
+      const method = params?.method ?? "PUT";
+
+      if (!url || typeof url !== "string") {
+        throw new Error("Could not get upload URL. Please try again.");
+      }
+
       const response = await fetch(url, {
         method: method,
         body: file,
@@ -92,7 +100,7 @@ export function ObjectUploader({
         type="file"
         onChange={handleFileChange}
         style={{ display: 'none' }}
-        accept="image/*,application/pdf"
+        accept={accept}
       />
       <Button 
         onClick={() => fileInputRef.current?.click()} 

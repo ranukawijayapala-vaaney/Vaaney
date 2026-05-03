@@ -157,20 +157,29 @@ export default function Banners() {
     }
   };
 
-  const getUploadUrl = async () => {
+  const getUploadUrl = async (file: File) => {
     const response = await fetch("/api/object-storage/upload-url", {
       method: "POST",
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({}),
+      body: JSON.stringify({
+        fileName: file.name,
+        contentType: file.type,
+      }),
     });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to get upload URL (${response.status})`);
+    }
+
     const data = await response.json();
-    
+
     // Store the objectPath for later use in finalize
     setCurrentObjectPath(data.objectPath);
-    
+
     return {
       method: "PUT" as const,
       url: data.uploadUrl,
