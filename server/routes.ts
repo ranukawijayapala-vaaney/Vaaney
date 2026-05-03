@@ -1055,13 +1055,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("[UPLOAD URL] Request received:", req.body);
       const { fileName, contentType } = req.body;
       
-      // Validate content type - only allow image uploads
+      // Validate content type - allow images + PDF (used for verification docs, payment slips, etc.)
       const allowedContentTypes = [
         "image/jpeg",
         "image/png",
         "image/gif",
         "image/webp",
-        "image/svg+xml"
+        "image/svg+xml",
+        "application/pdf",
       ];
       
       if (!contentType || !allowedContentTypes.includes(contentType)) {

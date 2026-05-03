@@ -870,6 +870,7 @@ export default function Boost() {
                     <ObjectUploader
                       onGetUploadParameters={getUploadUrl}
                       onComplete={handleUploadComplete}
+                      accept=".pdf,image/*"
                       variant="outline"
                       buttonClassName="w-full"
                     >

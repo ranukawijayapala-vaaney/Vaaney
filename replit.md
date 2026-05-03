@@ -21,7 +21,7 @@ An Express.js server in TypeScript exposes a REST API. Authentication uses Passp
 Drizzle ORM with Neon Serverless PostgreSQL and Zod for schema validation. The database supports core e-commerce entities, with orders structured at the variant level and grouped by `checkout_sessions`. The `variantId` in orders is nullable to support custom quote purchases. User accounts support dual authentication via `googleId` while preserving UUID-based primary keys. Products store only descriptive fields (name, description, category, images, requirements flags) — pricing, inventory, sizes, and shipping dimensions live exclusively on `product_variants`. Marketplace/Landing display "From $X" computed as `min(variant.price)`; AI context computes total stock as `sum(variant.inventory)`.
 
 ### File Storage
-Google Cloud Storage manages user-uploaded files, authenticated via the Replit sidecar. Uppy provides the drag-and-drop upload interface.
+Google Cloud Storage manages user-uploaded files, authenticated via the Replit sidecar. Uppy provides the drag-and-drop upload interface. The `/api/object-storage/upload-url` endpoint accepts JPEG/PNG/GIF/WebP/SVG **and PDF** (PDF is required for verification documents in `RoleSelection`, plus bank-transfer payment slips in Checkout/ServiceBooking/Boost). Upload sites that accept PDF must pass `accept=".pdf,image/*"` to `ObjectUploader` (its default is `image/*`).
 
 ### Key Features
 - **Authentication:** Email/password (bcrypt, email verification) and Google OAuth 2.0 (for buyers).

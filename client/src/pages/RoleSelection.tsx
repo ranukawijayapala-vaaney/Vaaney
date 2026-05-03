@@ -177,6 +177,7 @@ export default function RoleSelection() {
                       maxFileSize={10485760}
                       onGetUploadParameters={getUploadUrl}
                       onComplete={handleUploadComplete}
+                      accept=".pdf,image/*"
                       variant="outline"
                       size="sm"
                     >
@@ -198,6 +199,7 @@ export default function RoleSelection() {
                       maxFileSize={10485760}
                       onGetUploadParameters={getUploadUrl}
                       onComplete={handleUploadComplete}
+                      accept=".pdf,image/*"
                     >
                       <Upload className="h-4 w-4 mr-2" />
                       Choose Document
