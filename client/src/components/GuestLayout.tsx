@@ -143,6 +143,80 @@ export function GuestLayout({ children }: GuestLayoutProps) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
+      <footer className="border-t mt-12 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
+            <div>
+              <h3 className="font-semibold mb-3" data-testid="text-footer-platform">Platform</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link href="/about" className="text-muted-foreground hover:text-foreground" data-testid="link-footer-about">
+                    About Vaaney
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/marketplace" className="text-muted-foreground hover:text-foreground" data-testid="link-footer-marketplace">
+                    Marketplace
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-3" data-testid="text-footer-guides">Guides</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link href="/buyer-guidelines" className="text-muted-foreground hover:text-foreground" data-testid="link-footer-buyer-guide">
+                    Buyer Guide
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/seller-guidelines" className="text-muted-foreground hover:text-foreground" data-testid="link-footer-seller-guide">
+                    Seller Guide
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-3" data-testid="text-footer-buyer-legal">Buyer Legal</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link href="/legal/buyer-products" className="text-muted-foreground hover:text-foreground" data-testid="link-footer-buyer-products">
+                    Product Purchase Terms
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/legal/buyer-services" className="text-muted-foreground hover:text-foreground" data-testid="link-footer-buyer-services">
+                    Service Booking Terms
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/legal/privacy" className="text-muted-foreground hover:text-foreground" data-testid="link-footer-privacy">
+                    Privacy Policy
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-3" data-testid="text-footer-seller-legal">Seller Legal</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link href="/legal/seller-products" className="text-muted-foreground hover:text-foreground" data-testid="link-footer-seller-products">
+                    Product Supplier Agreement
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/legal/seller-services" className="text-muted-foreground hover:text-foreground" data-testid="link-footer-seller-services">
+                    Service Supplier Agreement
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-8 pt-6 border-t text-xs text-muted-foreground text-center">
+            &copy; {new Date().getFullYear()} Vaaney (Pvt) Ltd. All rights reserved.
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

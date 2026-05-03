@@ -25,6 +25,11 @@ import AboutUs from "@/pages/AboutUs";
 import PaymentReturn from "@/pages/buyer/PaymentReturn";
 import PaymentProcessing from "@/pages/buyer/PaymentProcessing";
 import AdminSetup from "@/pages/AdminSetup";
+import PrivacyPolicy from "@/pages/legal/PrivacyPolicy";
+import BuyerProductTerms from "@/pages/legal/BuyerProductTerms";
+import BuyerServiceTerms from "@/pages/legal/BuyerServiceTerms";
+import SellerProductAgreement from "@/pages/legal/SellerProductAgreement";
+import SellerServiceAgreement from "@/pages/legal/SellerServiceAgreement";
 
 import { BuyerLayout } from "@/components/BuyerLayout";
 import { SellerLayout } from "@/components/SellerLayout";
@@ -100,6 +105,11 @@ function Router() {
         <Route path="/payment-return" component={PaymentReturn} />
         <Route path="/payment-processing" component={PaymentProcessing} />
         <Route path="/admin-setup" component={AdminSetup} />
+        <Route path="/legal/privacy" component={PrivacyPolicy} />
+        <Route path="/legal/buyer-products" component={BuyerProductTerms} />
+        <Route path="/legal/buyer-services" component={BuyerServiceTerms} />
+        <Route path="/legal/seller-products" component={SellerProductAgreement} />
+        <Route path="/legal/seller-services" component={SellerServiceAgreement} />
         <Route path="/meeting/:meetingId" component={MeetingRoom} />
         <Route path="/marketplace">
           {() => (
@@ -153,6 +163,11 @@ function Router() {
         <Route path="/product/:id">
           {(params) => <ProductDetail productId={params.id} />}
         </Route>
+        <Route path="/legal/privacy" component={PrivacyPolicy} />
+        <Route path="/legal/buyer-products" component={BuyerProductTerms} />
+        <Route path="/legal/buyer-services" component={BuyerServiceTerms} />
+        <Route path="/legal/seller-products" component={SellerProductAgreement} />
+        <Route path="/legal/seller-services" component={SellerServiceAgreement} />
         <Route component={NotFound} />
       </Switch>
     );
@@ -169,6 +184,11 @@ function Router() {
         <Route path="/product/:id">
           {(params) => <ProductDetail productId={params.id} />}
         </Route>
+        <Route path="/legal/privacy" component={PrivacyPolicy} />
+        <Route path="/legal/buyer-products" component={BuyerProductTerms} />
+        <Route path="/legal/buyer-services" component={BuyerServiceTerms} />
+        <Route path="/legal/seller-products" component={SellerProductAgreement} />
+        <Route path="/legal/seller-services" component={SellerServiceAgreement} />
         <Route component={PendingVerification} />
       </Switch>
     );
@@ -186,6 +206,11 @@ function Router() {
         <Route path="/product/:id">
           {(params) => <ProductDetail productId={params.id} />}
         </Route>
+        <Route path="/legal/privacy" component={PrivacyPolicy} />
+        <Route path="/legal/buyer-products" component={BuyerProductTerms} />
+        <Route path="/legal/buyer-services" component={BuyerServiceTerms} />
+        <Route path="/legal/seller-products" component={SellerProductAgreement} />
+        <Route path="/legal/seller-services" component={SellerServiceAgreement} />
         <Route component={RejectedVerification} />
       </Switch>
     );
@@ -217,6 +242,11 @@ function Router() {
           <Route path="/meeting/:meetingId" component={MeetingRoom} />
           <Route path="/payment-return" component={PaymentReturn} />
           <Route path="/payment-processing" component={PaymentProcessing} />
+          <Route path="/legal/privacy" component={PrivacyPolicy} />
+          <Route path="/legal/buyer-products" component={BuyerProductTerms} />
+          <Route path="/legal/buyer-services" component={BuyerServiceTerms} />
+          <Route path="/legal/seller-products" component={SellerProductAgreement} />
+          <Route path="/legal/seller-services" component={SellerServiceAgreement} />
           <Route component={NotFound} />
         </Switch>
       </BuyerLayout>
@@ -253,6 +283,11 @@ function Router() {
           <Route path="/meeting/:meetingId" component={MeetingRoom} />
           <Route path="/payment-return" component={PaymentReturn} />
           <Route path="/payment-processing" component={PaymentProcessing} />
+          <Route path="/legal/privacy" component={PrivacyPolicy} />
+          <Route path="/legal/buyer-products" component={BuyerProductTerms} />
+          <Route path="/legal/buyer-services" component={BuyerServiceTerms} />
+          <Route path="/legal/seller-products" component={SellerProductAgreement} />
+          <Route path="/legal/seller-services" component={SellerServiceAgreement} />
           <Route component={NotFound} />
         </Switch>
       </SellerLayout>
@@ -282,6 +317,11 @@ function Router() {
           <Route path="/seller/:sellerId" component={SellerProfile} />
           <Route path="/payment-return" component={PaymentReturn} />
           <Route path="/payment-processing" component={PaymentProcessing} />
+          <Route path="/legal/privacy" component={PrivacyPolicy} />
+          <Route path="/legal/buyer-products" component={BuyerProductTerms} />
+          <Route path="/legal/buyer-services" component={BuyerServiceTerms} />
+          <Route path="/legal/seller-products" component={SellerProductAgreement} />
+          <Route path="/legal/seller-services" component={SellerServiceAgreement} />
           <Route component={NotFound} />
         </Switch>
       </AdminLayout>
