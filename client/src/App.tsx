@@ -31,6 +31,11 @@ import BuyerProductTerms from "@/pages/legal/BuyerProductTerms";
 import BuyerServiceTerms from "@/pages/legal/BuyerServiceTerms";
 import SellerProductAgreement from "@/pages/legal/SellerProductAgreement";
 import SellerServiceAgreement from "@/pages/legal/SellerServiceAgreement";
+import TermsOfService from "@/pages/legal/TermsOfService";
+import ProhibitedItems from "@/pages/legal/ProhibitedItems";
+import CookiePolicy from "@/pages/legal/CookiePolicy";
+import ReturnsRefunds from "@/pages/legal/ReturnsRefunds";
+import ShippingCustoms from "@/pages/legal/ShippingCustoms";
 
 import { BuyerLayout } from "@/components/BuyerLayout";
 import { SellerLayout } from "@/components/SellerLayout";
@@ -111,6 +116,11 @@ function Router() {
         <Route path="/legal/buyer-services" component={BuyerServiceTerms} />
         <Route path="/legal/seller-products" component={SellerProductAgreement} />
         <Route path="/legal/seller-services" component={SellerServiceAgreement} />
+        <Route path="/legal/terms" component={TermsOfService} />
+        <Route path="/legal/prohibited-items" component={ProhibitedItems} />
+        <Route path="/legal/cookies" component={CookiePolicy} />
+        <Route path="/legal/returns-refunds" component={ReturnsRefunds} />
+        <Route path="/legal/shipping-customs" component={ShippingCustoms} />
         <Route path="/meeting/:meetingId" component={MeetingRoom} />
         <Route path="/marketplace">
           {() => (
@@ -169,6 +179,11 @@ function Router() {
         <Route path="/legal/buyer-services" component={BuyerServiceTerms} />
         <Route path="/legal/seller-products" component={SellerProductAgreement} />
         <Route path="/legal/seller-services" component={SellerServiceAgreement} />
+        <Route path="/legal/terms" component={TermsOfService} />
+        <Route path="/legal/prohibited-items" component={ProhibitedItems} />
+        <Route path="/legal/cookies" component={CookiePolicy} />
+        <Route path="/legal/returns-refunds" component={ReturnsRefunds} />
+        <Route path="/legal/shipping-customs" component={ShippingCustoms} />
         <Route component={NotFound} />
       </Switch>
     );
@@ -190,6 +205,11 @@ function Router() {
         <Route path="/legal/buyer-services" component={BuyerServiceTerms} />
         <Route path="/legal/seller-products" component={SellerProductAgreement} />
         <Route path="/legal/seller-services" component={SellerServiceAgreement} />
+        <Route path="/legal/terms" component={TermsOfService} />
+        <Route path="/legal/prohibited-items" component={ProhibitedItems} />
+        <Route path="/legal/cookies" component={CookiePolicy} />
+        <Route path="/legal/returns-refunds" component={ReturnsRefunds} />
+        <Route path="/legal/shipping-customs" component={ShippingCustoms} />
         <Route component={PendingVerification} />
       </Switch>
     );
@@ -212,6 +232,11 @@ function Router() {
         <Route path="/legal/buyer-services" component={BuyerServiceTerms} />
         <Route path="/legal/seller-products" component={SellerProductAgreement} />
         <Route path="/legal/seller-services" component={SellerServiceAgreement} />
+        <Route path="/legal/terms" component={TermsOfService} />
+        <Route path="/legal/prohibited-items" component={ProhibitedItems} />
+        <Route path="/legal/cookies" component={CookiePolicy} />
+        <Route path="/legal/returns-refunds" component={ReturnsRefunds} />
+        <Route path="/legal/shipping-customs" component={ShippingCustoms} />
         <Route component={RejectedVerification} />
       </Switch>
     );
@@ -248,6 +273,11 @@ function Router() {
           <Route path="/legal/buyer-services" component={BuyerServiceTerms} />
           <Route path="/legal/seller-products" component={SellerProductAgreement} />
           <Route path="/legal/seller-services" component={SellerServiceAgreement} />
+          <Route path="/legal/terms" component={TermsOfService} />
+          <Route path="/legal/prohibited-items" component={ProhibitedItems} />
+          <Route path="/legal/cookies" component={CookiePolicy} />
+          <Route path="/legal/returns-refunds" component={ReturnsRefunds} />
+          <Route path="/legal/shipping-customs" component={ShippingCustoms} />
           <Route component={NotFound} />
         </Switch>
       </BuyerLayout>
@@ -289,6 +319,11 @@ function Router() {
           <Route path="/legal/buyer-services" component={BuyerServiceTerms} />
           <Route path="/legal/seller-products" component={SellerProductAgreement} />
           <Route path="/legal/seller-services" component={SellerServiceAgreement} />
+          <Route path="/legal/terms" component={TermsOfService} />
+          <Route path="/legal/prohibited-items" component={ProhibitedItems} />
+          <Route path="/legal/cookies" component={CookiePolicy} />
+          <Route path="/legal/returns-refunds" component={ReturnsRefunds} />
+          <Route path="/legal/shipping-customs" component={ShippingCustoms} />
           <Route component={NotFound} />
         </Switch>
       </SellerLayout>
@@ -323,6 +358,11 @@ function Router() {
           <Route path="/legal/buyer-services" component={BuyerServiceTerms} />
           <Route path="/legal/seller-products" component={SellerProductAgreement} />
           <Route path="/legal/seller-services" component={SellerServiceAgreement} />
+          <Route path="/legal/terms" component={TermsOfService} />
+          <Route path="/legal/prohibited-items" component={ProhibitedItems} />
+          <Route path="/legal/cookies" component={CookiePolicy} />
+          <Route path="/legal/returns-refunds" component={ReturnsRefunds} />
+          <Route path="/legal/shipping-customs" component={ShippingCustoms} />
           <Route component={NotFound} />
         </Switch>
       </AdminLayout>

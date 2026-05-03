@@ -145,7 +145,7 @@ export function GuestLayout({ children }: GuestLayoutProps) {
       </main>
       <footer className="border-t mt-12 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 text-sm">
             <div>
               <h3 className="font-semibold mb-3" data-testid="text-footer-platform">Platform</h3>
               <ul className="space-y-2">
@@ -207,6 +207,36 @@ export function GuestLayout({ children }: GuestLayoutProps) {
                 <li>
                   <Link href="/legal/seller-services" className="text-muted-foreground hover:text-foreground" data-testid="link-footer-seller-services">
                     Service Supplier Agreement
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/legal/prohibited-items" className="text-muted-foreground hover:text-foreground" data-testid="link-footer-prohibited-items">
+                    Prohibited Items
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-3" data-testid="text-footer-policies">Policies</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link href="/legal/terms" className="text-muted-foreground hover:text-foreground" data-testid="link-footer-terms">
+                    Terms of Service
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/legal/cookies" className="text-muted-foreground hover:text-foreground" data-testid="link-footer-cookies">
+                    Cookie Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/legal/returns-refunds" className="text-muted-foreground hover:text-foreground" data-testid="link-footer-returns">
+                    Returns &amp; Refunds
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/legal/shipping-customs" className="text-muted-foreground hover:text-foreground" data-testid="link-footer-shipping">
+                    Shipping &amp; Customs
                   </Link>
                 </li>
               </ul>

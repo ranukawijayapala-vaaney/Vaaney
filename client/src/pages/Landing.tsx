@@ -924,7 +924,7 @@ export default function Landing() {
 
       <footer className="border-t py-12 bg-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
+          <div className="grid md:grid-cols-5 gap-8 mb-8">
             <div className="space-y-4">
               <div className="flex items-center">
                 <img src={vaaneyLogo} alt="Vaaney" className="h-8" />
@@ -949,6 +949,16 @@ export default function Landing() {
                 <li><a href="/signup" className="hover:text-foreground transition-colors" data-testid="link-footer-become-seller">Become a Seller</a></li>
                 <li><a href="/legal/seller-products" className="hover:text-foreground transition-colors" data-testid="link-footer-seller-products">Product Supplier Agreement</a></li>
                 <li><a href="/legal/seller-services" className="hover:text-foreground transition-colors" data-testid="link-footer-seller-services">Service Supplier Agreement</a></li>
+                <li><a href="/legal/prohibited-items" className="hover:text-foreground transition-colors" data-testid="link-footer-prohibited-items">Prohibited Items</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Policies</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="/legal/terms" className="hover:text-foreground transition-colors" data-testid="link-footer-terms">Terms of Service</a></li>
+                <li><a href="/legal/cookies" className="hover:text-foreground transition-colors" data-testid="link-footer-cookies">Cookie Policy</a></li>
+                <li><a href="/legal/returns-refunds" className="hover:text-foreground transition-colors" data-testid="link-footer-returns">Returns &amp; Refunds</a></li>
+                <li><a href="/legal/shipping-customs" className="hover:text-foreground transition-colors" data-testid="link-footer-shipping">Shipping &amp; Customs</a></li>
               </ul>
             </div>
             <div>
