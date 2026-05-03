@@ -13,6 +13,8 @@ import { eq, and } from "drizzle-orm";
 import { Storage } from "@google-cloud/storage";
 import { sendVerificationEmail } from "./services/emailVerificationService";
 import { notifyWelcome, notifyAdminNewUser, notifyAdminVerificationPending } from "./services/notificationService";
+import { recordConsents, validateConsentsForRole, getPendingConsents, isValidDocumentType } from "./legalConsents";
+import { LEGAL_DOCUMENT_VERSIONS, LEGAL_DOCUMENT_PATHS, LEGAL_DOCUMENT_TITLES, type LegalDocumentType } from "@shared/legalVersions";
 
 const SALT_ROUNDS = 10;
 
@@ -139,7 +141,8 @@ export async function setupAuth(app: Express) {
       const { 
         email, password, firstName, lastName, role,
         contactNumber, streetAddress, city, postalCode, country,
-        bankName, bankAccountNumber, bankAccountHolderName, bankSwiftCode
+        bankName, bankAccountNumber, bankAccountHolderName, bankSwiftCode,
+        acceptedConsents
       } = req.body;
       const files = req.files as Express.Multer.File[];
 
@@ -153,6 +156,20 @@ export async function setupAuth(app: Express) {
 
       if (password.length < 8) {
         return res.status(400).json({ message: "Password must be at least 8 characters" });
+      }
+
+      // Validate legal consents (Privacy Policy + relevant Terms/Agreement)
+      let parsedConsents: unknown = acceptedConsents;
+      if (typeof acceptedConsents === "string") {
+        try {
+          parsedConsents = JSON.parse(acceptedConsents);
+        } catch {
+          parsedConsents = acceptedConsents.split(",").map((s) => s.trim()).filter(Boolean);
+        }
+      }
+      const consentCheck = validateConsentsForRole(role, parsedConsents);
+      if (!consentCheck.ok) {
+        return res.status(400).json({ message: consentCheck.message });
       }
 
       // Validate seller-specific requirements
@@ -232,6 +249,13 @@ export async function setupAuth(app: Express) {
         .insert(users)
         .values(userData)
         .returning();
+
+      // Record versioned legal consents alongside the new account
+      try {
+        await recordConsents(newUser.id, consentCheck.documents, req);
+      } catch (consentError) {
+        console.error("Failed to record legal consents at signup:", consentError);
+      }
 
       // Send verification email to new user
       try {

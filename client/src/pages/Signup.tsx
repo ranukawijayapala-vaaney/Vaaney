@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
+import { LEGAL_DOCUMENT_PATHS, LEGAL_DOCUMENT_TITLES, requiredConsentsForRole, type LegalDocumentType } from "@shared/legalVersions";
 import { UserPlus, ArrowLeft, ShoppingCart, Store, Eye, EyeOff } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import { Separator } from "@/components/ui/separator";
@@ -66,6 +68,7 @@ export default function Signup() {
   const [selectedRole, setSelectedRole] = useState<"buyer" | "seller" | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [acceptedConsents, setAcceptedConsents] = useState<Record<string, boolean>>({});
 
   const form = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
@@ -105,6 +108,18 @@ export default function Signup() {
       return;
     }
 
+    // Validate legal consents
+    const required = requiredConsentsForRole(data.role);
+    const missing = required.filter((doc) => !acceptedConsents[doc]);
+    if (missing.length > 0) {
+      toast({
+        title: "Please accept the required documents",
+        description: "You must accept the Privacy Policy and the relevant terms/agreement to create an account.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const formData = new FormData();
@@ -131,6 +146,12 @@ export default function Signup() {
       selectedFiles.forEach((file) => {
         formData.append("documents", file);
       });
+
+      // Versioned legal consents
+      formData.append(
+        "acceptedConsents",
+        JSON.stringify(requiredConsentsForRole(data.role)),
+      );
 
       const response = await fetch("/api/signup", {
         method: "POST",
@@ -614,6 +635,46 @@ export default function Signup() {
                   </div>
                 </div>
               )}
+
+              <div className="space-y-3 pt-4 border-t">
+                <h3 className="text-sm font-semibold">Legal acceptance</h3>
+                <p className="text-xs text-muted-foreground">
+                  Please review and accept the documents below. We'll record the
+                  version you accepted against your account for our records.
+                </p>
+                {requiredConsentsForRole(selectedRole).map((doc) => (
+                  <label
+                    key={doc}
+                    htmlFor={`signup-consent-${doc}`}
+                    className="flex items-start gap-3 cursor-pointer"
+                    data-testid={`row-signup-consent-${doc}`}
+                  >
+                    <Checkbox
+                      id={`signup-consent-${doc}`}
+                      checked={!!acceptedConsents[doc]}
+                      onCheckedChange={(value) =>
+                        setAcceptedConsents((prev) => ({
+                          ...prev,
+                          [doc]: value === true,
+                        }))
+                      }
+                      className="mt-0.5"
+                      data-testid={`checkbox-signup-consent-${doc}`}
+                    />
+                    <span className="text-sm leading-snug">
+                      I have read and accept the{" "}
+                      <Link
+                        href={LEGAL_DOCUMENT_PATHS[doc as LegalDocumentType]}
+                        className="text-primary hover:underline"
+                        target="_blank"
+                        data-testid={`link-signup-consent-${doc}`}
+                      >
+                        {LEGAL_DOCUMENT_TITLES[doc as LegalDocumentType]}
+                      </Link>
+                    </span>
+                  </label>
+                ))}
+              </div>
 
               <Button
                 type="submit"

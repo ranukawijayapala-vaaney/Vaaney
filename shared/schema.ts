@@ -1739,3 +1739,20 @@ export const insertMeetingSchema = createInsertSchema(meetings).omit({
 
 export type Meeting = typeof meetings.$inferSelect;
 export type InsertMeeting = z.infer<typeof insertMeetingSchema>;
+
+// Legal consents — versioned, immutable audit trail of user acceptances
+export const legalConsents = pgTable("legal_consents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  documentType: varchar("document_type", { length: 50 }).notNull(),
+  version: varchar("version", { length: 20 }).notNull(),
+  acceptedAt: timestamp("accepted_at").notNull().defaultNow(),
+  ipAddress: varchar("ip_address", { length: 64 }),
+  userAgent: text("user_agent"),
+}, (table) => ({
+  userIdx: index("legal_consents_user_idx").on(table.userId),
+  userDocIdx: index("legal_consents_user_doc_idx").on(table.userId, table.documentType),
+}));
+
+export type LegalConsent = typeof legalConsents.$inferSelect;
+export type InsertLegalConsent = typeof legalConsents.$inferInsert;

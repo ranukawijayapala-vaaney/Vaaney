@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { useAuth } from "@/hooks/useAuth";
 import { ChatAssistant } from "@/components/ChatAssistant";
+import { ConsentGate } from "@/components/ConsentGate";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
@@ -338,6 +339,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <ChatAssistant />
+          <ConsentGate />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

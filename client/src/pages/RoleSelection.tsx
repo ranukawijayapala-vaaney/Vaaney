@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { ShoppingBag, Store, Upload, FileText } from "lucide-react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
@@ -11,10 +13,17 @@ import { apiRequest } from "@/lib/queryClient";
 import { requestUploadUrl, finalizeUpload } from "@/lib/uploadHelpers";
 import type { UploadResult } from "@uppy/core";
 import type { UserRole } from "@shared/schema";
+import {
+  LEGAL_DOCUMENT_PATHS,
+  LEGAL_DOCUMENT_TITLES,
+  requiredConsentsForRole,
+  type LegalDocumentType,
+} from "@shared/legalVersions";
 
 export default function RoleSelection() {
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [documentUrl, setDocumentUrl] = useState<string>("");
+  const [acceptedConsents, setAcceptedConsents] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
   const getUploadUrl = async (file: File) => {
@@ -60,10 +69,16 @@ export default function RoleSelection() {
     mutationFn: async () => {
       if (!selectedRole) throw new Error("Please select a role");
       if (!documentUrl) throw new Error("Please upload a verification document");
+      const required = requiredConsentsForRole(selectedRole);
+      const missing = required.filter((doc) => !acceptedConsents[doc]);
+      if (missing.length > 0) {
+        throw new Error("Please accept the Privacy Policy and the relevant terms/agreement to continue.");
+      }
 
       return await apiRequest("POST", "/api/user/role", {
         role: selectedRole,
         verificationDocumentUrl: documentUrl,
+        acceptedConsents: required,
       });
     },
     onSuccess: () => {
@@ -210,6 +225,48 @@ export default function RoleSelection() {
             </div>
           )}
 
+          {selectedRole && (
+            <div className="space-y-3 animate-in fade-in-50">
+              <Label className="text-base font-semibold">Legal acceptance</Label>
+              <p className="text-sm text-muted-foreground">
+                Please review and accept the documents below. We'll record the
+                version you accepted against your account.
+              </p>
+              {requiredConsentsForRole(selectedRole).map((doc) => (
+                <label
+                  key={doc}
+                  htmlFor={`role-consent-${doc}`}
+                  className="flex items-start gap-3 cursor-pointer"
+                  data-testid={`row-role-consent-${doc}`}
+                >
+                  <Checkbox
+                    id={`role-consent-${doc}`}
+                    checked={!!acceptedConsents[doc]}
+                    onCheckedChange={(value) =>
+                      setAcceptedConsents((prev) => ({
+                        ...prev,
+                        [doc]: value === true,
+                      }))
+                    }
+                    className="mt-0.5"
+                    data-testid={`checkbox-role-consent-${doc}`}
+                  />
+                  <span className="text-sm leading-snug">
+                    I have read and accept the{" "}
+                    <Link
+                      href={LEGAL_DOCUMENT_PATHS[doc as LegalDocumentType]}
+                      className="text-primary hover:underline"
+                      target="_blank"
+                      data-testid={`link-role-consent-${doc}`}
+                    >
+                      {LEGAL_DOCUMENT_TITLES[doc as LegalDocumentType]}
+                    </Link>
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+
           <div className="flex justify-end gap-3">
             <Button
               variant="outline"
@@ -224,7 +281,14 @@ export default function RoleSelection() {
             </Button>
             <Button
               onClick={() => submitMutation.mutate()}
-              disabled={!selectedRole || !documentUrl || submitMutation.isPending}
+              disabled={
+                !selectedRole ||
+                !documentUrl ||
+                submitMutation.isPending ||
+                requiredConsentsForRole(selectedRole).some(
+                  (doc) => !acceptedConsents[doc],
+                )
+              }
               data-testid="button-submit"
               className="hover-elevate active-elevate-2"
             >

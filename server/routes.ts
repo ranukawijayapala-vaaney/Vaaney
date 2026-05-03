@@ -61,6 +61,8 @@ import { createCheckoutSession as createMpgsSession, retrieveOrder as retrieveMp
 import * as aramex from "./aramex";
 import { trackShipments, isShipmentDelivered, CalculateRateResponse } from "./aramex";
 import { setupShippingRoutes } from "./shippingRoutes";
+import { recordConsents, validateConsentsForRole, getPendingConsents, isValidDocumentType } from "./legalConsents";
+import { LEGAL_DOCUMENT_VERSIONS, LEGAL_DOCUMENT_PATHS, LEGAL_DOCUMENT_TITLES, type LegalDocumentType } from "@shared/legalVersions";
 import { setupQuoteApprovalRoutes } from "./quoteApprovalRoutes";
 import notificationRoutes from "./notificationRoutes";
 import meetingRoutes from "./meetingRoutes";
@@ -684,9 +686,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Role selection and verification
   app.post("/api/user/role", isAuthenticated, async (req: AuthRequest, res: Response) => {
     const userId = (req.user as any)?.id;
-    const { role, verificationDocumentUrl } = req.body;
+    const { role, verificationDocumentUrl, acceptedConsents } = req.body;
     if (!userId || !role || !verificationDocumentUrl) {
       return res.status(400).json({ message: "Missing required fields" });
+    }
+    const consentCheck = validateConsentsForRole(role, acceptedConsents);
+    if (!consentCheck.ok) {
+      return res.status(400).json({ message: consentCheck.message });
     }
     try {
       // Check if user is already approved - don't let them change their role
@@ -694,11 +700,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (existingUser && existingUser.verificationStatus === "approved") {
         return res.status(403).json({ message: "Cannot change role for already approved users" });
       }
-      
+
       const user = await storage.updateUserRole(userId, role, verificationDocumentUrl);
+
+      try {
+        await recordConsents(userId, consentCheck.documents, req);
+      } catch (consentError) {
+        console.error("Failed to record legal consents at role selection:", consentError);
+      }
+
       res.json(user);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Pending legal consents for the currently logged-in user
+  app.get("/api/legal/pending-consents", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    const userId = (req.user as any)?.id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      const pending = await getPendingConsents(userId, user.role);
+      res.json({
+        documents: pending.map((doc) => ({
+          documentType: doc,
+          version: LEGAL_DOCUMENT_VERSIONS[doc],
+          title: LEGAL_DOCUMENT_TITLES[doc],
+          path: LEGAL_DOCUMENT_PATHS[doc],
+        })),
+      });
+    } catch (error: any) {
+      console.error("Failed to load pending consents:", error);
+      res.status(500).json({ message: "Failed to load pending consents" });
+    }
+  });
+
+  // Record acceptance for currently logged-in user (re-prompt flow)
+  app.post("/api/legal/accept", isAuthenticated, async (req: AuthRequest, res: Response) => {
+    const userId = (req.user as any)?.id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    const { documents } = req.body || {};
+    if (!Array.isArray(documents) || documents.length === 0) {
+      return res.status(400).json({ message: "No documents provided" });
+    }
+    const validated = documents.filter(isValidDocumentType) as LegalDocumentType[];
+    if (validated.length === 0) {
+      return res.status(400).json({ message: "Unknown document types" });
+    }
+    try {
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      const required = new Set(await getPendingConsents(userId, user.role));
+      // Only accept docs that are actually pending for this user
+      const toRecord = validated.filter((d) => required.has(d));
+      if (toRecord.length > 0) {
+        await recordConsents(userId, toRecord, req);
+      }
+      const remaining = await getPendingConsents(userId, user.role);
+      res.json({ success: true, remaining });
+    } catch (error: any) {
+      console.error("Failed to record legal consent acceptance:", error);
+      res.status(500).json({ message: "Failed to record acceptance" });
     }
   });
 
