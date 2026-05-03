@@ -6,8 +6,9 @@ export default function TermsOfService() {
       <p>
         These Terms of Service (the "Terms") govern your access to and use of the Vaaney marketplace platform, including
         our website at vaaney.com and any related applications (together, the "Platform"). The Platform is operated by{" "}
-        <strong>Vaaney (Pvt) Ltd</strong>, a company incorporated in Sri Lanka under registration No. [ ], with its
-        registered office at [ ] ("Vaaney", "we", "our", "us").
+        <strong>Vaaney (Pvt) Ltd</strong>, a company incorporated in Sri Lanka under registration No. PV-00333267,
+        with its registered office at 307/1, Kotte Road, Mirihana, Nugegoda, Sri Lanka 10250 ("Vaaney", "we", "our",
+        "us").
       </p>
       <p>
         By creating an account, browsing, or otherwise using the Platform, you agree to these Terms. If you do not
@@ -38,7 +39,7 @@ export default function TermsOfService() {
       <h3>3.2 Account security</h3>
       <ul>
         <li>You are responsible for keeping your login credentials confidential and for all activity under your account.</li>
-        <li>You must notify us promptly at <a href="mailto:support@vaaney.com">support@vaaney.com</a> if you suspect unauthorised use.</li>
+        <li>You must notify us promptly at <a href="mailto:info@vaaney.com">info@vaaney.com</a> if you suspect unauthorised use.</li>
         <li>You must provide accurate, current and complete information and keep it updated.</li>
       </ul>
       <h3>3.3 One account per person</h3>
@@ -110,7 +111,7 @@ export default function TermsOfService() {
       <h3>9.2 Reporting infringement</h3>
       <p>
         If you believe content on the Platform infringes your copyright or trademark, send a takedown notice to{" "}
-        <a href="mailto:legal@vaaney.com">legal@vaaney.com</a> with: (a) identification of the work; (b) the URL of the
+        <a href="mailto:info@vaaney.com">info@vaaney.com</a> with: (a) identification of the work; (b) the URL of the
         infringing listing; (c) your contact details; (d) a statement of good-faith belief; and (e) your signature. We
         will action valid notices and notify the Seller, who may submit a counter-notice.
       </p>
@@ -135,7 +136,7 @@ export default function TermsOfService() {
         To the maximum extent permitted by law, Vaaney's aggregate liability to you for any claim arising out of or
         relating to these Terms or your use of the Platform is limited to the greater of (a) the total commission
         Vaaney actually earned from your transactions on the Platform during the 6 months preceding the event giving
-        rise to the claim, and (b) USD [ ]. Vaaney is not liable for indirect, incidental, special, consequential or
+        rise to the claim, and (b) USD 100. Vaaney is not liable for indirect, incidental, special, consequential or
         punitive damages, or for loss of profits, revenue, data or goodwill.
       </p>
       <p>
@@ -178,7 +179,7 @@ export default function TermsOfService() {
         <li><strong>No waiver.</strong> Failure to enforce any right is not a waiver of that right.</li>
         <li><strong>Assignment.</strong> You may not assign these Terms without our consent. Vaaney may assign these Terms to an affiliate or successor.</li>
         <li><strong>Notices.</strong> We may give notices via email, in-app or by posting on the Platform.</li>
-        <li><strong>Contact.</strong> <a href="mailto:legal@vaaney.com">legal@vaaney.com</a></li>
+        <li><strong>Contact.</strong> <a href="mailto:info@vaaney.com">info@vaaney.com</a></li>
       </ul>
     </LegalLayout>
   );

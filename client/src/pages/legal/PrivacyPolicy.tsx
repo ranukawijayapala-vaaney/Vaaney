@@ -5,8 +5,9 @@ export default function PrivacyPolicy() {
     <LegalLayout title="Privacy Policy" effectiveDate="[date]" version="1.0" testId="text-privacy-title">
       <h2>1. Who we are</h2>
       <p>
-        Vaaney (Pvt) Ltd ("Vaaney", "we", "our", "us") is a company incorporated in Sri Lanka under registration No.
-        [ ], with its registered office at [ ]. We operate the Vaaney marketplace platform at vaaney.com and our
+        Vaaney (Pvt) Ltd ("Vaaney", "we", "our", "us") is a company incorporated in Sri Lanka under registration
+        No. PV-00333267, with its registered office at 307/1, Kotte Road, Mirihana, Nugegoda, Sri Lanka 10250. We
+        operate the Vaaney marketplace platform at vaaney.com and our
         mobile/web applications (the "Platform").
       </p>
       <p>
@@ -15,7 +16,7 @@ export default function PrivacyPolicy() {
         otherwise.
       </p>
       <p>
-        Contact for data-protection matters: <a href="mailto:privacy@vaaney.com">privacy@vaaney.com</a> (or write to the
+        Contact for data-protection matters: <a href="mailto:info@vaaney.com">info@vaaney.com</a> (or write to the
         registered office above, marked for the attention of the Data Protection Officer).
       </p>
 
@@ -133,7 +134,7 @@ export default function PrivacyPolicy() {
         <li>Audit logs of administrator actions;</li>
         <li>Regular security reviews of dependencies and infrastructure.</li>
       </ul>
-      <p>No system is 100% secure. If you suspect your account is compromised, contact <a href="mailto:privacy@vaaney.com">privacy@vaaney.com</a> immediately.</p>
+      <p>No system is 100% secure. If you suspect your account is compromised, contact <a href="mailto:info@vaaney.com">info@vaaney.com</a> immediately.</p>
 
       <h2>9. Cookies and similar technologies</h2>
       <ul>
@@ -155,13 +156,13 @@ export default function PrivacyPolicy() {
         <li><strong>Lodge a complaint</strong> with the Data Protection Authority of Sri Lanka.</li>
       </ul>
       <p>
-        To exercise any right, email <a href="mailto:privacy@vaaney.com">privacy@vaaney.com</a>. We will respond within
+        To exercise any right, email <a href="mailto:info@vaaney.com">info@vaaney.com</a>. We will respond within
         the timelines required by law (and in any event within [30] days). If you are a Buyer based in Maldives, the
         protections above apply equally to you regardless of jurisdiction.
       </p>
 
       <h2>11. Children</h2>
-      <p>The Platform is not intended for use by anyone under 18. We do not knowingly collect personal data from minors. If you believe a minor has provided us personal data, contact <a href="mailto:privacy@vaaney.com">privacy@vaaney.com</a> and we will delete it.</p>
+      <p>The Platform is not intended for use by anyone under 18. We do not knowingly collect personal data from minors. If you believe a minor has provided us personal data, contact <a href="mailto:info@vaaney.com">info@vaaney.com</a> and we will delete it.</p>
 
       <h2>12. Marketing and communications</h2>
       <ul>
@@ -185,10 +186,10 @@ export default function PrivacyPolicy() {
 
       <h2>15. Contact us</h2>
       <p>
-        Vaaney (Pvt) Ltd<br />
-        [Registered office address], Sri Lanka<br />
-        Email: <a href="mailto:privacy@vaaney.com">privacy@vaaney.com</a><br />
-        Data Protection Officer: [name / email]
+        Vaaney (Pvt) Ltd (PV-00333267)<br />
+        307/1, Kotte Road, Mirihana, Nugegoda, Sri Lanka 10250<br />
+        Email: <a href="mailto:info@vaaney.com">info@vaaney.com</a><br />
+        Phone: +94 77 302 8600 (Sri Lanka) &middot; +960 931 3486 (Maldives)
       </p>
     </LegalLayout>
   );

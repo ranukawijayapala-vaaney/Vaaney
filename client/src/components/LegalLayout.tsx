@@ -51,8 +51,8 @@ export function LegalLayout({ title, effectiveDate, version, children, testId }:
         <footer className="mt-12 pt-6 border-t text-sm text-muted-foreground">
           <p>
             This document is provided for transparency and is governed by the laws of Sri Lanka. For questions, contact{" "}
-            <a href="mailto:legal@vaaney.com" className="underline hover-elevate rounded-sm px-1">
-              legal@vaaney.com
+            <a href="mailto:info@vaaney.com" className="underline hover-elevate rounded-sm px-1">
+              info@vaaney.com
             </a>
             .
           </p>

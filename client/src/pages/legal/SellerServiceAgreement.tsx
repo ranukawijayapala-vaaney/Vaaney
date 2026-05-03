@@ -11,7 +11,7 @@ export default function SellerServiceAgreement() {
       <p>
         <strong>This Agreement</strong> is made and entered into at Colombo, Sri Lanka on the [ ] day of [ ] 20[ ], by
         and between <strong>Vaaney (Pvt) Ltd</strong>, a company incorporated under the laws of the Democratic Socialist
-        Republic of Sri Lanka under registration No. [ ], having its registered office at [ ] (
+        Republic of Sri Lanka under registration No. PV-00333267, having its registered office at 307/1, Kotte Road, Mirihana, Nugegoda, Sri Lanka 10250 (
         <strong>"Vaaney"</strong>), and the undersigned service provider whose details are set out in{" "}
         <strong>Schedule I</strong> (<strong>"Service Provider"</strong>).
       </p>

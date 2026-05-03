@@ -932,6 +932,12 @@ export default function Landing() {
               <p className="text-sm text-muted-foreground">
                 Connecting Maldivian buyers with Sri Lankan sellers through a trusted, secure marketplace.
               </p>
+              <div className="text-xs text-muted-foreground space-y-1" data-testid="text-footer-company-info">
+                <p><span className="font-medium text-foreground">Vaaney (Pvt) Ltd</span> &middot; PV-00333267</p>
+                <p>307/1, Kotte Road, Mirihana,<br />Nugegoda, Sri Lanka 10250</p>
+                <p><a href="mailto:info@vaaney.com" className="hover:text-foreground" data-testid="link-footer-email">info@vaaney.com</a></p>
+                <p>+94 77 302 8600 &middot; +960 931 3486</p>
+              </div>
             </div>
             <div>
               <h4 className="font-semibold mb-4">For Buyers</h4>
@@ -971,7 +977,7 @@ export default function Landing() {
             </div>
           </div>
           <div className="pt-8 border-t text-center text-sm text-muted-foreground">
-            <p>© 2024 Vaaney. Bridging Maldives and Sri Lanka through quality, trust, and community.</p>
+            <p>© {new Date().getFullYear()} Vaaney (Pvt) Ltd. All rights reserved. Bridging Maldives and Sri Lanka through quality, trust, and community.</p>
           </div>
         </div>
       </footer>

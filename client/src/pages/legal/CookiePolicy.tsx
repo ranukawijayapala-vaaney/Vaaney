@@ -101,7 +101,7 @@ export default function CookiePolicy() {
       <h2>8. Contact</h2>
       <p>
         If you have questions about this Policy, please email{" "}
-        <a href="mailto:privacy@vaaney.com">privacy@vaaney.com</a>.
+        <a href="mailto:info@vaaney.com">info@vaaney.com</a>.
       </p>
     </LegalLayout>
   );

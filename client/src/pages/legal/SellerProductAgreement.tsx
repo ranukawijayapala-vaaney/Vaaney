@@ -14,7 +14,7 @@ export default function SellerProductAgreement() {
       </p>
       <p>
         <strong>Vaaney (Pvt) Ltd</strong>, a company incorporated under the laws of the Democratic Socialist Republic of
-        Sri Lanka under registration No. [ ], having its registered office at [ ] (<strong>"Vaaney"</strong>), and the
+        Sri Lanka under registration No. PV-00333267, having its registered office at 307/1, Kotte Road, Mirihana, Nugegoda, Sri Lanka 10250 (<strong>"Vaaney"</strong>), and the
         undersigned product supplier whose details are set out in <strong>Schedule A</strong> (
         <strong>"Supplier"</strong>). Each a <strong>"Party"</strong>; together the <strong>"Parties"</strong>.
       </p>

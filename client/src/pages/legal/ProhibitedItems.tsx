@@ -90,7 +90,7 @@ export default function ProhibitedItems() {
 
       <h2>5. Reporting and enforcement</h2>
       <ul>
-        <li>If you see a listing that breaches this policy, please report it to <a href="mailto:trust@vaaney.com">trust@vaaney.com</a> with the listing URL and a brief description.</li>
+        <li>If you see a listing that breaches this policy, please report it to <a href="mailto:info@vaaney.com">info@vaaney.com</a> with the listing URL and a brief description.</li>
         <li>We may remove listings, suspend or ban Sellers, withhold payouts, refund Buyers, and report serious breaches to law-enforcement.</li>
         <li>Repeated or wilful breaches will result in permanent suspension and forfeiture of fees paid for promotional packages.</li>
       </ul>

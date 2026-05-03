@@ -119,8 +119,8 @@ export default function ReturnsRefunds() {
 
       <h2>10. Contact</h2>
       <p>
-        Questions about a return or refund: <a href="mailto:support@vaaney.com">support@vaaney.com</a>. Questions about
-        this Policy: <a href="mailto:legal@vaaney.com">legal@vaaney.com</a>.
+        Questions about a return or refund: <a href="mailto:info@vaaney.com">info@vaaney.com</a>. Questions about
+        this Policy: <a href="mailto:info@vaaney.com">info@vaaney.com</a>.
       </p>
     </LegalLayout>
   );

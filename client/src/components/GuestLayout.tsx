@@ -242,8 +242,21 @@ export function GuestLayout({ children }: GuestLayoutProps) {
               </ul>
             </div>
           </div>
-          <div className="mt-8 pt-6 border-t text-xs text-muted-foreground text-center">
-            &copy; {new Date().getFullYear()} Vaaney (Pvt) Ltd. All rights reserved.
+          <div className="mt-8 pt-6 border-t text-xs text-muted-foreground space-y-2">
+            <div className="grid md:grid-cols-3 gap-2 md:gap-6">
+              <div data-testid="text-footer-company">
+                <span className="font-medium text-foreground">Vaaney (Pvt) Ltd</span> &middot; PV-00333267
+              </div>
+              <div data-testid="text-footer-address">
+                307/1, Kotte Road, Mirihana, Nugegoda, Sri Lanka 10250
+              </div>
+              <div className="md:text-right" data-testid="text-footer-contact">
+                <a href="mailto:info@vaaney.com" className="hover:text-foreground">info@vaaney.com</a> &middot; +94 77 302 8600 &middot; +960 931 3486
+              </div>
+            </div>
+            <div className="text-center pt-2">
+              &copy; {new Date().getFullYear()} Vaaney (Pvt) Ltd. All rights reserved.
+            </div>
           </div>
         </div>
       </footer>

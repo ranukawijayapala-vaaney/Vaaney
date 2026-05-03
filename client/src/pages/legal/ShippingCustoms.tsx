@@ -117,8 +117,8 @@ export default function ShippingCustoms() {
 
       <h2>12. Contact</h2>
       <p>
-        Shipping or customs questions: <a href="mailto:support@vaaney.com">support@vaaney.com</a>. Policy questions:{" "}
-        <a href="mailto:legal@vaaney.com">legal@vaaney.com</a>.
+        Shipping or customs questions: <a href="mailto:info@vaaney.com">info@vaaney.com</a>. Policy questions:{" "}
+        <a href="mailto:info@vaaney.com">info@vaaney.com</a>.
       </p>
     </LegalLayout>
   );

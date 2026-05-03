@@ -11,7 +11,7 @@ export default function BuyerProductTerms() {
       <p>
         These Buyer Product Purchase Terms ("Terms") apply when you purchase physical products through the Vaaney
         marketplace (the "Platform") operated by <strong>Vaaney (Pvt) Ltd</strong>, a company incorporated in Sri Lanka
-        under registration No. [ ], with its registered office at [ ] ("Vaaney", "we", "our", "us").
+        under registration No. PV-00333267, with its registered office at 307/1, Kotte Road, Mirihana, Nugegoda, Sri Lanka 10250 ("Vaaney", "we", "our", "us").
       </p>
       <p>By placing an order on the Platform you accept these Terms. If you do not accept them, do not place the order.</p>
       <p>These Terms should be read together with the Vaaney <strong>Privacy Policy</strong> and (where applicable) the <strong>Buyer Service Booking Terms</strong>.</p>
@@ -97,7 +97,7 @@ export default function BuyerProductTerms() {
       <ul>
         <li>You may rate and review a Product after the Order is completed, including photos. Reviews must be honest, lawful and your own experience.</li>
         <li>We may remove reviews that are abusive, defamatory, contain personal data, or breach these Terms.</li>
-        <li>All buyer-seller communications must take place through the Platform. Sellers are contractually prohibited from contacting you for marketing purposes outside the Platform — please report any such contact to <a href="mailto:support@vaaney.com">support@vaaney.com</a>.</li>
+        <li>All buyer-seller communications must take place through the Platform. Sellers are contractually prohibited from contacting you for marketing purposes outside the Platform — please report any such contact to <a href="mailto:info@vaaney.com">info@vaaney.com</a>.</li>
       </ul>
 
       <h2>11. Returns, refunds and dispute resolution</h2>
@@ -160,7 +160,7 @@ export default function BuyerProductTerms() {
       <h2>18. General</h2>
       <ul>
         <li><strong>Changes.</strong> We may update these Terms from time to time. Material changes will be notified by email and/or in-app at least <strong>[14] days</strong> before they take effect. Continued use of the Platform after the effective date is acceptance of the new version.</li>
-        <li><strong>Notices.</strong> Notices to you go to the email address on your account. Notices to Vaaney go to <a href="mailto:support@vaaney.com">support@vaaney.com</a> (general) and <a href="mailto:legal@vaaney.com">legal@vaaney.com</a> (legal).</li>
+        <li><strong>Notices.</strong> Notices to you go to the email address on your account. Notices to Vaaney go to <a href="mailto:info@vaaney.com">info@vaaney.com</a> (general) and <a href="mailto:info@vaaney.com">info@vaaney.com</a> (legal).</li>
         <li><strong>Assignment.</strong> You may not assign these Terms. Vaaney may assign to an affiliate or in connection with a corporate reorganisation.</li>
         <li><strong>Severability and waiver.</strong> If any provision is unenforceable, the rest stands. A delay in enforcing a right is not a waiver.</li>
         <li><strong>Governing law and jurisdiction.</strong> These Terms are governed by the laws of <strong>Sri Lanka</strong>. The courts of <strong>Colombo</strong> have non-exclusive jurisdiction; nothing in this clause prevents you from bringing proceedings in your country of residence to enforce non-excludable consumer rights.</li>
