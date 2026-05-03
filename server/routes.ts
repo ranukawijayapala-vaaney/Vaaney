@@ -765,13 +765,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (context?.productId) {
           const product = await storage.getProduct(context.productId);
           if (product) {
+            const variants = await storage.getProductVariants(product.id);
+            const prices = variants.map(v => parseFloat(v.price as any)).filter(p => !isNaN(p) && p > 0);
+            const totalStock = variants.reduce((sum, v) => sum + (v.inventory || 0), 0);
             chatContext.currentProduct = {
               id: product.id,
               name: product.name,
               category: product.category,
-              price: product.price,
+              price: prices.length > 0 ? Math.min(...prices) : null,
               description: product.description,
-              stock: product.stock,
+              stock: totalStock,
             };
           }
         }
@@ -872,13 +875,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (context?.productId) {
           const product = await storage.getProduct(context.productId);
           if (product) {
+            const variants = await storage.getProductVariants(product.id);
+            const prices = variants.map(v => parseFloat(v.price as any)).filter(p => !isNaN(p) && p > 0);
+            const totalStock = variants.reduce((sum, v) => sum + (v.inventory || 0), 0);
             chatContext.currentProduct = {
               id: product.id,
               name: product.name,
               category: product.category,
-              price: product.price,
+              price: prices.length > 0 ? Math.min(...prices) : null,
               description: product.description,
-              stock: product.stock,
+              stock: totalStock,
             };
           }
         }
@@ -3225,30 +3231,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const productData = insertProductSchema.parse(req.body);
       const product = await storage.createProduct({ ...productData, sellerId: userId });
-      
-      // Extract and parse optional shipping dimensions for default variant
-      const { weight, length, width, height } = req.body;
-      
-      // Parse and validate dimension values, converting to numbers or null
-      const parsedWeight = weight ? parseFloat(weight) : null;
-      const parsedLength = length ? parseFloat(length) : null;
-      const parsedWidth = width ? parseFloat(width) : null;
-      const parsedHeight = height ? parseFloat(height) : null;
-      
-      // Auto-create a default variant so the product is immediately purchasable
-      // Sellers can add more variants later if they want size/color options
-      await db.insert(productVariants).values({
-        productId: product.id,
-        name: "Default",
-        price: product.price || "0",
-        inventory: product.stock || 0,
-        attributes: {},
-        weight: parsedWeight && !isNaN(parsedWeight) ? parsedWeight.toString() : undefined,
-        length: parsedLength && !isNaN(parsedLength) ? parsedLength.toString() : undefined,
-        width: parsedWidth && !isNaN(parsedWidth) ? parsedWidth.toString() : undefined,
-        height: parsedHeight && !isNaN(parsedHeight) ? parsedHeight.toString() : undefined,
-      });
-      
+      // Pricing, inventory, and shipping dimensions live on variants.
+      // The seller must add at least one variant before the product is purchasable.
       res.json(product);
     } catch (error: any) {
       res.status(400).json({ message: error.message });

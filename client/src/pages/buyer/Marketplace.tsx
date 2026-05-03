@@ -99,43 +99,24 @@ export default function Marketplace() {
     return boostedItems.some(boost => boost.itemId === itemId && boost.itemType === itemType && boost.isActive);
   };
 
-  // Helper function to get the display price for a product
-  // Priority: minimum positive variant price > minimum zero variant price > base product price > null (for quote/TBD)
+  // Helper function to get the display price for a product (computed from variants).
+  // Priority: minimum positive variant price > "Custom Quote" if requires quote > null
   const getProductDisplayPrice = (product: any): string | null => {
-    let allPrices: number[] = [];
-    
-    // Collect all variant prices
     if (product.variants && product.variants.length > 0) {
       const variantPrices = product.variants
         .map((v: any) => parseFloat(v.price))
         .filter((p: number) => !isNaN(p) && p >= 0);
-      allPrices = [...variantPrices];
-    }
-    
-    // Also consider base product price
-    if (product.price !== null && product.price !== undefined) {
-      const basePrice = parseFloat(product.price);
-      if (!isNaN(basePrice) && basePrice >= 0) {
-        allPrices.push(basePrice);
+
+      const positivePrices = variantPrices.filter((p: number) => p > 0);
+      if (positivePrices.length > 0) {
+        return `From $${Math.min(...positivePrices).toFixed(2)}`;
+      }
+
+      if (variantPrices.length > 0 && !product.requiresQuote) {
+        return `From $${(0).toFixed(2)}`;
       }
     }
-    
-    if (allPrices.length === 0) {
-      // No valid prices at all
-      return null;
-    }
-    
-    // Prefer the minimum POSITIVE price first
-    const positivePrices = allPrices.filter(p => p > 0);
-    if (positivePrices.length > 0) {
-      return `From $${Math.min(...positivePrices).toFixed(2)}`;
-    }
-    
-    // All prices are 0 - show "Custom Quote" if requires quote, otherwise show "$0.00"
-    if (product.requiresQuote) {
-      return null;
-    }
-    return `From $${(0).toFixed(2)}`;
+    return null;
   };
 
   // Separate boosted and regular products

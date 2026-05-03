@@ -600,26 +600,22 @@ export function setupQuoteApprovalRoutes(app: Express) {
         return res.json({ shippingCost: "0.00" });
       }
 
-      // Get product weight - match purchase endpoint logic exactly
+      // Get weight/dimensions from variant. Pricing/weight/dimensions live on variants only.
+      // For custom quotes without a selected variant, fall back to a sensible default weight.
       let unitWeight = 0;
       let productDimensions = "";
 
       if (quote.productVariantId) {
-        // If quote has variant, use variant weight only (don't fall back to product)
         const variant = await storage.getProductVariantById(quote.productVariantId);
         if (variant) {
-          // Parse weight to handle potential string values
           unitWeight = parseFloat(variant.weight as any) || 0;
-          productDimensions = variant.dimensions || "";
+          if (variant.length && variant.width && variant.height) {
+            productDimensions = `${variant.length}x${variant.width}x${variant.height} cm`;
+          }
         }
       } else if (quote.productId) {
-        // Only use product weight for custom quotes without variant
-        const product = await storage.getProduct(quote.productId);
-        if (product) {
-          // Parse weight to handle potential string values, default 0.5kg for custom quotes
-          unitWeight = parseFloat(product.weight as any) || 0.5;
-          productDimensions = product.dimensions || "";
-        }
+        // Custom quote without variant — no per-item dimensions available; use default weight
+        unitWeight = 0.5;
       }
 
       // Calculate shipping cost with quantity (same logic as purchase)
@@ -723,9 +719,8 @@ export function setupQuoteApprovalRoutes(app: Express) {
       let productDimensions = null;
       
       if (quote.productId) {
-        const product = await storage.getProduct(quote.productId);
-        
-        // Get weight from variant if exists, otherwise from product
+        // Weight/dimensions live on variants only. Custom quotes without a variant
+        // get a default weight and no dimensions.
         if (quote.productVariantId) {
           const variant = await db.query.productVariants.findFirst({
             where: (variants, { eq }) => eq(variants.id, quote.productVariantId!),
@@ -740,9 +735,9 @@ export function setupQuoteApprovalRoutes(app: Express) {
               };
             }
           }
-        } else if (product) {
-          // Use product weight for custom quotes without variant
-          productWeight = (parseFloat(product.weight || "0") || 0.5) * quote.quantity; // Default 0.5 kg per item
+        } else {
+          // Custom quote without variant — default weight, no dimensions
+          productWeight = 0.5 * quote.quantity;
         }
         
         // Calculate shipping using same logic as checkout

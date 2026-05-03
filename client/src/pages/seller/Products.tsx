@@ -23,17 +23,10 @@ const productFormSchema = z.object({
   name: z.string().min(3, "Product name must be at least 3 characters"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   category: z.string().min(1, "Category is required"),
-  price: z.string().regex(/^\d+(\.\d{1,2})?$/, "Price must be a valid number (e.g., 29.99)"),
-  stock: z.string().regex(/^\d+$/, "Stock must be a whole number"),
   images: z.array(z.string()).min(1, "At least one image is required").max(10, "Maximum 10 images allowed"),
   isActive: z.boolean().default(true),
   requiresQuote: z.boolean().default(false),
   requiresDesignApproval: z.boolean().default(false),
-  // Optional shipping dimensions for default variant (decimals stay as strings)
-  weight: z.string().optional().transform(val => val === "" || val === undefined ? undefined : val),
-  length: z.string().optional().transform(val => val === "" || val === undefined ? undefined : val),
-  width: z.string().optional().transform(val => val === "" || val === undefined ? undefined : val),
-  height: z.string().optional().transform(val => val === "" || val === undefined ? undefined : val),
 });
 
 const variantFormSchema = z.object({
@@ -54,15 +47,8 @@ const variantFormSchema = z.object({
 type ProductForm = z.infer<typeof productFormSchema>;
 type VariantForm = z.infer<typeof variantFormSchema>;
 
-// API payload types with numeric values (forms use strings, API expects numbers)
-type ProductApiPayload = Omit<ProductForm, 'price' | 'stock' | 'weight' | 'length' | 'width' | 'height'> & {
-  price: number;
-  stock: number;
-  weight?: number;
-  length?: number;
-  width?: number;
-  height?: number;
-};
+// API payload type for products. Pricing/inventory/shipping live on variants.
+type ProductApiPayload = ProductForm;
 
 type VariantApiPayload = Omit<VariantForm, 'price' | 'inventory' | 'weight' | 'length' | 'width' | 'height' | 'productionDays'> & {
   price: number;
@@ -98,16 +84,10 @@ export default function Products() {
       name: "",
       description: "",
       category: "",
-      price: "",
-      stock: "",
       images: [],
       isActive: true,
       requiresQuote: false,
       requiresDesignApproval: false,
-      weight: "",
-      length: "",
-      width: "",
-      height: "",
     },
   });
 
@@ -274,49 +254,27 @@ export default function Products() {
       return;
     }
 
-    // Convert string values to proper numbers with explicit coercion
-    const priceNum = Number(data.price);
-    const stockNum = Math.floor(Number(data.stock));
-    
-    // Validate numeric conversions
-    if (isNaN(priceNum) || priceNum < 0) {
-      toast({
-        title: "Invalid price",
-        description: "Please enter a valid price",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (isNaN(stockNum) || stockNum < 0) {
-      toast({
-        title: "Invalid stock",
-        description: "Please enter a valid stock quantity",
-        variant: "destructive",
-      });
-      return;
-    }
-
     const submitData: ProductApiPayload = {
       name: data.name,
       description: data.description,
       category: data.category,
-      price: priceNum,
-      stock: stockNum,
       images: data.images,
       isActive: data.isActive,
       requiresQuote: data.requiresQuote,
       requiresDesignApproval: data.requiresDesignApproval,
-      weight: data.weight ? Number(data.weight) : undefined,
-      length: data.length ? Number(data.length) : undefined,
-      width: data.width ? Number(data.width) : undefined,
-      height: data.height ? Number(data.height) : undefined,
     };
-    
+
     if (selectedProduct) {
       updateProductMutation.mutate({ id: selectedProduct.id, data: submitData });
     } else {
-      createProductMutation.mutate(submitData);
+      createProductMutation.mutate(submitData, {
+        onSuccess: (newProduct: any) => {
+          if (newProduct && newProduct.id) {
+            // Prompt the seller to add the first variant immediately
+            setTimeout(() => openVariantDialog(newProduct as Product), 200);
+          }
+        },
+      });
     }
   };
 
@@ -424,17 +382,10 @@ export default function Products() {
         name: product.name,
         description: product.description,
         category: product.category || "",
-        price: product.price || "",
-        stock: product.stock?.toString() || "",
         images: product.images || [],
         isActive: product.isActive,
         requiresQuote: product.requiresQuote || false,
         requiresDesignApproval: product.requiresDesignApproval || false,
-        // Weight/dimensions belong to variants - edit via variant form
-        weight: "",
-        length: "",
-        width: "",
-        height: "",
       });
     } else {
       setSelectedProduct(null);
@@ -442,16 +393,10 @@ export default function Products() {
         name: "",
         description: "",
         category: "",
-        price: "",
-        stock: "",
         images: [],
         isActive: true,
         requiresQuote: false,
         requiresDesignApproval: false,
-        weight: "",
-        length: "",
-        width: "",
-        height: "",
       });
     }
     setShowProductDialog(true);
@@ -690,45 +635,12 @@ export default function Products() {
                   </FormItem>
                 )}
               />
-              <div className="space-y-4 border-t pt-4">
-                <div>
-                  <h4 className="text-sm font-semibold">Pricing & Inventory</h4>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    These fields are required for all products. If you plan to add variants (sizes, colors, materials, etc.), 
-                    you can enter a placeholder price here and then manage specific pricing per variant after creating the product.
-                  </p>
+              {!selectedProduct && (
+                <div className="rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
+                  Pricing, inventory, sizes, and shipping dimensions are set per variant.
+                  After you save this product, you'll be prompted to add your first variant.
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={productForm.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Base Price (USD)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="29.99" {...field} data-testid="input-product-price" />
-                        </FormControl>
-                        <FormDescription>Add variants later for different pricing options</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={productForm.control}
-                    name="stock"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Base Stock Quantity</FormLabel>
-                        <FormControl>
-                          <Input placeholder="10" {...field} data-testid="input-product-stock" />
-                        </FormControl>
-                        <FormDescription>Manage stock per variant after creation</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
+              )}
               <FormField
                 control={productForm.control}
                 name="images"
@@ -748,72 +660,6 @@ export default function Products() {
                 )}
               />
               
-              <div className="space-y-4 border-t pt-4">
-                <h4 className="text-sm font-semibold">Default Variant Shipping Dimensions (Optional)</h4>
-                <p className="text-xs text-muted-foreground">
-                  These dimensions apply to the default product variant. You can add more variants with different dimensions later.
-                  Leave blank to use default (1 KG per item).
-                </p>
-                
-                <FormField
-                  control={productForm.control}
-                  name="weight"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Weight (KG)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., 1.5" {...field} data-testid="input-product-weight" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="grid grid-cols-3 gap-2">
-                  <FormField
-                    control={productForm.control}
-                    name="length"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Length (CM)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="30" {...field} data-testid="input-product-length" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={productForm.control}
-                    name="width"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Width (CM)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="20" {...field} data-testid="input-product-width" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={productForm.control}
-                    name="height"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Height (CM)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="10" {...field} data-testid="input-product-height" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-
               <div className="space-y-4 border-t pt-4">
                 <h4 className="text-sm font-semibold">Purchase Requirements</h4>
                 <p className="text-xs text-muted-foreground">

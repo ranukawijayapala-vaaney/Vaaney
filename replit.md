@@ -18,7 +18,7 @@ Built with React, TypeScript, Vite, Wouter for routing, and TanStack Query for s
 An Express.js server in TypeScript exposes a REST API. Authentication uses Passport.js with Local (email/password) and Google OAuth 2.0 strategies. Session management is handled by `express-session` with a PostgreSQL store.
 
 ### Database Design
-Drizzle ORM with Neon Serverless PostgreSQL and Zod for schema validation. The database supports core e-commerce entities, with orders structured at the variant level and grouped by `checkout_sessions`. The `variantId` in orders is nullable to support custom quote purchases. User accounts support dual authentication via `googleId` while preserving UUID-based primary keys.
+Drizzle ORM with Neon Serverless PostgreSQL and Zod for schema validation. The database supports core e-commerce entities, with orders structured at the variant level and grouped by `checkout_sessions`. The `variantId` in orders is nullable to support custom quote purchases. User accounts support dual authentication via `googleId` while preserving UUID-based primary keys. Products store only descriptive fields (name, description, category, images, requirements flags) — pricing, inventory, sizes, and shipping dimensions live exclusively on `product_variants`. Marketplace/Landing display "From $X" computed as `min(variant.price)`; AI context computes total stock as `sum(variant.inventory)`.
 
 ### File Storage
 Google Cloud Storage manages user-uploaded files, authenticated via the Replit sidecar. Uppy provides the drag-and-drop upload interface.

@@ -310,8 +310,12 @@ function enhancePromptWithContext(systemPrompt: string, context: ChatContext): s
     contextAddition += `- Viewing Product:\n`;
     contextAddition += `  - Name: ${currentProduct.name}\n`;
     contextAddition += `  - Category: ${currentProduct.category}\n`;
-    contextAddition += `  - Price: MVR ${currentProduct.price}\n`;
-    contextAddition += `  - Stock: ${currentProduct.stock}\n`;
+    if (currentProduct.price !== null && currentProduct.price !== undefined) {
+      contextAddition += `  - Price (from): USD ${currentProduct.price}\n`;
+    } else {
+      contextAddition += `  - Price: not yet set (no variants)\n`;
+    }
+    contextAddition += `  - Total stock across variants: ${currentProduct.stock ?? 0}\n`;
     if (currentProduct.description) {
       contextAddition += `  - Description: ${currentProduct.description}\n`;
     }

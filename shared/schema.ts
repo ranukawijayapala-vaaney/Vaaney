@@ -211,8 +211,6 @@ export const products = pgTable("products", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description").notNull(),
   category: varchar("category", { length: 100 }),
-  price: decimal("price", { precision: 10, scale: 2 }), // Base price for simple products
-  stock: integer("stock").default(0), // Base stock quantity
   images: jsonb("images").notNull().$type<string[]>(),
   isActive: boolean("is_active").notNull().default(true),
   requiresQuote: boolean("requires_quote").notNull().default(false), // Custom products require quote first
@@ -234,8 +232,6 @@ export const insertProductSchema = createInsertSchema(products, {
   name: z.string().min(1, "Product name is required"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   images: z.array(z.string()).min(1, "At least one image is required"),
-  price: z.union([z.number(), z.string(), z.null()]).transform(val => val === null || val === '' ? null : String(val)).optional(),
-  stock: z.union([z.number(), z.string(), z.null()]).transform(val => val === null || val === '' ? 0 : (typeof val === 'string' ? parseInt(val, 10) : val)).optional(),
 }).omit({ id: true, sellerId: true, createdAt: true, updatedAt: true });
 
 export type Product = typeof products.$inferSelect;

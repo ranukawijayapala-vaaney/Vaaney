@@ -121,7 +121,7 @@ export default function Landing() {
     return boostedItems.some(boost => boost.itemId === itemId && boost.itemType === itemType && boost.isActive);
   };
 
-  // Get price display for product
+  // Get price display for product (computed from minimum variant price)
   const getProductDisplayPrice = (product: Product): string | null => {
     const variants = (product as any).variants;
     if (variants && variants.length > 0) {
@@ -130,12 +130,6 @@ export default function Landing() {
         .filter((p: number) => !isNaN(p) && p > 0);
       if (prices.length > 0) {
         return `From $${Math.min(...prices).toFixed(2)}`;
-      }
-    }
-    if (product.price !== null && product.price !== undefined) {
-      const price = parseFloat(String(product.price));
-      if (!isNaN(price) && price > 0) {
-        return `$${price.toFixed(2)}`;
       }
     }
     return null;
