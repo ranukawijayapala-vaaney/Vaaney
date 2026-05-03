@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { uploadFile } from "@/lib/uploadHelpers";
 import {
   Dialog,
   DialogContent,
@@ -75,31 +76,9 @@ function GalleryImageUploader({
 
     setIsUploading(true);
     try {
-      const result = await apiRequest(
-        "POST",
-        "/api/object-storage/upload-url",
-        { fileName: file.name, contentType: file.type }
-      ) as { uploadUrl: string; objectPath: string };
-
-      const uploadResponse = await fetch(result.uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: { "Content-Type": file.type },
-      });
-
-      if (!uploadResponse.ok) throw new Error("Upload failed");
-
-      await apiRequest("POST", "/api/object-storage/finalize-upload", {
-        objectPath: result.objectPath,
-        visibility: "public",
-      });
-
-      const normalizedPath = result.objectPath.startsWith("/")
-        ? `/objects${result.objectPath.split(".private")[1] || result.objectPath}`
-        : result.objectPath;
-      
-      setUploadedUrl(normalizedPath);
-      onUploadComplete(normalizedPath);
+      const { objectPath } = await uploadFile(file, { kind: "default", visibility: "public" });
+      setUploadedUrl(objectPath);
+      onUploadComplete(objectPath);
     } catch (error) {
       toast({ 
         title: "Upload failed", 
@@ -373,30 +352,8 @@ export default function ProfileManagement() {
 
     setUploading(true);
     try {
-      const result = await apiRequest(
-        "POST",
-        "/api/object-storage/upload-url",
-        { fileName: file.name, contentType: file.type }
-      ) as { uploadUrl: string; objectPath: string };
-
-      const uploadResponse = await fetch(result.uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: { "Content-Type": file.type },
-      });
-
-      if (!uploadResponse.ok) throw new Error("Upload failed");
-
-      await apiRequest("POST", "/api/object-storage/finalize-upload", {
-        objectPath: result.objectPath,
-        visibility: "public",
-      });
-
-      const normalizedPath = result.objectPath.startsWith("/")
-        ? `/objects${result.objectPath.split(".private")[1] || result.objectPath}`
-        : result.objectPath;
-      
-      setUrl(normalizedPath);
+      const { objectPath } = await uploadFile(file, { kind: "default", visibility: "public" });
+      setUrl(objectPath);
       toast({ title: "Image uploaded successfully" });
     } catch (error) {
       toast({ 

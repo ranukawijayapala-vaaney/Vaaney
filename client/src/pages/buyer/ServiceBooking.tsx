@@ -17,6 +17,7 @@ import { launchMpgsCheckout } from "@/lib/mpgs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { addDays, format } from "date-fns";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { uploadFile } from "@/lib/uploadHelpers";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import type { Service, ServicePackage, PaymentMethod } from "@shared/schema";
@@ -662,43 +663,18 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
   const handleUploadSlip = async (file: File) => {
     try {
       setIsUploadingSlip(true);
-      
-      console.log("[UPLOAD] Step 1: Getting upload URL");
-      const urlResponse: any = await apiRequest("POST", "/api/object-storage/upload-url", {
-        fileName: file.name,
-        contentType: file.type,
-      });
-      console.log("[UPLOAD] Step 1 complete. Upload URL received:", urlResponse);
-
-      console.log("[UPLOAD] Step 2: Uploading to GCS");
-      const uploadResponse = await fetch(urlResponse.uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-      console.log("[UPLOAD] Step 2 complete. GCS response status:", uploadResponse.status);
-
-      if (!uploadResponse.ok) {
-        const errorText = await uploadResponse.text();
-        console.error("[UPLOAD] GCS upload failed:", errorText);
-        throw new Error(`Failed to upload file to storage (status ${uploadResponse.status})`);
-      }
-
-      console.log("[UPLOAD] Step 3: Finalizing upload");
-      const finalizeResponse: any = await apiRequest("POST", "/api/object-storage/finalize-private-upload", {
-        objectPath: urlResponse.objectPath,
+      const { rawObjectPath, url, objectPath } = await uploadFile(file, {
+        kind: "private",
         fileName: file.name,
       });
-      console.log("[UPLOAD] Step 3 complete. Finalize response:", finalizeResponse);
-
-      setTransferSlipUrl(finalizeResponse.url);
-      setTransferSlipObjectPath(urlResponse.objectPath);
+      setTransferSlipUrl(url ?? objectPath);
+      setTransferSlipObjectPath(rawObjectPath);
       toast({ title: "Transfer slip uploaded successfully" });
     } catch (error: any) {
       console.error("[UPLOAD] Error caught:", error);
       toast({ 
         title: "Upload failed", 
-        description: error.message, 
+        description: error?.message || "An error occurred during upload", 
         variant: "destructive" 
       });
     } finally {

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, X } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { uploadFile } from "@/lib/uploadHelpers";
 
 interface MultiImageUploaderProps {
   maxImages?: number;
@@ -65,61 +65,9 @@ export function MultiImageUploader({
     try {
       for (const file of validFiles) {
         try {
-          // Get upload URL
-          const uploadResponse = await fetch("/api/object-storage/upload-url", {
-            method: "POST",
-            credentials: "include",
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              fileName: file.name,
-              contentType: file.type,
-            }),
-          });
-          
-          if (!uploadResponse.ok) {
-            const errorData = await uploadResponse.json().catch(() => ({}));
-            throw new Error(errorData.message || `Failed to get upload URL (${uploadResponse.status})`);
-          }
-          
-          const { uploadUrl } = await uploadResponse.json();
-
-          // Upload file to object storage
-          console.log(`Uploading ${file.name} to storage...`, { uploadUrl: uploadUrl.substring(0, 100) });
-          const uploadFileResponse = await fetch(uploadUrl, {
-            method: "PUT",
-            body: file,
-            headers: {
-              'Content-Type': file.type,
-            },
-          });
-
-          console.log(`Upload response for ${file.name}:`, uploadFileResponse.status, uploadFileResponse.statusText);
-
-          if (!uploadFileResponse.ok) {
-            const responseText = await uploadFileResponse.text().catch(() => 'No response body');
-            console.error(`Upload failed for ${file.name}:`, {
-              status: uploadFileResponse.status,
-              statusText: uploadFileResponse.statusText,
-              responseText,
-            });
-            throw new Error(`Failed to upload ${file.name} to storage (${uploadFileResponse.status}: ${uploadFileResponse.statusText})`);
-          }
-
-          // Finalize upload (set ACL to public for product images)
-          const objectPath = uploadUrl.split('?')[0];
-          const data = await apiRequest("POST", "/api/object-storage/finalize-product-upload", {
-            objectPath,
-          });
-          
-          if (data && data.objectPath) {
-            newUrls.push(data.objectPath);
-          } else {
-            throw new Error(`Invalid response from server for ${file.name}`);
-          }
+          const { objectPath } = await uploadFile(file, { kind: "product" });
+          newUrls.push(objectPath);
         } catch (fileError) {
-          // Log individual file errors but continue with other files
           console.error(`Error uploading ${file.name}:`, fileError);
           toast({
             title: `Failed to upload ${file.name}`,

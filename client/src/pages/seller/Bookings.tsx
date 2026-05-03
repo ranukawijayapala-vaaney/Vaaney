@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { uploadFormData } from "@/lib/uploadHelpers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -103,19 +104,23 @@ export default function Bookings() {
 
     setUploadingFiles(true);
     try {
-      // Upload each file
       for (const file of selectedFiles) {
         const formData = new FormData();
         formData.append("file", file);
 
-        await fetch(`/api/bookings/${selectedBooking.id}/deliverables`, {
-          method: "POST",
-          body: formData,
-          credentials: "include",
-        });
+        try {
+          await uploadFormData(
+            `/api/bookings/${selectedBooking.id}/deliverables`,
+            formData,
+            `Could not upload "${file.name}"`,
+          );
+        } catch (fileError: any) {
+          throw new Error(
+            `Failed to upload "${file.name}": ${fileError?.message || "Unknown error"}`,
+          );
+        }
       }
 
-      // After uploading files, update the status
       await apiRequest("PUT", `/api/seller/bookings/${selectedBooking.id}/status`, { status: "completed" });
 
       queryClient.invalidateQueries({ queryKey: ["/api/seller/bookings"] });
@@ -125,7 +130,11 @@ export default function Bookings() {
       setSelectedBooking(null);
       setSelectedFiles([]);
     } catch (error: any) {
-      toast({ title: "Completion failed", description: error.message, variant: "destructive" });
+      toast({
+        title: "Completion failed",
+        description: error?.message || "An error occurred while uploading deliverables",
+        variant: "destructive",
+      });
     } finally {
       setUploadingFiles(false);
     }

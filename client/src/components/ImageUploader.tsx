@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, X, Loader2 } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { uploadFile } from "@/lib/uploadHelpers";
 
 interface UploadedImage {
   url: string;
@@ -72,33 +72,12 @@ export function ImageUploader({
         const file = validFiles[i];
         setUploadProgress(`Uploading ${i + 1} of ${validFiles.length}...`);
 
-        const result = await apiRequest(
-          "POST",
-          "/api/object-storage/upload-url",
-          { fileName: file.name, contentType: file.type }
-        ) as { uploadUrl: string; objectPath: string };
-        const { uploadUrl, objectPath } = result;
-
-        const uploadResponse = await fetch(uploadUrl, {
-          method: "PUT",
-          body: file,
-          headers: { "Content-Type": file.type },
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error(`Failed to upload ${file.name}`);
-        }
-
-        await apiRequest("POST", "/api/object-storage/finalize-upload", {
-          objectPath,
+        const { objectPath } = await uploadFile(file, {
+          kind: "default",
           visibility: "public",
         });
 
-        const normalizedPath = objectPath.startsWith("/")
-          ? `/objects${objectPath.split(".private")[1] || objectPath}`
-          : objectPath;
-        
-        newImages.push(normalizedPath);
+        newImages.push(objectPath);
       }
 
       onImagesChange([...images, ...newImages]);

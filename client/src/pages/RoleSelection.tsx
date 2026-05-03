@@ -8,6 +8,7 @@ import { ObjectUploader } from "@/components/ObjectUploader";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { requestUploadUrl, finalizeUpload } from "@/lib/uploadHelpers";
 import type { UploadResult } from "@uppy/core";
 import type { UserRole } from "@shared/schema";
 
@@ -17,28 +18,11 @@ export default function RoleSelection() {
   const { toast } = useToast();
 
   const getUploadUrl = async (file: File) => {
-    const response = await fetch("/api/object-storage/upload-url", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        fileName: file.name,
-        contentType: file.type,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to get upload URL (${response.status})`);
-    }
-
-    const data = await response.json();
+    const data = await requestUploadUrl(file);
     return {
       method: "PUT" as const,
       url: data.uploadUrl,
-      objectPath: data.objectPath as string,
+      objectPath: data.objectPath,
     };
   };
 
@@ -56,21 +40,12 @@ export default function RoleSelection() {
     }
 
     try {
-      // apiRequest already returns parsed JSON
-      const data = await apiRequest("POST", "/api/object-storage/finalize-upload", {
-        objectPath,
-        visibility: "private",
+      const data = await finalizeUpload(objectPath, { kind: "default", visibility: "private" });
+      setDocumentUrl(data.objectPath);
+      toast({
+        title: "Document uploaded",
+        description: "Your verification document has been uploaded successfully.",
       });
-
-      if (data && data.objectPath) {
-        setDocumentUrl(data.objectPath);
-        toast({
-          title: "Document uploaded",
-          description: "Your verification document has been uploaded successfully.",
-        });
-      } else {
-        throw new Error("No objectPath in response");
-      }
     } catch (error) {
       console.error("Error saving document:", error);
       toast({

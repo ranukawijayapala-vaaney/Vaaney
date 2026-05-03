@@ -21,6 +21,7 @@ import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 import { ObjectUploader } from "@/components/ObjectUploader";
+import { requestUploadUrl, finalizeUpload } from "@/lib/uploadHelpers";
 import type { UploadResult } from "@uppy/core";
 
 const formSchema = insertHomepageBannerSchema.extend({
@@ -156,29 +157,11 @@ export default function Banners() {
   };
 
   const getUploadUrl = async (file: File) => {
-    const response = await fetch("/api/object-storage/upload-url", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        fileName: file.name,
-        contentType: file.type,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to get upload URL (${response.status})`);
-    }
-
-    const data = await response.json();
-
+    const data = await requestUploadUrl(file);
     return {
       method: "PUT" as const,
       url: data.uploadUrl,
-      objectPath: data.objectPath as string,
+      objectPath: data.objectPath,
     };
   };
 
@@ -196,10 +179,7 @@ export default function Banners() {
       }
 
       try {
-        const response: any = await apiRequest("POST", "/api/object-storage/finalize-banner-upload", {
-          objectPath,
-        });
-
+        const response = await finalizeUpload(objectPath, { kind: "banner" });
         setUploadedImageUrl(response.objectPath);
         form.setValue("imageUrl", response.objectPath);
         toast({
@@ -210,7 +190,7 @@ export default function Banners() {
         console.error("Error saving image:", error);
         toast({
           title: "Upload failed",
-          description: "Failed to save banner image.",
+          description: error instanceof Error ? error.message : "Failed to save banner image.",
           variant: "destructive",
         });
       }

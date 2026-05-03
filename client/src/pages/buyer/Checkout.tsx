@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { uploadFile } from "@/lib/uploadHelpers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -825,61 +826,12 @@ export default function Checkout() {
 
                                         setIsUploadingSlip(true);
                                         try {
-                                          console.log("[UPLOAD] Starting upload process for:", file.name);
-                                          
-                                          // Get upload URL
-                                          const uploadResponse = await fetch("/api/object-storage/upload-url", {
-                                            method: "POST",
-                                            credentials: "include",
-                                            headers: {
-                                              'Content-Type': 'application/json',
-                                            },
-                                            body: JSON.stringify({
-                                              fileName: file.name,
-                                              contentType: file.type,
-                                            }),
-                                          });
-                                          
-                                          console.log("[UPLOAD] Upload URL response status:", uploadResponse.status);
-                                          
-                                          if (!uploadResponse.ok) {
-                                            const errorText = await uploadResponse.text();
-                                            console.error("[UPLOAD] Failed to get upload URL:", errorText);
-                                            throw new Error(`Failed to get upload URL: ${uploadResponse.status}`);
-                                          }
-                                          
-                                          const { uploadUrl, objectPath } = await uploadResponse.json();
-                                          console.log("[UPLOAD] Got upload URL and object path:", objectPath);
-
-                                          // Upload file to GCS
-                                          console.log("[UPLOAD] Uploading file to GCS...");
-                                          const uploadFileResponse = await fetch(uploadUrl, {
-                                            method: "PUT",
-                                            body: file,
-                                            headers: {
-                                              'Content-Type': file.type,
-                                            },
-                                          });
-
-                                          console.log("[UPLOAD] GCS upload response status:", uploadFileResponse.status);
-
-                                          if (!uploadFileResponse.ok) {
-                                            const errorText = await uploadFileResponse.text();
-                                            console.error("[UPLOAD] GCS upload failed:", errorText);
-                                            throw new Error(`Failed to upload file to storage: ${uploadFileResponse.status}`);
-                                          }
-
-                                          // Finalize upload
-                                          console.log("[UPLOAD] Finalizing upload...");
-                                          const data = await apiRequest("POST", "/api/object-storage/finalize-private-upload", {
-                                            objectPath,
+                                          const { rawObjectPath, url, objectPath } = await uploadFile(file, {
+                                            kind: "private",
                                             fileName: file.name,
                                           });
-
-                                          console.log("[UPLOAD] Finalize response:", data);
-
-                                          field.onChange(data.url);
-                                          setTransferSlipObjectPath(objectPath);
+                                          field.onChange(url ?? objectPath);
+                                          setTransferSlipObjectPath(rawObjectPath);
                                           toast({
                                             title: "Success",
                                             description: "Transfer slip uploaded successfully",
@@ -888,7 +840,7 @@ export default function Checkout() {
                                           console.error("[UPLOAD] Upload error:", error);
                                           toast({
                                             title: "Upload failed",
-                                            description: error.message || "An error occurred during upload",
+                                            description: error?.message || "An error occurred during upload",
                                             variant: "destructive",
                                           });
                                         } finally {

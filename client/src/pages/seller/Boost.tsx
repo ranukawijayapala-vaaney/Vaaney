@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { requestUploadUrl, finalizeUpload } from "@/lib/uploadHelpers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -165,28 +166,11 @@ export default function Boost() {
   });
 
   const getUploadUrl = async (file: File) => {
-    const response = await fetch("/api/object-storage/upload-url", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        fileName: file.name,
-        contentType: file.type,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to get upload URL (${response.status})`);
-    }
-
-    const data = await response.json();
+    const data = await requestUploadUrl(file);
     return {
       method: "PUT" as const,
       url: data.uploadUrl,
-      objectPath: data.objectPath as string,
+      objectPath: data.objectPath,
     };
   };
 
@@ -204,20 +188,12 @@ export default function Boost() {
     }
 
     try {
-      const data = await apiRequest("POST", "/api/object-storage/finalize-upload", {
-        objectPath,
-        visibility: "private",
+      const data = await finalizeUpload(objectPath, { kind: "default", visibility: "private" });
+      setPaymentSlipUrl(data.objectPath);
+      toast({
+        title: "Payment slip uploaded",
+        description: "Your payment slip has been uploaded successfully.",
       });
-
-      if (data && data.objectPath) {
-        setPaymentSlipUrl(data.objectPath);
-        toast({
-          title: "Payment slip uploaded",
-          description: "Your payment slip has been uploaded successfully.",
-        });
-      } else {
-        throw new Error("No objectPath in response");
-      }
     } catch (error) {
       console.error("Error saving payment slip:", error);
       toast({

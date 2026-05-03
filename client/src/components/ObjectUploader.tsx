@@ -71,7 +71,11 @@ export function ObjectUploader({
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const detail = await response.text().catch(() => "");
+        const trimmed = detail.trim().slice(0, 300);
+        throw new Error(
+          `Could not upload "${file.name}" to storage (HTTP ${response.status})${trimmed ? `: ${trimmed}` : ""}`,
+        );
       }
 
       onComplete?.({
@@ -80,11 +84,6 @@ export function ObjectUploader({
           objectPath,
         }],
         failed: [],
-      });
-      
-      toast({
-        title: "Upload successful",
-        description: "Your file has been uploaded successfully.",
       });
     } catch (error) {
       toast({
