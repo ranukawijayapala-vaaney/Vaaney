@@ -936,22 +936,27 @@ export default function Landing() {
             <div>
               <h4 className="font-semibold mb-4">For Buyers</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="/buyer-guidelines" className="hover:text-foreground transition-colors">Buyer Guidelines</a></li>
-                <li><a href="/signup" className="hover:text-foreground transition-colors">Start Shopping</a></li>
+                <li><a href="/buyer-guidelines" className="hover:text-foreground transition-colors" data-testid="link-footer-buyer-guidelines">Buyer Guidelines</a></li>
+                <li><a href="/signup" className="hover:text-foreground transition-colors" data-testid="link-footer-start-shopping">Start Shopping</a></li>
+                <li><a href="/legal/buyer-products" className="hover:text-foreground transition-colors" data-testid="link-footer-buyer-products">Product Purchase Terms</a></li>
+                <li><a href="/legal/buyer-services" className="hover:text-foreground transition-colors" data-testid="link-footer-buyer-services">Service Booking Terms</a></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4">For Sellers</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="/seller-guidelines" className="hover:text-foreground transition-colors">Seller Guidelines</a></li>
-                <li><a href="/signup" className="hover:text-foreground transition-colors">Become a Seller</a></li>
+                <li><a href="/seller-guidelines" className="hover:text-foreground transition-colors" data-testid="link-footer-seller-guidelines">Seller Guidelines</a></li>
+                <li><a href="/signup" className="hover:text-foreground transition-colors" data-testid="link-footer-become-seller">Become a Seller</a></li>
+                <li><a href="/legal/seller-products" className="hover:text-foreground transition-colors" data-testid="link-footer-seller-products">Product Supplier Agreement</a></li>
+                <li><a href="/legal/seller-services" className="hover:text-foreground transition-colors" data-testid="link-footer-seller-services">Service Supplier Agreement</a></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="/about" className="hover:text-foreground transition-colors">About Us</a></li>
-                <li><a href="/login" className="hover:text-foreground transition-colors">Sign In</a></li>
+                <li><a href="/about" className="hover:text-foreground transition-colors" data-testid="link-footer-about">About Us</a></li>
+                <li><a href="/login" className="hover:text-foreground transition-colors" data-testid="link-footer-signin">Sign In</a></li>
+                <li><a href="/legal/privacy" className="hover:text-foreground transition-colors" data-testid="link-footer-privacy">Privacy Policy</a></li>
               </ul>
             </div>
           </div>
