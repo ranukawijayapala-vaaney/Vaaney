@@ -442,6 +442,8 @@ export interface IStorage {
     yearsExperience?: number;
     facilities?: string;
     facilityImages?: string[];
+    website?: string | null;
+    companyProfileUrl?: string | null;
   }): Promise<User>;
   
   // Seller projects management
@@ -3890,6 +3892,8 @@ export class DatabaseStorage implements IStorage {
     yearsExperience?: number;
     facilities?: string;
     facilityImages?: string[];
+    website?: string | null;
+    companyProfileUrl?: string | null;
   }): Promise<User> {
     const [user] = await db
       .update(users)

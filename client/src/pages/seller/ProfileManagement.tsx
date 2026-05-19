@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { 
   Building2, MapPin, Award, Wrench, Clock, Plus, Trash2, Edit, 
-  Image as ImageIcon, Save, ExternalLink, Upload, Loader2
+  Image as ImageIcon, Save, ExternalLink, Upload, Loader2, Globe, FileText
 } from "lucide-react";
 import { ImageUploader } from "@/components/ImageUploader";
 import { Button } from "@/components/ui/button";
@@ -136,6 +136,13 @@ const profileFormSchema = z.object({
   aboutUs: z.string().optional(),
   yearsExperience: z.coerce.number().min(0).max(100).optional(),
   facilities: z.string().optional(),
+  website: z
+    .string()
+    .trim()
+    .max(500)
+    .url("Enter a valid URL (https://...)")
+    .or(z.literal(""))
+    .optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -162,8 +169,10 @@ export default function ProfileManagement() {
   const [galleryCaption, setGalleryCaption] = useState("");
   const [shopLogo, setShopLogo] = useState<string | null>(null);
   const [shopBackgroundImage, setShopBackgroundImage] = useState<string | null>(null);
+  const [companyProfileUrl, setCompanyProfileUrl] = useState<string | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isUploadingBackground, setIsUploadingBackground] = useState(false);
+  const [isUploadingCompanyPdf, setIsUploadingCompanyPdf] = useState(false);
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery<SellerProject[]>({
     queryKey: ["/api/seller/projects"],
@@ -182,6 +191,7 @@ export default function ProfileManagement() {
       aboutUs: user?.aboutUs || "",
       yearsExperience: user?.yearsExperience || undefined,
       facilities: user?.facilities || "",
+      website: user?.website || "",
     },
   });
 
@@ -194,6 +204,9 @@ export default function ProfileManagement() {
     }
     if (user?.shopBackgroundImage) {
       setShopBackgroundImage(user.shopBackgroundImage);
+    }
+    if (user?.companyProfileUrl) {
+      setCompanyProfileUrl(user.companyProfileUrl);
     }
   }, [user]);
 
@@ -210,10 +223,12 @@ export default function ProfileManagement() {
     mutationFn: async (data: ProfileFormValues) => {
       const payload = {
         ...data,
+        website: data.website?.trim() || null,
         expertise: expertiseList,
         yearsExperience: data.yearsExperience || null,
         shopLogo,
         shopBackgroundImage,
+        companyProfileUrl,
       };
       return apiRequest("PUT", "/api/seller/profile", payload);
     },
@@ -502,6 +517,84 @@ export default function ProfileManagement() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Company Profile PDF */}
+                    <div className="space-y-2">
+                      <Label>Company Profile (PDF)</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Upload a PDF document buyers can download to learn more about your company.
+                      </p>
+                      {companyProfileUrl ? (
+                        <div className="flex items-center gap-3 rounded-md border p-3" data-testid="card-company-profile">
+                          <FileText className="w-5 h-5 text-muted-foreground shrink-0" />
+                          <a
+                            href={companyProfileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm underline truncate flex-1"
+                            data-testid="link-company-profile-preview"
+                          >
+                            View uploaded company profile
+                          </a>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setCompanyProfileUrl(null)}
+                            data-testid="button-remove-company-profile"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <label className="flex items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer hover-elevate bg-muted/50">
+                          <div className="flex items-center gap-2">
+                            {isUploadingCompanyPdf ? (
+                              <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
+                            ) : (
+                              <FileText className="w-5 h-5 text-muted-foreground" />
+                            )}
+                            <span className="text-sm text-muted-foreground">
+                              {isUploadingCompanyPdf ? "Uploading..." : "Click to upload PDF (max 10MB)"}
+                            </span>
+                          </div>
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="application/pdf"
+                            disabled={isUploadingCompanyPdf}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              if (file.type !== "application/pdf") {
+                                toast({ title: "Invalid file", description: "Please select a PDF file", variant: "destructive" });
+                                return;
+                              }
+                              if (file.size > 10 * 1024 * 1024) {
+                                toast({ title: "File too large", description: "Maximum file size is 10MB", variant: "destructive" });
+                                return;
+                              }
+                              setIsUploadingCompanyPdf(true);
+                              try {
+                                const { objectPath } = await uploadFile(file, { kind: "default", visibility: "public" });
+                                setCompanyProfileUrl(objectPath);
+                                toast({ title: "Company profile uploaded" });
+                              } catch (err) {
+                                toast({
+                                  title: "Upload failed",
+                                  description: err instanceof Error ? err.message : "An error occurred",
+                                  variant: "destructive",
+                                });
+                              } finally {
+                                setIsUploadingCompanyPdf(false);
+                                e.target.value = "";
+                              }
+                            }}
+                            data-testid="input-upload-company-profile"
+                          />
+                        </label>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -541,6 +634,26 @@ export default function ProfileManagement() {
                           <FormLabel>Years of Experience</FormLabel>
                           <FormControl>
                             <Input type="number" min="0" max="100" placeholder="10" {...field} data-testid="input-years-experience" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={profileForm.control}
+                      name="website"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Website</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="url"
+                              placeholder="https://yourcompany.com"
+                              {...field}
+                              value={field.value ?? ""}
+                              data-testid="input-website"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

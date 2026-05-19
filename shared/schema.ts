@@ -90,6 +90,8 @@ export const users = pgTable("users", {
   yearsExperience: integer("years_experience"),
   facilities: text("facilities"),
   facilityImages: text("facility_images").array(),
+  website: varchar("website", { length: 500 }),
+  companyProfileUrl: varchar("company_profile_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

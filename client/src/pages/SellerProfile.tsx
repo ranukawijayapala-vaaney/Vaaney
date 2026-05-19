@@ -4,7 +4,8 @@ import { useParams, Link } from "wouter";
 import { 
   MapPin, Clock, Star, Award, Wrench, Building2, 
   ArrowLeft, ShoppingBag, Briefcase, Image as ImageIcon,
-  Calendar, ExternalLink, ChevronLeft, ChevronRight, X
+  Calendar, ExternalLink, ChevronLeft, ChevronRight, X,
+  Globe, FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -355,6 +356,45 @@ export default function SellerProfile() {
                       <p className="text-muted-foreground whitespace-pre-wrap" data-testid="text-about-us">
                         {seller.aboutUs}
                       </p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {(seller.website || seller.companyProfileUrl) && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Globe className="w-5 h-5" />
+                        Company Information
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {seller.website && (
+                        <a
+                          href={seller.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm hover:underline"
+                          data-testid="link-seller-website"
+                        >
+                          <Globe className="w-4 h-4 text-muted-foreground" />
+                          <span className="truncate">{seller.website}</span>
+                          <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                        </a>
+                      )}
+                      {seller.companyProfileUrl && (
+                        <a
+                          href={seller.companyProfileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm hover:underline"
+                          data-testid="link-seller-company-profile"
+                        >
+                          <FileText className="w-4 h-4 text-muted-foreground" />
+                          <span>Download company profile (PDF)</span>
+                          <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                        </a>
+                      )}
                     </CardContent>
                   </Card>
                 )}

@@ -1534,9 +1534,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Seller profile update - seller only
   app.put("/api/seller/profile", isAuthenticated, requireRole(["seller"]), async (req: AuthRequest, res: Response) => {
     try {
-      const profile = await storage.updateSellerProfile(req.user!.id, req.body);
+      const updateSellerProfileSchema = z.object({
+        shopName: z.string().min(1).max(255).optional(),
+        shopLogo: z.string().nullable().optional(),
+        shopBackgroundImage: z.string().nullable().optional(),
+        location: z.string().max(255).optional(),
+        expertise: z.array(z.string()).optional(),
+        aboutUs: z.string().optional(),
+        yearsExperience: z.number().int().min(0).max(100).nullable().optional(),
+        facilities: z.string().optional(),
+        facilityImages: z.array(z.string()).optional(),
+        website: z
+          .string()
+          .trim()
+          .max(500)
+          .url("Website must be a valid URL")
+          .or(z.literal(""))
+          .nullable()
+          .optional()
+          .transform((v) => (v === "" ? null : v)),
+        companyProfileUrl: z
+          .string()
+          .max(1000)
+          .nullable()
+          .optional()
+          .transform((v) => (v === "" ? null : v))
+          .refine(
+            (v) => v === null || v === undefined || v.startsWith("/objects/") || v.startsWith("https://"),
+            { message: "Company profile must be an uploaded file" },
+          ),
+      });
+      const parsed = updateSellerProfileSchema.parse(req.body);
+      const profile = await storage.updateSellerProfile(req.user!.id, parsed);
       res.json(profile);
     } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid profile data", errors: error.errors });
+      }
       res.status(500).json({ message: error.message });
     }
   });
