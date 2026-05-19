@@ -128,7 +128,17 @@ function toDecimalString(amount: number | string | null | undefined, precision: 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
-  updateUserRole(userId: string, role: UserRole, verificationDocumentUrl: string): Promise<User>;
+  updateUserRole(
+    userId: string,
+    role: UserRole,
+    verificationDocumentUrl: string,
+    sellerExtras?: {
+      sellerType?: "individual" | "business";
+      companyName?: string | null;
+      businessRegistrationNumber?: string | null;
+      taxId?: string | null;
+    },
+  ): Promise<User>;
   updateUserVerificationStatus(userId: string, status: VerificationStatus, rejectionReason?: string): Promise<User>;
   updateUserCommission(userId: string, rate: string): Promise<User>;
   getAllUsers(roleFilter?: string, statusFilter?: string): Promise<User[]>;
@@ -466,15 +476,38 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUserRole(userId: string, role: UserRole, verificationDocumentUrl: string): Promise<User> {
+  async updateUserRole(
+    userId: string,
+    role: UserRole,
+    verificationDocumentUrl: string,
+    sellerExtras?: {
+      sellerType?: "individual" | "business";
+      companyName?: string | null;
+      businessRegistrationNumber?: string | null;
+      taxId?: string | null;
+    },
+  ): Promise<User> {
+    const update: any = {
+      role,
+      verificationDocumentUrl,
+      verificationStatus: "pending",
+      updatedAt: new Date(),
+    };
+    if (role === "seller" && sellerExtras) {
+      if (sellerExtras.sellerType) update.sellerType = sellerExtras.sellerType;
+      if (sellerExtras.sellerType === "business") {
+        update.companyName = sellerExtras.companyName ?? null;
+        update.businessRegistrationNumber = sellerExtras.businessRegistrationNumber ?? null;
+        update.taxId = sellerExtras.taxId ?? null;
+      } else if (sellerExtras.sellerType === "individual") {
+        update.companyName = null;
+        update.businessRegistrationNumber = null;
+        update.taxId = null;
+      }
+    }
     const [user] = await db
       .update(users)
-      .set({
-        role,
-        verificationDocumentUrl,
-        verificationStatus: "pending",
-        updatedAt: new Date(),
-      })
+      .set(update)
       .where(eq(users.id, userId))
       .returning();
     return user;

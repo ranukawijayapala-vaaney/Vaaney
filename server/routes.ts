@@ -686,9 +686,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Role selection and verification
   app.post("/api/user/role", isAuthenticated, async (req: AuthRequest, res: Response) => {
     const userId = (req.user as any)?.id;
-    const { role, verificationDocumentUrl, acceptedConsents } = req.body;
+    const {
+      role,
+      verificationDocumentUrl,
+      acceptedConsents,
+      sellerType,
+      companyName,
+      businessRegistrationNumber,
+      taxId,
+    } = req.body;
     if (!userId || !role || !verificationDocumentUrl) {
       return res.status(400).json({ message: "Missing required fields" });
+    }
+    // Only allow self-service onboarding into buyer/seller; never admin.
+    if (role !== "buyer" && role !== "seller") {
+      return res.status(400).json({ message: "Invalid role" });
+    }
+    const trimmedCompanyName = typeof companyName === "string" ? companyName.trim() : "";
+    const trimmedBR = typeof businessRegistrationNumber === "string" ? businessRegistrationNumber.trim() : "";
+    const trimmedTaxId = typeof taxId === "string" ? taxId.trim() : "";
+    if (role === "seller") {
+      if (!sellerType || !["individual", "business"].includes(sellerType)) {
+        return res.status(400).json({ message: "Please select a seller type (individual freelancer or business)" });
+      }
+      if (sellerType === "business" && (!trimmedCompanyName || !trimmedBR)) {
+        return res.status(400).json({ message: "Company name and business registration number are required for business sellers" });
+      }
     }
     const consentCheck = validateConsentsForRole(role, acceptedConsents);
     if (!consentCheck.ok) {
@@ -701,7 +724,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Cannot change role for already approved users" });
       }
 
-      const user = await storage.updateUserRole(userId, role, verificationDocumentUrl);
+      const user = await storage.updateUserRole(
+        userId,
+        role,
+        verificationDocumentUrl,
+        role === "seller"
+          ? {
+              sellerType,
+              companyName: sellerType === "business" ? trimmedCompanyName : null,
+              businessRegistrationNumber: sellerType === "business" ? trimmedBR : null,
+              taxId: sellerType === "business" ? (trimmedTaxId || null) : null,
+            }
+          : undefined,
+      );
 
       try {
         await recordConsents(userId, consentCheck.documents, req);

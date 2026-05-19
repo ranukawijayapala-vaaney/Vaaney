@@ -73,6 +73,13 @@ export const users = pgTable("users", {
   bankAccountNumber: varchar("bank_account_number", { length: 100 }),
   bankAccountHolderName: varchar("bank_account_holder_name", { length: 255 }),
   bankSwiftCode: varchar("bank_swift_code", { length: 20 }),
+  // Seller type & business details (only set when role = "seller")
+  // "individual" = freelancer (no company info required)
+  // "business"   = registered company (companyName + businessRegistrationNumber required)
+  sellerType: varchar("seller_type", { length: 20 }),
+  companyName: varchar("company_name", { length: 255 }),
+  businessRegistrationNumber: varchar("business_registration_number", { length: 100 }),
+  taxId: varchar("tax_id", { length: 100 }),
   // Extended seller profile fields
   shopName: varchar("shop_name", { length: 255 }),
   shopLogo: varchar("shop_logo"),

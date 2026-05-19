@@ -142,6 +142,7 @@ export async function setupAuth(app: Express) {
         email, password, firstName, lastName, role,
         contactNumber, streetAddress, city, postalCode, country,
         bankName, bankAccountNumber, bankAccountHolderName, bankSwiftCode,
+        sellerType, companyName, businessRegistrationNumber, taxId,
         acceptedConsents
       } = req.body;
       const files = req.files as Express.Multer.File[];
@@ -187,6 +188,18 @@ export async function setupAuth(app: Express) {
         // Verify bank details are provided
         if (!bankName || !bankAccountNumber || !bankAccountHolderName) {
           return res.status(400).json({ message: "Bank details are required for sellers" });
+        }
+
+        // Validate seller type and business details
+        if (!sellerType || !["individual", "business"].includes(sellerType)) {
+          return res.status(400).json({ message: "Please select a seller type (individual freelancer or business)" });
+        }
+        if (sellerType === "business") {
+          const trimmedCompanyName = typeof companyName === "string" ? companyName.trim() : "";
+          const trimmedBR = typeof businessRegistrationNumber === "string" ? businessRegistrationNumber.trim() : "";
+          if (!trimmedCompanyName || !trimmedBR) {
+            return res.status(400).json({ message: "Company name and business registration number are required for business sellers" });
+          }
         }
       }
 
@@ -243,6 +256,13 @@ export async function setupAuth(app: Express) {
         userData.bankAccountNumber = bankAccountNumber;
         userData.bankAccountHolderName = bankAccountHolderName;
         userData.bankSwiftCode = bankSwiftCode || null;
+        userData.sellerType = sellerType;
+        if (sellerType === "business") {
+          userData.companyName = typeof companyName === "string" ? companyName.trim() : companyName;
+          userData.businessRegistrationNumber = typeof businessRegistrationNumber === "string" ? businessRegistrationNumber.trim() : businessRegistrationNumber;
+          const trimmedTaxId = typeof taxId === "string" ? taxId.trim() : "";
+          userData.taxId = trimmedTaxId || null;
+        }
       }
       
       const [newUser] = await db

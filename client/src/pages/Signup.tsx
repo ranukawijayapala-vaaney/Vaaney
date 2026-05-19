@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { LEGAL_DOCUMENT_PATHS, LEGAL_DOCUMENT_TITLES, requiredConsentsForRole, type LegalDocumentType } from "@shared/legalVersions";
-import { UserPlus, ArrowLeft, ShoppingCart, Store, Eye, EyeOff } from "lucide-react";
+import { UserPlus, ArrowLeft, ShoppingCart, Store, Eye, EyeOff, User, Building2 } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import { Separator } from "@/components/ui/separator";
 
@@ -34,6 +34,11 @@ const signupSchema = z.object({
   bankAccountNumber: z.string().optional(),
   bankAccountHolderName: z.string().optional(),
   bankSwiftCode: z.string().optional(),
+  // Seller type & business details
+  sellerType: z.enum(["individual", "business"]).optional(),
+  companyName: z.string().optional(),
+  businessRegistrationNumber: z.string().optional(),
+  taxId: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -55,6 +60,15 @@ const signupSchema = z.object({
 }, {
   message: "All seller profile fields are required",
   path: ["contactNumber"],
+}).refine((data) => {
+  // Business sellers must provide company details
+  if (data.role === "seller" && data.sellerType === "business") {
+    return Boolean(data.companyName && data.businessRegistrationNumber);
+  }
+  return true;
+}, {
+  message: "Company name and business registration number are required",
+  path: ["companyName"],
 });
 
 type SignupFormData = z.infer<typeof signupSchema>;
@@ -64,8 +78,9 @@ export default function Signup() {
   const [, navigate] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [step, setStep] = useState<"role" | "form">("role");
+  const [step, setStep] = useState<"role" | "sellerType" | "form">("role");
   const [selectedRole, setSelectedRole] = useState<"buyer" | "seller" | null>(null);
+  const [selectedSellerType, setSelectedSellerType] = useState<"individual" | "business" | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptedConsents, setAcceptedConsents] = useState<Record<string, boolean>>({});
@@ -88,12 +103,26 @@ export default function Signup() {
       bankAccountNumber: "",
       bankAccountHolderName: "",
       bankSwiftCode: "",
+      sellerType: undefined,
+      companyName: "",
+      businessRegistrationNumber: "",
+      taxId: "",
     },
   });
 
   const handleRoleSelect = (role: "buyer" | "seller") => {
     setSelectedRole(role);
     form.setValue("role", role);
+    if (role === "seller") {
+      setStep("sellerType");
+    } else {
+      setStep("form");
+    }
+  };
+
+  const handleSellerTypeSelect = (type: "individual" | "business") => {
+    setSelectedSellerType(type);
+    form.setValue("sellerType", type);
     setStep("form");
   };
 
@@ -140,6 +169,12 @@ export default function Signup() {
         formData.append("bankAccountNumber", data.bankAccountNumber || "");
         formData.append("bankAccountHolderName", data.bankAccountHolderName || "");
         formData.append("bankSwiftCode", data.bankSwiftCode || "");
+        formData.append("sellerType", data.sellerType || "");
+        if (data.sellerType === "business") {
+          formData.append("companyName", data.companyName || "");
+          formData.append("businessRegistrationNumber", data.businessRegistrationNumber || "");
+          formData.append("taxId", data.taxId || "");
+        }
       }
       
       // Add document files for all users
@@ -194,6 +229,14 @@ export default function Signup() {
   const handleBackToRoleSelection = () => {
     setStep("role");
     setSelectedRole(null);
+    setSelectedSellerType(null);
+    form.setValue("sellerType", undefined);
+  };
+
+  const handleBackToSellerType = () => {
+    setStep("sellerType");
+    setSelectedSellerType(null);
+    form.setValue("sellerType", undefined);
   };
 
   if (step === "role") {
@@ -276,6 +319,88 @@ export default function Signup() {
     );
   }
 
+  if (step === "sellerType") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+        <Card className="w-full max-w-2xl">
+          <CardHeader className="space-y-1">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleBackToRoleSelection}
+                data-testid="button-back-from-seller-type"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <CardTitle className="text-2xl font-bold">What kind of seller are you?</CardTitle>
+                <CardDescription className="mt-1">
+                  Choose the option that best describes how you'll sell on Vaaney
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <Card
+                className="cursor-pointer transition-all hover-elevate active-elevate-2 border-2"
+                onClick={() => handleSellerTypeSelect("individual")}
+                data-testid="card-seller-type-individual"
+              >
+                <CardContent className="p-6 flex flex-col items-center text-center space-y-4">
+                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="h-8 w-8 text-primary" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-semibold">Individual Freelancer</h3>
+                    <p className="text-sm text-muted-foreground">
+                      I sell as an individual or freelancer. I'll verify with my personal ID — no
+                      company registration needed.
+                    </p>
+                  </div>
+                  <Button className="w-full" data-testid="button-select-seller-individual">
+                    Continue as Individual
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card
+                className="cursor-pointer transition-all hover-elevate active-elevate-2 border-2"
+                onClick={() => handleSellerTypeSelect("business")}
+                data-testid="card-seller-type-business"
+              >
+                <CardContent className="p-6 flex flex-col items-center text-center space-y-4">
+                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Building2 className="h-8 w-8 text-primary" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-semibold">Business / Company</h3>
+                    <p className="text-sm text-muted-foreground">
+                      I sell on behalf of a registered company. I'll provide my Business
+                      Registration (BR) details and tax ID.
+                    </p>
+                  </div>
+                  <Button className="w-full" data-testid="button-select-seller-business">
+                    Continue as Business
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-2">
+            <div className="text-sm text-muted-foreground text-center">
+              Already have an account?{" "}
+              <Link href="/login" className="text-primary hover:underline" data-testid="link-login">
+                Sign in
+              </Link>
+            </div>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md">
@@ -284,14 +409,20 @@ export default function Signup() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={handleBackToRoleSelection}
+              onClick={selectedRole === "seller" ? handleBackToSellerType : handleBackToRoleSelection}
               data-testid="button-back-to-role"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
               <CardTitle className="text-2xl font-bold">
-                Create {selectedRole === "buyer" ? "Buyer" : "Seller"} Account
+                Create {selectedRole === "buyer"
+                  ? "Buyer"
+                  : selectedSellerType === "business"
+                    ? "Business Seller"
+                    : selectedSellerType === "individual"
+                      ? "Freelancer"
+                      : "Seller"} Account
               </CardTitle>
               <CardDescription>
                 Enter your information to get started
@@ -430,6 +561,66 @@ export default function Signup() {
                   </FormItem>
                 )}
               />
+
+              {selectedRole === "seller" && selectedSellerType === "business" && (
+                <div className="space-y-4 pt-4 border-t">
+                  <h3 className="text-sm font-semibold">Business Details</h3>
+
+                  <FormField
+                    control={form.control}
+                    name="companyName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Registered Company Name *</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g. Acme Print (Pvt) Ltd"
+                            {...field}
+                            data-testid="input-company-name"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="businessRegistrationNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Business Registration No. *</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g. PV-00123456"
+                            {...field}
+                            data-testid="input-business-registration"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="taxId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tax ID / VAT No. (Optional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g. 123456789-7000"
+                            {...field}
+                            data-testid="input-tax-id"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
 
               {selectedRole === "seller" && (
                 <>

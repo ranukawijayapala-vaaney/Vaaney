@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ShoppingBag, Store, Upload, FileText } from "lucide-react";
+import { ShoppingBag, Store, Upload, FileText, User, Building2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +23,10 @@ import {
 
 export default function RoleSelection() {
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+  const [sellerType, setSellerType] = useState<"individual" | "business" | null>(null);
+  const [companyName, setCompanyName] = useState("");
+  const [businessRegistrationNumber, setBusinessRegistrationNumber] = useState("");
+  const [taxId, setTaxId] = useState("");
   const [documentUrl, setDocumentUrl] = useState<string>("");
   const [acceptedConsents, setAcceptedConsents] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
@@ -68,6 +73,12 @@ export default function RoleSelection() {
   const submitMutation = useMutation({
     mutationFn: async () => {
       if (!selectedRole) throw new Error("Please select a role");
+      if (selectedRole === "seller" && !sellerType) {
+        throw new Error("Please choose whether you're signing up as an individual freelancer or a business");
+      }
+      if (selectedRole === "seller" && sellerType === "business" && (!companyName.trim() || !businessRegistrationNumber.trim())) {
+        throw new Error("Company name and business registration number are required for business sellers");
+      }
       if (!documentUrl) throw new Error("Please upload a verification document");
       const required = requiredConsentsForRole(selectedRole);
       const missing = required.filter((doc) => !acceptedConsents[doc]);
@@ -79,6 +90,12 @@ export default function RoleSelection() {
         role: selectedRole,
         verificationDocumentUrl: documentUrl,
         acceptedConsents: required,
+        ...(selectedRole === "seller" ? {
+          sellerType,
+          companyName: sellerType === "business" ? companyName.trim() : null,
+          businessRegistrationNumber: sellerType === "business" ? businessRegistrationNumber.trim() : null,
+          taxId: sellerType === "business" ? (taxId.trim() || null) : null,
+        } : {}),
       });
     },
     onSuccess: () => {
@@ -154,6 +171,79 @@ export default function RoleSelection() {
               </div>
             </RadioGroup>
           </div>
+
+          {selectedRole === "seller" && (
+            <div className="space-y-4 animate-in fade-in-50">
+              <Label className="text-base font-semibold">I'm signing up as a...</Label>
+              <RadioGroup value={sellerType || ""} onValueChange={(v) => setSellerType(v as "individual" | "business")}>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <Card className={`cursor-pointer transition-all hover-elevate ${sellerType === "individual" ? "ring-2 ring-primary" : ""}`}>
+                    <label htmlFor="seller-type-individual" className="cursor-pointer">
+                      <CardContent className="p-4 flex items-start gap-3">
+                        <RadioGroupItem value="individual" id="seller-type-individual" data-testid="radio-seller-type-individual" />
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-primary" />
+                            <h4 className="font-semibold">Individual Freelancer</h4>
+                          </div>
+                          <p className="text-xs text-muted-foreground">Verify with personal ID. No company registration required.</p>
+                        </div>
+                      </CardContent>
+                    </label>
+                  </Card>
+                  <Card className={`cursor-pointer transition-all hover-elevate ${sellerType === "business" ? "ring-2 ring-primary" : ""}`}>
+                    <label htmlFor="seller-type-business" className="cursor-pointer">
+                      <CardContent className="p-4 flex items-start gap-3">
+                        <RadioGroupItem value="business" id="seller-type-business" data-testid="radio-seller-type-business" />
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-primary" />
+                            <h4 className="font-semibold">Business / Company</h4>
+                          </div>
+                          <p className="text-xs text-muted-foreground">Provide Business Registration (BR) and tax ID.</p>
+                        </div>
+                      </CardContent>
+                    </label>
+                  </Card>
+                </div>
+              </RadioGroup>
+
+              {sellerType === "business" && (
+                <div className="space-y-3 pt-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="rs-company-name">Registered Company Name *</Label>
+                    <Input
+                      id="rs-company-name"
+                      placeholder="e.g. Acme Print (Pvt) Ltd"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      data-testid="input-rs-company-name"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="rs-br">Business Registration No. *</Label>
+                    <Input
+                      id="rs-br"
+                      placeholder="e.g. PV-00123456"
+                      value={businessRegistrationNumber}
+                      onChange={(e) => setBusinessRegistrationNumber(e.target.value)}
+                      data-testid="input-rs-business-registration"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="rs-tax">Tax ID / VAT No. (Optional)</Label>
+                    <Input
+                      id="rs-tax"
+                      placeholder="e.g. 123456789-7000"
+                      value={taxId}
+                      onChange={(e) => setTaxId(e.target.value)}
+                      data-testid="input-rs-tax-id"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {selectedRole && (
             <div className="space-y-4 animate-in fade-in-50">
@@ -285,6 +375,8 @@ export default function RoleSelection() {
                 !selectedRole ||
                 !documentUrl ||
                 submitMutation.isPending ||
+                (selectedRole === "seller" && !sellerType) ||
+                (selectedRole === "seller" && sellerType === "business" && (!companyName.trim() || !businessRegistrationNumber.trim())) ||
                 requiredConsentsForRole(selectedRole).some(
                   (doc) => !acceptedConsents[doc],
                 )
