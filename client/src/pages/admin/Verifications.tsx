@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { FileCheck, FileX, Eye, CheckCircle, XCircle } from "lucide-react";
+import { FileCheck, FileX, Eye, CheckCircle, XCircle, User as UserIcon, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -172,6 +172,7 @@ export default function Verifications() {
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead>Requested Role</TableHead>
+                    <TableHead>Seller Type</TableHead>
                     <TableHead>Document</TableHead>
                     <TableHead>Submitted</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -190,6 +191,42 @@ export default function Verifications() {
                         <Badge variant="secondary" className={getRoleColor(user.role || "")} data-testid={`badge-role-${user.id}`}>
                           {user.role || "none"}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {user.role === "seller" ? (
+                          user.sellerType === "business" ? (
+                            <div className="space-y-0.5" data-testid={`text-seller-type-${user.id}`}>
+                              <Badge variant="secondary" className="gap-1">
+                                <Building2 className="h-3 w-3" />
+                                Business
+                              </Badge>
+                              {user.companyName && (
+                                <div className="text-xs font-medium" data-testid={`text-company-name-${user.id}`}>
+                                  {user.companyName}
+                                </div>
+                              )}
+                              {user.businessRegistrationNumber && (
+                                <div className="text-xs text-muted-foreground" data-testid={`text-business-registration-${user.id}`}>
+                                  BR: {user.businessRegistrationNumber}
+                                </div>
+                              )}
+                              {user.taxId && (
+                                <div className="text-xs text-muted-foreground" data-testid={`text-tax-id-${user.id}`}>
+                                  Tax: {user.taxId}
+                                </div>
+                              )}
+                            </div>
+                          ) : user.sellerType === "individual" ? (
+                            <Badge variant="secondary" className="gap-1" data-testid={`text-seller-type-${user.id}`}>
+                              <UserIcon className="h-3 w-3" />
+                              Individual
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Not specified</span>
+                          )
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {user.verificationDocumentUrl ? (

@@ -141,6 +141,11 @@ export interface IStorage {
   ): Promise<User>;
   updateUserVerificationStatus(userId: string, status: VerificationStatus, rejectionReason?: string): Promise<User>;
   updateUserCommission(userId: string, rate: string): Promise<User>;
+  updateSellerType(
+    userId: string,
+    sellerType: "individual" | "business",
+    business?: { companyName?: string | null; businessRegistrationNumber?: string | null; taxId?: string | null },
+  ): Promise<User>;
   getAllUsers(roleFilter?: string, statusFilter?: string): Promise<User[]>;
   
   createProduct(product: InsertProduct & { sellerId: string }): Promise<Product>;
@@ -533,6 +538,32 @@ export class DatabaseStorage implements IStorage {
         commissionRate: rate,
         updatedAt: new Date(),
       })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async updateSellerType(
+    userId: string,
+    sellerType: "individual" | "business",
+    business?: { companyName?: string | null; businessRegistrationNumber?: string | null; taxId?: string | null },
+  ): Promise<User> {
+    const update: any = {
+      sellerType,
+      updatedAt: new Date(),
+    };
+    if (sellerType === "business") {
+      update.companyName = business?.companyName ?? null;
+      update.businessRegistrationNumber = business?.businessRegistrationNumber ?? null;
+      update.taxId = business?.taxId ?? null;
+    } else {
+      update.companyName = null;
+      update.businessRegistrationNumber = null;
+      update.taxId = null;
+    }
+    const [user] = await db
+      .update(users)
+      .set(update)
       .where(eq(users.id, userId))
       .returning();
     return user;

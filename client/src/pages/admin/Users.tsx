@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Search, UserCheck, Users as UsersIcon, DollarSign, Edit2, FileSpreadsheet, Mail, Phone, MapPin, Building2, Calendar, FileText, Eye, MailCheck, UserPlus } from "lucide-react";
+import { Search, UserCheck, Users as UsersIcon, DollarSign, Edit2, FileSpreadsheet, Mail, Phone, MapPin, Building2, Calendar, FileText, Eye, MailCheck, UserPlus, User as UserIcon, Briefcase } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,11 @@ export default function Users() {
   const [documentPreviewOpen, setDocumentPreviewOpen] = useState(false);
   const [documents, setDocuments] = useState<DocumentData[]>([]);
   const [createAdminOpen, setCreateAdminOpen] = useState(false);
+  const [sellerTypeDialogOpen, setSellerTypeDialogOpen] = useState(false);
+  const [editSellerType, setEditSellerType] = useState<"individual" | "business">("individual");
+  const [editCompanyName, setEditCompanyName] = useState("");
+  const [editBusinessRegistration, setEditBusinessRegistration] = useState("");
+  const [editTaxId, setEditTaxId] = useState("");
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [newAdminPassword, setNewAdminPassword] = useState("");
   const [newAdminFirstName, setNewAdminFirstName] = useState("");
@@ -102,6 +107,62 @@ export default function Users() {
       });
     },
   });
+
+  const updateSellerTypeMutation = useMutation({
+    mutationFn: async (data: {
+      userId: string;
+      sellerType: "individual" | "business";
+      companyName?: string;
+      businessRegistrationNumber?: string;
+      taxId?: string;
+    }) => {
+      return await apiRequest("PUT", `/api/admin/users/${data.userId}/seller-type`, {
+        sellerType: data.sellerType,
+        companyName: data.companyName,
+        businessRegistrationNumber: data.businessRegistrationNumber,
+        taxId: data.taxId,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ predicate: (q) => (q.queryKey[0] as string)?.startsWith("/api/admin/users") });
+      toast({ title: "Seller type updated successfully!" });
+      setSellerTypeDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to update seller type", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleEditSellerType = (user: User) => {
+    setSelectedUser(user);
+    setEditSellerType((user.sellerType as "individual" | "business") || "individual");
+    setEditCompanyName(user.companyName || "");
+    setEditBusinessRegistration(user.businessRegistrationNumber || "");
+    setEditTaxId(user.taxId || "");
+    setProfileDialogOpen(false);
+    setSellerTypeDialogOpen(true);
+  };
+
+  const handleSaveSellerType = () => {
+    if (!selectedUser) return;
+    if (editSellerType === "business") {
+      if (!editCompanyName.trim() || !editBusinessRegistration.trim()) {
+        toast({
+          title: "Missing required fields",
+          description: "Company name and Business Registration No. are required for business sellers.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    updateSellerTypeMutation.mutate({
+      userId: selectedUser.id,
+      sellerType: editSellerType,
+      companyName: editSellerType === "business" ? editCompanyName.trim() : undefined,
+      businessRegistrationNumber: editSellerType === "business" ? editBusinessRegistration.trim() : undefined,
+      taxId: editSellerType === "business" ? editTaxId.trim() : undefined,
+    });
+  };
 
   const createAdminMutation = useMutation({
     mutationFn: async (data: { email: string; password: string; firstName: string; lastName: string }) => {
@@ -616,6 +677,60 @@ export default function Users() {
               {selectedUser.role === "seller" && (
                 <>
                   <div className="space-y-3">
+                    <h3 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
+                      <Briefcase className="h-4 w-4" />
+                      Seller Type
+                    </h3>
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <div className="space-y-1">
+                        {selectedUser.sellerType === "business" ? (
+                          <div className="space-y-1">
+                            <Badge variant="secondary" className="gap-1" data-testid="badge-profile-seller-type">
+                              <Building2 className="h-3 w-3" />
+                              Business
+                            </Badge>
+                            {selectedUser.companyName && (
+                              <p className="font-medium" data-testid="text-profile-company-name">
+                                {selectedUser.companyName}
+                              </p>
+                            )}
+                            {selectedUser.businessRegistrationNumber && (
+                              <p className="text-sm text-muted-foreground" data-testid="text-profile-business-registration">
+                                BR No.: {selectedUser.businessRegistrationNumber}
+                              </p>
+                            )}
+                            {selectedUser.taxId && (
+                              <p className="text-sm text-muted-foreground" data-testid="text-profile-tax-id">
+                                Tax ID: {selectedUser.taxId}
+                              </p>
+                            )}
+                          </div>
+                        ) : selectedUser.sellerType === "individual" ? (
+                          <Badge variant="secondary" className="gap-1" data-testid="badge-profile-seller-type">
+                            <UserIcon className="h-3 w-3" />
+                            Individual Freelancer
+                          </Badge>
+                        ) : (
+                          <p className="text-sm text-muted-foreground" data-testid="text-profile-seller-type-missing">
+                            Not specified (legacy account — set this for accurate records)
+                          </p>
+                        )}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditSellerType(selectedUser)}
+                        data-testid="button-edit-seller-type"
+                      >
+                        <Edit2 className="h-4 w-4 mr-2" />
+                        {selectedUser.sellerType ? "Edit" : "Set"} Seller Type
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-3">
                     <h3 className="font-semibold text-sm text-muted-foreground">Business Contact Information</h3>
                     <div className="grid grid-cols-2 gap-4">
                       {selectedUser.contactNumber && (
@@ -849,6 +964,104 @@ export default function Users() {
         description={`Verification documents for ${selectedUser?.firstName} ${selectedUser?.lastName}`}
         testIdPrefix="user-document"
       />
+
+      <Dialog open={sellerTypeDialogOpen} onOpenChange={setSellerTypeDialogOpen}>
+        <DialogContent data-testid="dialog-edit-seller-type">
+          <DialogHeader>
+            <DialogTitle>Set Seller Type</DialogTitle>
+            <DialogDescription>
+              Choose whether {selectedUser?.firstName} {selectedUser?.lastName} sells as an individual
+              freelancer or on behalf of a registered business. Use this to backfill legacy seller accounts.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <Card
+                className={`cursor-pointer hover-elevate ${editSellerType === "individual" ? "ring-2 ring-primary" : ""}`}
+                onClick={() => setEditSellerType("individual")}
+                data-testid="card-edit-seller-type-individual"
+              >
+                <CardContent className="p-4 flex items-center gap-3">
+                  <UserIcon className="h-5 w-5 text-primary" />
+                  <div>
+                    <div className="font-medium">Individual</div>
+                    <div className="text-xs text-muted-foreground">Freelancer / sole trader</div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card
+                className={`cursor-pointer hover-elevate ${editSellerType === "business" ? "ring-2 ring-primary" : ""}`}
+                onClick={() => setEditSellerType("business")}
+                data-testid="card-edit-seller-type-business"
+              >
+                <CardContent className="p-4 flex items-center gap-3">
+                  <Building2 className="h-5 w-5 text-primary" />
+                  <div>
+                    <div className="font-medium">Business</div>
+                    <div className="text-xs text-muted-foreground">Registered company</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {editSellerType === "business" && (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-company-name">Registered Company Name *</Label>
+                  <Input
+                    id="edit-company-name"
+                    value={editCompanyName}
+                    onChange={(e) => setEditCompanyName(e.target.value)}
+                    placeholder="e.g. Acme Print (Pvt) Ltd"
+                    data-testid="input-edit-company-name"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-business-registration">Business Registration No. *</Label>
+                  <Input
+                    id="edit-business-registration"
+                    value={editBusinessRegistration}
+                    onChange={(e) => setEditBusinessRegistration(e.target.value)}
+                    placeholder="e.g. PV-00123456"
+                    data-testid="input-edit-business-registration"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-tax-id">Tax ID / VAT No. (Optional)</Label>
+                  <Input
+                    id="edit-tax-id"
+                    value={editTaxId}
+                    onChange={(e) => setEditTaxId(e.target.value)}
+                    placeholder="e.g. 123456789-7000"
+                    data-testid="input-edit-tax-id"
+                  />
+                </div>
+              </div>
+            )}
+            {editSellerType === "individual" && (
+              <p className="text-xs text-muted-foreground">
+                Switching to Individual will clear any stored company name, BR number, and tax ID for this seller.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setSellerTypeDialogOpen(false)}
+              data-testid="button-cancel-edit-seller-type"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveSellerType}
+              disabled={updateSellerTypeMutation.isPending}
+              data-testid="button-save-seller-type"
+            >
+              {updateSellerTypeMutation.isPending ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={createAdminOpen} onOpenChange={setCreateAdminOpen}>
         <DialogContent>

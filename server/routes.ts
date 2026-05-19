@@ -5177,6 +5177,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: backfill or correct a seller's type (individual freelancer vs business)
+  app.put("/api/admin/users/:id/seller-type", isAuthenticated, requireRole(["admin"]), async (req: Request, res: Response) => {
+    const { sellerType, companyName, businessRegistrationNumber, taxId } = req.body;
+    if (!sellerType || !["individual", "business"].includes(sellerType)) {
+      return res.status(400).json({ message: "sellerType must be 'individual' or 'business'" });
+    }
+    const trimmedCompanyName = typeof companyName === "string" ? companyName.trim() : "";
+    const trimmedBR = typeof businessRegistrationNumber === "string" ? businessRegistrationNumber.trim() : "";
+    const trimmedTaxId = typeof taxId === "string" ? taxId.trim() : "";
+    if (sellerType === "business" && (!trimmedCompanyName || !trimmedBR)) {
+      return res.status(400).json({ message: "Company name and business registration number are required for business sellers" });
+    }
+    try {
+      const target = await storage.getUser(req.params.id);
+      if (!target) return res.status(404).json({ message: "User not found" });
+      if (target.role !== "seller") {
+        return res.status(400).json({ message: "Seller type can only be set on seller accounts" });
+      }
+      const user = await storage.updateSellerType(req.params.id, sellerType, {
+        companyName: sellerType === "business" ? trimmedCompanyName : null,
+        businessRegistrationNumber: sellerType === "business" ? trimmedBR : null,
+        taxId: sellerType === "business" ? (trimmedTaxId || null) : null,
+      });
+      res.json(user);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
   app.get("/api/admin/transactions", isAuthenticated, requireRole(["admin"]), async (req: Request, res: Response) => {
     try {
       const allTransactions = await storage.getTransactions();
