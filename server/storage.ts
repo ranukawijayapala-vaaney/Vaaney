@@ -101,6 +101,7 @@ import {
   type SellerGalleryImage,
   type InsertSellerGalleryImage,
 } from "@shared/schema";
+
 import { db } from "./db";
 import { eq, and, desc, sql, lt, gte, inArray, notInArray, or, isNull, isNotNull } from "drizzle-orm";
 
@@ -3804,32 +3805,33 @@ export class DatabaseStorage implements IStorage {
       buyer: { firstName: string | null; lastName: string | null };
     }>;
   } | undefined> {
-    const [sellerRow] = await db.select().from(users).where(and(eq(users.id, sellerId), eq(users.role, "seller")));
-    if (!sellerRow) return undefined;
-    const seller: PublicSeller = {
-      id: sellerRow.id,
-      role: sellerRow.role,
-      firstName: sellerRow.firstName,
-      lastName: sellerRow.lastName,
-      profileImageUrl: sellerRow.profileImageUrl,
-      shopName: sellerRow.shopName,
-      shopLogo: sellerRow.shopLogo,
-      shopBackgroundImage: sellerRow.shopBackgroundImage,
-      verificationStatus: sellerRow.verificationStatus,
-      location: sellerRow.location,
-      expertise: sellerRow.expertise,
-      aboutUs: sellerRow.aboutUs,
-      yearsExperience: sellerRow.yearsExperience,
-      facilities: sellerRow.facilities,
-      facilityImages: sellerRow.facilityImages,
-      website: sellerRow.website,
-      companyProfileUrl: sellerRow.companyProfileUrl,
-      streetAddress: sellerRow.streetAddress,
-      city: sellerRow.city,
-      postalCode: sellerRow.postalCode,
-      country: sellerRow.country,
-      createdAt: sellerRow.createdAt,
-    };
+    const [seller] = await db
+      .select({
+        id: users.id,
+        role: users.role,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        shopName: users.shopName,
+        shopLogo: users.shopLogo,
+        shopBackgroundImage: users.shopBackgroundImage,
+        verificationStatus: users.verificationStatus,
+        location: users.location,
+        expertise: users.expertise,
+        aboutUs: users.aboutUs,
+        yearsExperience: users.yearsExperience,
+        facilities: users.facilities,
+        facilityImages: users.facilityImages,
+        website: users.website,
+        companyProfileUrl: users.companyProfileUrl,
+        streetAddress: users.streetAddress,
+        city: users.city,
+        postalCode: users.postalCode,
+        country: users.country,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(and(eq(users.id, sellerId), eq(users.role, "seller")));
+    if (!seller) return undefined;
 
     const projectsList = await db.select().from(sellerProjects)
       .where(eq(sellerProjects.sellerId, sellerId))

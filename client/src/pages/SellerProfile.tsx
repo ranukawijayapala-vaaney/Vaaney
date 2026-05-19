@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { User, Product, Service, SellerProject, SellerGalleryImage } from "@shared/schema";
+import type { Product, Service, SellerProject, SellerGalleryImage, PublicSeller } from "@shared/schema";
 
 function ImageCarousel({ images, altPrefix, onImageClick }: { images: string[]; altPrefix: string; onImageClick?: (index: number) => void }) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -153,7 +153,7 @@ function ImageLightbox({
 }
 
 interface SellerProfileData {
-  seller: User;
+  seller: PublicSeller;
   projects: SellerProject[];
   gallery: SellerGalleryImage[];
   products: Product[];
@@ -257,7 +257,7 @@ export default function SellerProfile() {
           
           <div className="flex flex-col md:flex-row gap-6 items-start">
             <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-background shadow-lg">
-              <AvatarImage src={seller.shopLogo || seller.profileImageUrl || undefined} alt={shopName} />
+              <AvatarImage src={seller.shopLogo || undefined} alt={shopName} />
               <AvatarFallback className="text-2xl font-bold bg-primary text-primary-foreground">
                 {shopName.charAt(0).toUpperCase()}
               </AvatarFallback>
@@ -489,7 +489,7 @@ export default function SellerProfile() {
                   </CardContent>
                 </Card>
 
-                {seller.city && (
+                {seller.location && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -498,8 +498,8 @@ export default function SellerProfile() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-muted-foreground">
-                        {[seller.streetAddress, seller.city, seller.country].filter(Boolean).join(", ")}
+                      <p className="text-muted-foreground" data-testid="text-seller-location">
+                        {seller.location}
                       </p>
                     </CardContent>
                   </Card>
