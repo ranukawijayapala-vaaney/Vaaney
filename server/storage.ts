@@ -18,6 +18,7 @@ import {
   messageAttachments,
   adminMessageTemplates,
   type User,
+  type PublicSeller,
   type UpsertUser,
   type Product,
   type InsertProduct,
@@ -418,7 +419,7 @@ export interface IStorage {
   
   // Seller profile management
   getSellerProfile(sellerId: string): Promise<{
-    seller: User;
+    seller: PublicSeller;
     projects: SellerProject[];
     gallery: SellerGalleryImage[];
     products: Product[];
@@ -3789,7 +3790,7 @@ export class DatabaseStorage implements IStorage {
 
   // Seller profile management
   async getSellerProfile(sellerId: string): Promise<{
-    seller: User;
+    seller: PublicSeller;
     projects: SellerProject[];
     gallery: SellerGalleryImage[];
     products: Product[];
@@ -3803,8 +3804,32 @@ export class DatabaseStorage implements IStorage {
       buyer: { firstName: string | null; lastName: string | null };
     }>;
   } | undefined> {
-    const [seller] = await db.select().from(users).where(and(eq(users.id, sellerId), eq(users.role, "seller")));
-    if (!seller) return undefined;
+    const [sellerRow] = await db.select().from(users).where(and(eq(users.id, sellerId), eq(users.role, "seller")));
+    if (!sellerRow) return undefined;
+    const seller: PublicSeller = {
+      id: sellerRow.id,
+      role: sellerRow.role,
+      firstName: sellerRow.firstName,
+      lastName: sellerRow.lastName,
+      profileImageUrl: sellerRow.profileImageUrl,
+      shopName: sellerRow.shopName,
+      shopLogo: sellerRow.shopLogo,
+      shopBackgroundImage: sellerRow.shopBackgroundImage,
+      verificationStatus: sellerRow.verificationStatus,
+      location: sellerRow.location,
+      expertise: sellerRow.expertise,
+      aboutUs: sellerRow.aboutUs,
+      yearsExperience: sellerRow.yearsExperience,
+      facilities: sellerRow.facilities,
+      facilityImages: sellerRow.facilityImages,
+      website: sellerRow.website,
+      companyProfileUrl: sellerRow.companyProfileUrl,
+      streetAddress: sellerRow.streetAddress,
+      city: sellerRow.city,
+      postalCode: sellerRow.postalCode,
+      country: sellerRow.country,
+      createdAt: sellerRow.createdAt,
+    };
 
     const projectsList = await db.select().from(sellerProjects)
       .where(eq(sellerProjects.sellerId, sellerId))

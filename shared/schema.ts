@@ -117,6 +117,35 @@ export const usersRelations = relations(users, ({ many }) => ({
 export type User = typeof users.$inferSelect;
 export type UpsertUser = typeof users.$inferInsert;
 
+// Public-safe subset of User for buyer-facing seller profile endpoints.
+// Excludes: email, password, googleId, phone, bank details, tax/business IDs,
+// commission rate, verification document URL, verification tokens, etc.
+export type PublicSeller = Pick<
+  User,
+  | "id"
+  | "role"
+  | "firstName"
+  | "lastName"
+  | "profileImageUrl"
+  | "shopName"
+  | "shopLogo"
+  | "shopBackgroundImage"
+  | "verificationStatus"
+  | "location"
+  | "expertise"
+  | "aboutUs"
+  | "yearsExperience"
+  | "facilities"
+  | "facilityImages"
+  | "website"
+  | "companyProfileUrl"
+  | "streetAddress"
+  | "city"
+  | "postalCode"
+  | "country"
+  | "createdAt"
+>;
+
 // Password Reset Tokens table
 export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
