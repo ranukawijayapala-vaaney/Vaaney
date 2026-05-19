@@ -141,6 +141,14 @@ const profileFormSchema = z.object({
     .trim()
     .max(500)
     .url("Enter a valid URL (https://...)")
+    .refine((v) => {
+      try {
+        const u = new URL(v);
+        return u.protocol === "http:" || u.protocol === "https:";
+      } catch {
+        return false;
+      }
+    }, { message: "Website must start with http:// or https://" })
     .or(z.literal(""))
     .optional(),
 });
@@ -170,6 +178,8 @@ export default function ProfileManagement() {
   const [shopLogo, setShopLogo] = useState<string | null>(null);
   const [shopBackgroundImage, setShopBackgroundImage] = useState<string | null>(null);
   const [companyProfileUrl, setCompanyProfileUrl] = useState<string | null>(null);
+  const [companyProfileFilename, setCompanyProfileFilename] = useState<string | null>(null);
+  const companyProfileInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isUploadingBackground, setIsUploadingBackground] = useState(false);
   const [isUploadingCompanyPdf, setIsUploadingCompanyPdf] = useState(false);
@@ -524,30 +534,93 @@ export default function ProfileManagement() {
                       <p className="text-sm text-muted-foreground">
                         Upload a PDF document buyers can download to learn more about your company.
                       </p>
+                      <input
+                        ref={companyProfileInputRef}
+                        type="file"
+                        className="hidden"
+                        accept="application/pdf"
+                        disabled={isUploadingCompanyPdf}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.type !== "application/pdf") {
+                            toast({ title: "Invalid file", description: "Please select a PDF file", variant: "destructive" });
+                            e.target.value = "";
+                            return;
+                          }
+                          if (file.size > 10 * 1024 * 1024) {
+                            toast({ title: "File too large", description: "Maximum file size is 10MB", variant: "destructive" });
+                            e.target.value = "";
+                            return;
+                          }
+                          setIsUploadingCompanyPdf(true);
+                          try {
+                            const { objectPath } = await uploadFile(file, { kind: "default", visibility: "public" });
+                            setCompanyProfileUrl(objectPath);
+                            setCompanyProfileFilename(file.name);
+                            toast({ title: "Company profile uploaded" });
+                          } catch (err) {
+                            toast({
+                              title: "Upload failed",
+                              description: err instanceof Error ? err.message : "An error occurred",
+                              variant: "destructive",
+                            });
+                          } finally {
+                            setIsUploadingCompanyPdf(false);
+                            e.target.value = "";
+                          }
+                        }}
+                        data-testid="input-upload-company-profile"
+                      />
                       {companyProfileUrl ? (
-                        <div className="flex items-center gap-3 rounded-md border p-3" data-testid="card-company-profile">
+                        <div className="flex items-center gap-3 rounded-md border p-3 flex-wrap" data-testid="card-company-profile">
                           <FileText className="w-5 h-5 text-muted-foreground shrink-0" />
                           <a
                             href={companyProfileUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm underline truncate flex-1"
+                            className="text-sm underline truncate flex-1 min-w-0"
                             data-testid="link-company-profile-preview"
                           >
-                            View uploaded company profile
+                            {companyProfileFilename || "View uploaded company profile"}
                           </a>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={isUploadingCompanyPdf}
+                            onClick={() => companyProfileInputRef.current?.click()}
+                            data-testid="button-replace-company-profile"
+                          >
+                            {isUploadingCompanyPdf ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <Upload className="w-4 h-4 mr-2" />
+                            )}
+                            Replace
+                          </Button>
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            onClick={() => setCompanyProfileUrl(null)}
+                            disabled={isUploadingCompanyPdf}
+                            onClick={() => {
+                              setCompanyProfileUrl(null);
+                              setCompanyProfileFilename(null);
+                            }}
                             data-testid="button-remove-company-profile"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       ) : (
-                        <label className="flex items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer hover-elevate bg-muted/50">
+                        <button
+                          type="button"
+                          onClick={() => companyProfileInputRef.current?.click()}
+                          disabled={isUploadingCompanyPdf}
+                          className="flex items-center justify-center w-full h-20 border-2 border-dashed rounded-lg cursor-pointer hover-elevate bg-muted/50"
+                          data-testid="button-upload-company-profile"
+                        >
                           <div className="flex items-center gap-2">
                             {isUploadingCompanyPdf ? (
                               <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
@@ -558,41 +631,7 @@ export default function ProfileManagement() {
                               {isUploadingCompanyPdf ? "Uploading..." : "Click to upload PDF (max 10MB)"}
                             </span>
                           </div>
-                          <input
-                            type="file"
-                            className="hidden"
-                            accept="application/pdf"
-                            disabled={isUploadingCompanyPdf}
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (!file) return;
-                              if (file.type !== "application/pdf") {
-                                toast({ title: "Invalid file", description: "Please select a PDF file", variant: "destructive" });
-                                return;
-                              }
-                              if (file.size > 10 * 1024 * 1024) {
-                                toast({ title: "File too large", description: "Maximum file size is 10MB", variant: "destructive" });
-                                return;
-                              }
-                              setIsUploadingCompanyPdf(true);
-                              try {
-                                const { objectPath } = await uploadFile(file, { kind: "default", visibility: "public" });
-                                setCompanyProfileUrl(objectPath);
-                                toast({ title: "Company profile uploaded" });
-                              } catch (err) {
-                                toast({
-                                  title: "Upload failed",
-                                  description: err instanceof Error ? err.message : "An error occurred",
-                                  variant: "destructive",
-                                });
-                              } finally {
-                                setIsUploadingCompanyPdf(false);
-                                e.target.value = "";
-                              }
-                            }}
-                            data-testid="input-upload-company-profile"
-                          />
-                        </label>
+                        </button>
                       )}
                     </div>
                   </div>

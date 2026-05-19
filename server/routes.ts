@@ -1549,6 +1549,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .trim()
           .max(500)
           .url("Website must be a valid URL")
+          .refine((v) => {
+            try {
+              const u = new URL(v);
+              return u.protocol === "http:" || u.protocol === "https:";
+            } catch {
+              return false;
+            }
+          }, { message: "Website must start with http:// or https://" })
           .or(z.literal(""))
           .nullable()
           .optional()
