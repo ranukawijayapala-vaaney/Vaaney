@@ -183,7 +183,7 @@ export default function Verifications() {
                     <TableRow key={user.id} data-testid={`row-verification-${user.id}`}>
                       <TableCell>
                         <div className="font-medium" data-testid={`text-user-name-${user.id}`}>
-                          {user.firstName} {user.lastName}
+                          {getUserDisplayName(user)}
                         </div>
                         <div className="text-sm text-muted-foreground">{user.email}</div>
                       </TableCell>
