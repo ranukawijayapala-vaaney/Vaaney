@@ -1,0 +1,1 @@
+- [Seller display-name rule](seller-display-name.md) — business sellers show companyName via getUserDisplayName(); lists the surfaces that deliberately keep the literal person name.

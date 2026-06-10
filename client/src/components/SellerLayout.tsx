@@ -8,6 +8,7 @@ import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { NotificationBell } from "@/components/NotificationBell";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import { getUserDisplayName } from "@shared/schema";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -207,7 +208,7 @@ export function SellerLayout({ children }: SellerLayoutProps) {
             </nav>
             <div className="flex items-center gap-3">
               <span className="text-sm text-muted-foreground hidden sm:block">
-                {user?.firstName} {user?.lastName}
+                {getUserDisplayName(user)}
               </span>
               {user?.canSwitchRoles && <RoleSwitcher currentRole={user?.role || "seller"} />}
               <NotificationBell />

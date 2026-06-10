@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { notifications, users } from "@shared/schema";
+import { notifications, users, getUserDisplayName } from "@shared/schema";
 import type { NotificationType, InsertNotification } from "@shared/schema";
 import { sendEmail, generateEmailTemplate } from "./emailService";
 import { eq } from "drizzle-orm";
@@ -47,7 +47,7 @@ export async function createNotification(params: CreateNotificationParams): Prom
       const [user] = await db.select().from(users).where(eq(users.id, userId));
       
       if (user?.email) {
-        const recipientName = user.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : undefined;
+        const recipientName = getUserDisplayName(user) || undefined;
         
         const emailTemplate = generateEmailTemplate(type, {
           recipientName,

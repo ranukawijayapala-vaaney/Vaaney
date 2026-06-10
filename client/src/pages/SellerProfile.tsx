@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Product, Service, SellerProject, SellerGalleryImage, PublicSeller } from "@shared/schema";
+import { type Product, type Service, type SellerProject, type SellerGalleryImage, type PublicSeller, getUserDisplayName } from "@shared/schema";
 
 function ImageCarousel({ images, altPrefix, onImageClick }: { images: string[]; altPrefix: string; onImageClick?: (index: number) => void }) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -227,7 +227,7 @@ export default function SellerProfile() {
 
   const { seller, projects, gallery, products, services, ratings } = profile;
   
-  const shopName = seller.shopName || `${seller.firstName || ""} ${seller.lastName || ""}`.trim() || "Seller";
+  const shopName = seller.shopName || getUserDisplayName(seller) || "Seller";
   const averageRating = ratings.length > 0 
     ? (ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length).toFixed(1)
     : null;

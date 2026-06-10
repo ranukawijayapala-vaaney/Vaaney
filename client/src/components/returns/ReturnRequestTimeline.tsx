@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { ReturnRequest as BaseReturnRequest } from "@shared/schema";
+import { getUserDisplayName } from "@shared/schema";
 
 // Extend the base return request type with enriched relations from API
 type EnrichedReturnRequest = BaseReturnRequest & {
@@ -16,6 +17,8 @@ type EnrichedReturnRequest = BaseReturnRequest & {
     id: string;
     firstName: string;
     lastName: string;
+    sellerType?: string | null;
+    companyName?: string | null;
   };
   order?: {
     id: string;
@@ -145,7 +148,7 @@ export function ReturnRequestTimeline({
           {request.seller && (
             <div className="text-sm">
               <span className="text-muted-foreground">From:</span>
-              <div className="font-medium">{request.seller.firstName} {request.seller.lastName}</div>
+              <div className="font-medium">{getUserDisplayName(request.seller)}</div>
             </div>
           )}
           <div className="flex justify-between items-center">

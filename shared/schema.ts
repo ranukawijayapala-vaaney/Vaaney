@@ -117,6 +117,29 @@ export const usersRelations = relations(users, ({ many }) => ({
 export type User = typeof users.$inferSelect;
 export type UpsertUser = typeof users.$inferInsert;
 
+// Returns the user's main display name. For business sellers this is the
+// registered company name; otherwise the person's full name, falling back to email.
+export function getUserDisplayName(
+  user:
+    | {
+        firstName?: string | null;
+        lastName?: string | null;
+        email?: string | null;
+        sellerType?: string | null;
+        companyName?: string | null;
+      }
+    | null
+    | undefined,
+): string {
+  if (!user) return "";
+  if (user.sellerType === "business" && user.companyName && user.companyName.trim()) {
+    return user.companyName.trim();
+  }
+  const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
+  if (fullName) return fullName;
+  return user.email ?? "";
+}
+
 // Public-safe subset of User for buyer-facing seller profile endpoints.
 // Excludes: email, password, googleId, phone, bank details, tax/business IDs,
 // commission rate, verification document URL, verification tokens, etc.
@@ -139,6 +162,8 @@ export type PublicSeller = Pick<
   | "facilityImages"
   | "website"
   | "companyProfileUrl"
+  | "sellerType"
+  | "companyName"
   | "streetAddress"
   | "city"
   | "postalCode"

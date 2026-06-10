@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReturnRequestTimeline } from "@/components/returns/ReturnRequestTimeline";
 import type { ReturnRequestStatus } from "@shared/schema";
+import { getUserDisplayName } from "@shared/schema";
 import { MAX_RETURN_ATTEMPTS } from "@shared/constants";
 import {
   Dialog,
@@ -55,6 +56,8 @@ interface ReturnRequest {
     email: string;
     firstName: string | null;
     lastName: string | null;
+    sellerType?: string | null;
+    companyName?: string | null;
   };
   order: {
     id: string;
@@ -335,7 +338,7 @@ export default function AdminReturns() {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm" data-testid={`text-seller-name-${request.id}`}>
-                          {request.seller.firstName} {request.seller.lastName}
+                          {getUserDisplayName(request.seller)}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -566,7 +569,7 @@ export default function AdminReturns() {
                 <CardContent className="space-y-4">
                   <div className="text-sm">
                     <span className="text-muted-foreground">From:</span>
-                    <div className="font-medium">{selectedRequest.seller.firstName} {selectedRequest.seller.lastName}</div>
+                    <div className="font-medium">{getUserDisplayName(selectedRequest.seller)}</div>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">Seller's Decision:</span>

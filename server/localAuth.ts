@@ -8,7 +8,7 @@ import multer from "multer";
 import crypto from "crypto";
 import { storage } from "./storage";
 import { db } from "./db";
-import { users, passwordResetTokens } from "@shared/schema";
+import { users, passwordResetTokens, getUserDisplayName } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { Storage } from "@google-cloud/storage";
 import { sendVerificationEmail } from "./services/emailVerificationService";
@@ -289,7 +289,7 @@ export async function setupAuth(app: Express) {
       try {
         await notifyWelcome({
           userId: newUser.id,
-          userName: `${firstName} ${lastName}`.trim(),
+          userName: getUserDisplayName(newUser),
           userRole: role,
         });
       } catch (notifyError) {
@@ -299,7 +299,7 @@ export async function setupAuth(app: Express) {
       // Notify admins about the new user registration
       try {
         await notifyAdminNewUser({
-          userName: `${firstName} ${lastName}`.trim(),
+          userName: getUserDisplayName(newUser),
           userEmail: email.toLowerCase(),
           userRole: role,
         });
@@ -311,7 +311,7 @@ export async function setupAuth(app: Express) {
       if (role === "seller") {
         try {
           await notifyAdminVerificationPending({
-            sellerName: `${firstName} ${lastName}`.trim(),
+            sellerName: getUserDisplayName(newUser),
             sellerId: newUser.id,
           });
         } catch (notifyError) {

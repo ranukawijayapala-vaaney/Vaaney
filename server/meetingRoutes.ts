@@ -7,6 +7,7 @@ import {
   notifyMeetingConfirmed, 
   notifyMeetingCancelled 
 } from "./services/notificationService";
+import { getUserDisplayName } from "@shared/schema";
 
 const router = Router();
 
@@ -58,7 +59,7 @@ router.post("/propose", requireAuth, async (req: any, res: any) => {
     // Get proposer and recipient details
     const proposer = await storage.getUser(userId);
     const recipientId = userId === conversation.buyerId ? conversation.sellerId : conversation.buyerId;
-    const proposerName = proposer ? `${proposer.firstName || ""} ${proposer.lastName || ""}`.trim() || proposer.email : "Someone";
+    const proposerName = proposer ? getUserDisplayName(proposer) : "Someone";
     const recipientRole = userId === conversation.buyerId ? "seller" : "buyer";
 
     // Format meeting time for message
@@ -120,7 +121,7 @@ router.post("/:id/confirm", requireAuth, async (req: any, res: any) => {
     // Get conversation and user details
     const conversation = await storage.getConversation(meeting.conversationId);
     const confirmer = await storage.getUser(userId);
-    const confirmerName = confirmer ? `${confirmer.firstName || ""} ${confirmer.lastName || ""}`.trim() || confirmer.email : "Someone";
+    const confirmerName = confirmer ? getUserDisplayName(confirmer) : "Someone";
     
     // The proposer is the one who should be notified
     const recipientId = meeting.proposedById;
@@ -185,7 +186,7 @@ router.post("/:id/cancel", requireAuth, async (req: any, res: any) => {
     // Get conversation and user details
     const conversation = await storage.getConversation(meeting.conversationId);
     const canceller = await storage.getUser(userId);
-    const cancellerName = canceller ? `${canceller.firstName || ""} ${canceller.lastName || ""}`.trim() || canceller.email : "Someone";
+    const cancellerName = canceller ? getUserDisplayName(canceller) : "Someone";
     
     // The other party should be notified
     const recipientId = userId === meeting.buyerId ? meeting.sellerId : meeting.buyerId;
@@ -353,11 +354,17 @@ router.post("/:id/join", requireAuth, async (req: any, res: any) => {
       await createVideoRoom(roomName);
     }
 
-    // Get user details for identity
+    // Get user details for identity. Business sellers show their company name;
+    // everyone else keeps their person name, falling back to a generic id (never email).
     const user = await storage.getUser(userId);
-    const identity = user?.firstName 
-      ? `${user.firstName} ${user.lastName || ''}`.trim()
-      : `User-${userId.substring(0, 8)}`;
+    const businessName = user?.sellerType === "business" && user?.companyName?.trim()
+      ? user.companyName.trim()
+      : null;
+    const identity = businessName
+      ? businessName
+      : user?.firstName
+        ? `${user.firstName} ${user.lastName || ''}`.trim()
+        : `User-${userId.substring(0, 8)}`;
 
     // Generate access token for this user
     const token = await generateVideoAccessToken(identity, roomName);

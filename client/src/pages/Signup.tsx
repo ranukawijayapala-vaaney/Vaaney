@@ -439,7 +439,7 @@ export default function Signup() {
                   name="firstName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>First Name</FormLabel>
+                      <FormLabel>{selectedSellerType === "business" ? "Contact Person First Name" : "First Name"}</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="John"
@@ -457,7 +457,7 @@ export default function Signup() {
                   name="lastName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Last Name</FormLabel>
+                      <FormLabel>{selectedSellerType === "business" ? "Contact Person Last Name" : "Last Name"}</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="Doe"
@@ -470,6 +470,12 @@ export default function Signup() {
                   )}
                 />
               </div>
+
+              {selectedSellerType === "business" && (
+                <p className="text-xs text-muted-foreground" data-testid="text-business-contact-hint">
+                  Enter the authorized contact person's name. Your registered business name is captured below under Business Details and will be shown as your profile name.
+                </p>
+              )}
 
               <FormField
                 control={form.control}
@@ -811,7 +817,9 @@ export default function Signup() {
                       data-testid="input-documents"
                     />
                     <p className="text-xs text-muted-foreground mt-2">
-                      Upload ID, passport, or other verification documents (PDF, JPG, PNG)
+                      {selectedSellerType === "business"
+                        ? "Upload your Business Registration (BR) document (PDF, JPG, PNG)"
+                        : "Upload your ID card or passport (PDF, JPG, PNG)"}
                     </p>
                     {selectedFiles.length > 0 && (
                       <div className="mt-2 space-y-1">

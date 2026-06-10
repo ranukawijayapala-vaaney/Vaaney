@@ -15,7 +15,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import type { ShippingAddress } from "@shared/schema";
+import { type ShippingAddress, getUserDisplayName } from "@shared/schema";
 import { BankAccountManagement } from "@/components/admin/BankAccountManagement";
 import { VerificationDocumentDialog, type DocumentData } from "@/components/VerificationDocumentDialog";
 
@@ -368,7 +368,7 @@ export default function Profile() {
                 <span>Name</span>
               </div>
               <p className="font-medium" data-testid="text-user-name">
-                {user.firstName} {user.lastName}
+                {getUserDisplayName(user)}
               </p>
             </div>
 

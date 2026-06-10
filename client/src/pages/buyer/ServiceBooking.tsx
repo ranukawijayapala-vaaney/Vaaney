@@ -21,6 +21,7 @@ import { uploadFile } from "@/lib/uploadHelpers";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import type { Service, ServicePackage, PaymentMethod } from "@shared/schema";
+import { getUserDisplayName } from "@shared/schema";
 
 interface ServiceWithPackages extends Service {
   packages: ServicePackage[];
@@ -28,6 +29,8 @@ interface ServiceWithPackages extends Service {
     id: string;
     firstName: string;
     lastName: string;
+    sellerType?: string | null;
+    companyName?: string | null;
     shopName?: string;
   };
 }
@@ -947,7 +950,7 @@ export default function ServiceBooking({ serviceId }: { serviceId: string }) {
                       <div className="flex items-center gap-2 flex-wrap">
                         <Badge variant="secondary" className="text-xs">Verified</Badge>
                         <span className="text-sm text-muted-foreground">
-                          {service.seller.shopName || `${service.seller.firstName} ${service.seller.lastName}`}
+                          {service.seller.shopName || getUserDisplayName(service.seller)}
                         </span>
                         <Button
                           variant="ghost"

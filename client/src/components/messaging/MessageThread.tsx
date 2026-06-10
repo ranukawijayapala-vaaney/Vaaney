@@ -6,12 +6,15 @@ import { Card } from "@/components/ui/card";
 import { FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Message, MessageAttachment } from "@shared/schema";
+import { getUserDisplayName } from "@shared/schema";
 
 interface MessageWithUser extends Message {
   sender?: {
     id: string;
     firstName?: string | null;
     lastName?: string | null;
+    sellerType?: string | null;
+    companyName?: string | null;
     profileImageUrl?: string | null;
   };
   attachments?: MessageAttachment[];
@@ -43,7 +46,7 @@ export function MessageThread({ messages, currentUserId }: MessageThreadProps) {
       {messages.map((message) => {
         const isOwnMessage = message.senderId === currentUserId;
         const senderName = message.sender
-          ? `${message.sender.firstName || ""} ${message.sender.lastName || ""}`.trim()
+          ? getUserDisplayName(message.sender) || "Unknown User"
           : "Unknown User";
         const senderInitials = senderName
           .split(" ")

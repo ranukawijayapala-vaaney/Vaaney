@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RatingDisplay } from "@/components/RatingDisplay";
+import { getUserDisplayName } from "@shared/schema";
 
 interface ProductDetailProps {
   productId?: string;
@@ -545,7 +546,7 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
           {product.seller && (
             <div className="flex items-center gap-2">
               <Badge variant="secondary">Verified Seller</Badge>
-              <span className="text-sm">{product.seller.shopName || `${product.seller.firstName} ${product.seller.lastName}`}</span>
+              <span className="text-sm">{product.seller.shopName || getUserDisplayName(product.seller)}</span>
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -1175,7 +1176,7 @@ export default function ProductDetail({ productId: propId }: ProductDetailProps)
                 <h3 className="font-semibold">{product.name}</h3>
                 <p className="text-sm text-muted-foreground">
                   {product.seller 
-                    ? `Seller: ${product.seller.firstName} ${product.seller.lastName}`
+                    ? `Seller: ${getUserDisplayName(product.seller)}`
                     : "Seller information not available"}
                 </p>
               </div>

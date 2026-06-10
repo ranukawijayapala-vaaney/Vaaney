@@ -256,7 +256,9 @@ export default function RoleSelection() {
                   <p className="text-sm font-medium text-primary">
                     {selectedRole === "buyer" 
                       ? "Buyers: Upload your Maldivian ID Card" 
-                      : "Sellers: Upload your ID Card or Business Registration (BR)"}
+                      : sellerType === "business"
+                        ? "Sellers: Upload your Business Registration (BR) document"
+                        : "Sellers: Upload your ID Card or passport"}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Accepted formats: PDF, JPG, PNG • Maximum size: 10MB

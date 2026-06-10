@@ -323,6 +323,8 @@ export function setupQuoteApprovalRoutes(app: Express) {
               email: seller.email,
               firstName: seller.firstName,
               lastName: seller.lastName,
+              sellerType: seller.sellerType,
+              companyName: seller.companyName,
             } : null
           };
           
@@ -348,6 +350,8 @@ export function setupQuoteApprovalRoutes(app: Express) {
               email: seller.email,
               firstName: seller.firstName,
               lastName: seller.lastName,
+              sellerType: seller.sellerType,
+              companyName: seller.companyName,
             } : null
           };
           

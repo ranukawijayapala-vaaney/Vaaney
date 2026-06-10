@@ -56,6 +56,7 @@ import {
   quotes,
   designApprovals,
   bankAccounts,
+  getUserDisplayName,
 } from "@shared/schema";
 import { createCheckoutSession as createMpgsSession, retrieveOrder as retrieveMpgsOrder, getMpgsCheckoutJsUrl, getMpgsMerchantId, storeSessionConfig, getSessionConfig } from "./mpgs";
 import * as aramex from "./aramex";
@@ -176,6 +177,8 @@ async function enrichReturnRequest(request: any) {
         id: seller.id,
         firstName: seller.firstName,
         lastName: seller.lastName,
+        sellerType: seller.sellerType,
+        companyName: seller.companyName,
       };
     }
   }
@@ -962,7 +965,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userRole: user.role,
         userId: user.id,
         userEmail: user.email,
-        userName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        userName: getUserDisplayName(user),
         sellerVerificationStatus: user.verificationStatus,
         commissionRate: user.commissionRate,
         currentPage: context?.currentPage || 'unknown',
@@ -1305,6 +1308,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             seller: seller ? {
               firstName: seller.firstName,
               lastName: seller.lastName,
+              sellerType: seller.sellerType,
+              companyName: seller.companyName,
               verificationStatus: seller.verificationStatus
             } : null,
             approvedVariantCount
@@ -1332,6 +1337,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: seller.id,
           firstName: seller.firstName,
           lastName: seller.lastName,
+          sellerType: seller.sellerType,
+          companyName: seller.companyName,
           shopName: seller.shopName,
           verificationStatus: seller.verificationStatus
         } : null
@@ -1358,6 +1365,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             seller: seller ? {
               firstName: seller.firstName,
               lastName: seller.lastName,
+              sellerType: seller.sellerType,
+              companyName: seller.companyName,
               verificationStatus: seller.verificationStatus
             } : null
           };
@@ -1384,6 +1393,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: seller.id,
           firstName: seller.firstName,
           lastName: seller.lastName,
+          sellerType: seller.sellerType,
+          companyName: seller.companyName,
           shopName: seller.shopName,
           verificationStatus: seller.verificationStatus
         } : null
@@ -1771,6 +1782,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               id: seller.id,
               firstName: seller.firstName,
               lastName: seller.lastName,
+              sellerType: seller.sellerType,
+              companyName: seller.companyName,
             } : null,
             activeReturnRequest: activeReturnRequest || null,
             rating: rating || null,
@@ -2534,7 +2547,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get buyer info for admin notification
         const buyer = await storage.getUser(userId);
         const buyerName = buyer?.firstName ? `${buyer.firstName} ${buyer.lastName || ""}`.trim() : buyer?.email || "Unknown";
-        const sellerName = seller.firstName ? `${seller.firstName} ${seller.lastName || ""}`.trim() : seller.email || "Unknown Seller";
+        const sellerName = getUserDisplayName(seller) || "Unknown Seller";
         
         // Send admin notification for direct quote order (in-app only)
         try {
@@ -2782,6 +2795,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 id: seller.id,
                 firstName: seller.firstName,
                 lastName: seller.lastName,
+                sellerType: seller.sellerType,
+                companyName: seller.companyName,
               },
               product,
               variant,
@@ -2805,7 +2820,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await notifyAdminNewOrder({
             orderId: order.id,
             buyerName,
-            sellerName: order.seller ? `${order.seller.firstName || ""} ${order.seller.lastName || ""}`.trim() : "Unknown Seller",
+            sellerName: getUserDisplayName(order.seller) || "Unknown Seller",
             productName: order.product?.name || order.variant?.name || "Product",
             totalAmount: order.totalAmount,
           });
@@ -3062,7 +3077,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const service = await storage.getService(parsedData.serviceId);
       const buyer = await storage.getUser(userId);
       const buyerName = buyer?.firstName ? `${buyer.firstName} ${buyer.lastName || ""}`.trim() : buyer?.email || "Unknown";
-      const sellerName = seller.firstName ? `${seller.firstName} ${seller.lastName || ""}`.trim() : seller.email || "Unknown Seller";
+      const sellerName = getUserDisplayName(seller) || "Unknown Seller";
       
       try {
         await notifyAdminNewBooking({
@@ -4471,7 +4486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               email: seller?.email,
               firstName: seller?.firstName,
               lastName: seller?.lastName,
-              businessName: seller?.businessName,
+              businessName: seller?.sellerType === "business" && seller.companyName?.trim() ? seller.companyName : null,
               phone: seller?.phone,
             },
             itemCount: enrichedItems.length,
@@ -5064,7 +5079,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               email: seller?.email,
               firstName: seller?.firstName,
               lastName: seller?.lastName,
-              businessName: seller?.businessName,
+              businessName: seller?.sellerType === "business" && seller.companyName?.trim() ? seller.companyName : null,
               phone: seller?.phone,
             },
             service: {
@@ -6493,7 +6508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (recipientId) {
         const recipient = await storage.getUser(recipientId);
         if (recipient) {
-          const senderName = user.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : "Someone";
+          const senderName = getUserDisplayName(user) || "Someone";
           await notifyMessageReceived({
             recipientId,
             recipientRole: recipient.role as 'buyer' | 'seller' | 'admin',
@@ -7149,6 +7164,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               email: seller?.email,
               firstName: seller?.firstName,
               lastName: seller?.lastName,
+              sellerType: seller?.sellerType,
+              companyName: seller?.companyName,
             },
             packageName: boostPackage?.name || "Unknown Package",
             itemName,

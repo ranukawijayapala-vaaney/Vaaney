@@ -14,6 +14,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import type { Product, EnrichedService, BoostedItem } from "@shared/schema";
+import { getUserDisplayName } from "@shared/schema";
 import { Link, useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AddToCartModal, type ApprovedVariant } from "@/components/cart/AddToCartModal";
@@ -34,7 +35,7 @@ export default function Marketplace() {
     queryKey: ["/api/products"],
   });
 
-  const { data: allServices = [], isLoading: servicesLoading } = useQuery<(EnrichedService & { seller: { firstName: string; lastName: string } })[]>({
+  const { data: allServices = [], isLoading: servicesLoading } = useQuery<(EnrichedService & { seller: { firstName: string; lastName: string; sellerType?: string | null; companyName?: string | null } })[]>({
     queryKey: ["/api/services"],
   });
 
@@ -469,7 +470,7 @@ export default function Marketplace() {
                         {product.seller && (
                           <>
                             <Badge variant="secondary" className="text-xs">Verified</Badge>
-                            <span>{product.seller.firstName} {product.seller.lastName}</span>
+                            <span>{getUserDisplayName(product.seller)}</span>
                           </>
                         )}
                       </div>
@@ -604,7 +605,7 @@ export default function Marketplace() {
                               {product.seller && (
                                 <>
                                   <Badge variant="secondary" className="text-xs">Verified</Badge>
-                                  <span>{product.seller.firstName} {product.seller.lastName}</span>
+                                  <span>{getUserDisplayName(product.seller)}</span>
                                 </>
                               )}
                             </div>
@@ -770,7 +771,7 @@ export default function Marketplace() {
                           {service.seller && (
                             <>
                               <Badge variant="secondary" className="text-xs">Verified</Badge>
-                              <span>{service.seller.firstName} {service.seller.lastName}</span>
+                              <span>{getUserDisplayName(service.seller)}</span>
                             </>
                           )}
                         </div>
@@ -881,7 +882,7 @@ export default function Marketplace() {
                                 {service.seller && (
                                   <>
                                     <Badge variant="secondary" className="text-xs">Verified</Badge>
-                                    <span>{service.seller.firstName} {service.seller.lastName}</span>
+                                    <span>{getUserDisplayName(service.seller)}</span>
                                   </>
                                 )}
                               </div>
@@ -993,7 +994,7 @@ export default function Marketplace() {
                   <h3 className="font-semibold">{askSellerDialog.item.name}</h3>
                   <p className="text-sm text-muted-foreground">
                     {askSellerDialog.item.seller 
-                      ? `Seller: ${askSellerDialog.item.seller.firstName} ${askSellerDialog.item.seller.lastName}`
+                      ? `Seller: ${getUserDisplayName(askSellerDialog.item.seller)}`
                       : "Seller information not available"}
                   </p>
                 </div>

@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { User } from "@shared/schema";
+import { type User, getUserDisplayName } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VerificationDocumentDialog, type DocumentData } from "@/components/VerificationDocumentDialog";
 
@@ -487,7 +487,7 @@ export default function Users() {
                       >
                         <TableCell>
                           <div className="font-medium" data-testid={`text-user-name-${user.id}`}>
-                            {user.firstName} {user.lastName}
+                            {getUserDisplayName(user)}
                           </div>
                           <div className="text-sm text-muted-foreground">{user.email}</div>
                           <div className="text-xs text-muted-foreground">ID: {user.id.slice(0, 8)}...</div>
@@ -544,7 +544,7 @@ export default function Users() {
                       <div className="flex justify-between items-start gap-2">
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold truncate" data-testid={`text-user-name-${user.id}`}>
-                            {user.firstName} {user.lastName}
+                            {getUserDisplayName(user)}
                           </h3>
                           <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                           <p className="text-xs text-muted-foreground font-mono">ID: {user.id.slice(0, 8)}...</p>
@@ -597,7 +597,7 @@ export default function Users() {
           <DialogHeader>
             <DialogTitle>User Profile</DialogTitle>
             <DialogDescription>
-              View detailed information about {selectedUser?.firstName} {selectedUser?.lastName}
+              View detailed information about {getUserDisplayName(selectedUser)}
             </DialogDescription>
           </DialogHeader>
           
@@ -911,7 +911,7 @@ export default function Users() {
           <DialogHeader>
             <DialogTitle>Edit Commission Rate</DialogTitle>
             <DialogDescription>
-              Update the commission rate for {selectedUser?.firstName} {selectedUser?.lastName}
+              Update the commission rate for {getUserDisplayName(selectedUser)}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -961,7 +961,7 @@ export default function Users() {
         onOpenChange={setDocumentPreviewOpen}
         documents={documents}
         title="User Verification Documents"
-        description={`Verification documents for ${selectedUser?.firstName} ${selectedUser?.lastName}`}
+        description={`Verification documents for ${getUserDisplayName(selectedUser)}`}
         testIdPrefix="user-document"
       />
 
@@ -970,7 +970,7 @@ export default function Users() {
           <DialogHeader>
             <DialogTitle>Set Seller Type</DialogTitle>
             <DialogDescription>
-              Choose whether {selectedUser?.firstName} {selectedUser?.lastName} sells as an individual
+              Choose whether {getUserDisplayName(selectedUser)} sells as an individual
               freelancer or on behalf of a registered business. Use this to backfill legacy seller accounts.
             </DialogDescription>
           </DialogHeader>

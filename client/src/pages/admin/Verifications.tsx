@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { User } from "@shared/schema";
+import { type User, getUserDisplayName } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VerificationDocumentDialog, type DocumentData } from "@/components/VerificationDocumentDialog";
 
@@ -286,7 +286,7 @@ export default function Verifications() {
           <DialogHeader>
             <DialogTitle>Reject Verification Request</DialogTitle>
             <DialogDescription>
-              Provide a reason for rejecting {selectedUser?.firstName} {selectedUser?.lastName}'s verification request
+              Provide a reason for rejecting {getUserDisplayName(selectedUser)}'s verification request
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

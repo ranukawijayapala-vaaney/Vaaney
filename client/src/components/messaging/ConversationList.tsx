@@ -4,18 +4,23 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageCircle, Package, ShoppingBag, AlertCircle, FileCheck, DollarSign, Calendar } from "lucide-react";
 import type { Conversation } from "@shared/schema";
+import { getUserDisplayName } from "@shared/schema";
 
 interface ConversationWithDetails extends Conversation {
   buyer?: {
     id: string;
     firstName?: string | null;
     lastName?: string | null;
+    sellerType?: string | null;
+    companyName?: string | null;
     profileImageUrl?: string | null;
   };
   seller?: {
     id: string;
     firstName?: string | null;
     lastName?: string | null;
+    sellerType?: string | null;
+    companyName?: string | null;
     profileImageUrl?: string | null;
   };
   product?: {
@@ -88,7 +93,7 @@ export function ConversationList({
         }
         
         const otherPartyName = otherParty
-          ? `${otherParty.firstName || ""} ${otherParty.lastName || ""}`.trim() || "Unknown User"
+          ? getUserDisplayName(otherParty) || "Unknown User"
           : "Admin";
 
         const otherPartyInitials = otherPartyName
